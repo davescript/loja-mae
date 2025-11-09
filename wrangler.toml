@@ -20,6 +20,7 @@ ENVIRONMENT = "development"
 
 [env.production]
 name = "loja-mae-api"
+workers_dev = true  # Habilitar workers.dev para desenvolvimento/testes
 routes = [
   { pattern = "api.leiasabores.pt/*", zone_name = "leiasabores.pt" }
 ]
