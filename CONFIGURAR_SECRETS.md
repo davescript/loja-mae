@@ -4,7 +4,7 @@
 
 ### 1. CLOUDFLARE_API_TOKEN
 ```
-mhJCle0uRfJEu6W8zKhxUCoM7pgrbWvW7ssStzqk
+(Configure no GitHub - veja INSTRUCOES_SECRETS.md para obter o valor)
 ```
 
 ### 2. CLOUDFLARE_ACCOUNT_ID
@@ -20,7 +20,7 @@ mhJCle0uRfJEu6W8zKhxUCoM7pgrbWvW7ssStzqk
 2. **Adicionar CLOUDFLARE_API_TOKEN:**
    - Clique em **"New repository secret"**
    - **Name:** `CLOUDFLARE_API_TOKEN`
-   - **Secret:** `mhJCle0uRfJEu6W8zKhxUCoM7pgrbWvW7ssStzqk`
+   - **Secret:** (Veja INSTRUCOES_SECRETS.md para obter o valor)
    - Clique em **"Add secret"**
 
 3. **Adicionar CLOUDFLARE_ACCOUNT_ID:**
@@ -51,7 +51,7 @@ gh auth login
 ```bash
 # Configurar CLOUDFLARE_API_TOKEN
 gh secret set CLOUDFLARE_API_TOKEN \
-  -b "mhJCle0uRfJEu6W8zKhxUCoM7pgrbWvW7ssStzqk" \
+  -b "SEU_TOKEN_AQUI" \
   -R davescript/loja-mae
 
 # Configurar CLOUDFLARE_ACCOUNT_ID
@@ -83,12 +83,12 @@ Após configurar os secrets:
 Para desenvolvimento local, adicione ao seu `.zshrc` ou `.bashrc`:
 
 ```bash
-export CLOUDFLARE_API_TOKEN="mhJCle0uRfJEu6W8zKhxUCoM7pgrbWvW7ssStzqk"
+export CLOUDFLARE_API_TOKEN="SEU_TOKEN_AQUI"
 ```
 
 Ou crie um arquivo `.env.local`:
 ```
-CLOUDFLARE_API_TOKEN=mhJCle0uRfJEu6W8zKhxUCoM7pgrbWvW7ssStzqk
+CLOUDFLARE_API_TOKEN=SEU_TOKEN_AQUI
 ```
 
 ## 📝 Status Atual

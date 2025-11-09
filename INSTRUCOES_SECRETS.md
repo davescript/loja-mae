@@ -4,7 +4,7 @@
 
 ### 1. CLOUDFLARE_API_TOKEN
 ```
-mhJCle0uRfJEu6W8zKhxUCoM7pgrbWvW7ssStzqk
+(Configure no GitHub - obtenha o valor do seu .dev.vars ou Cloudflare Dashboard)
 ```
 
 ### 2. CLOUDFLARE_ACCOUNT_ID
@@ -20,7 +20,7 @@ mhJCle0uRfJEu6W8zKhxUCoM7pgrbWvW7ssStzqk
 2. **Adicione CLOUDFLARE_API_TOKEN:**
    - Clique em "New repository secret"
    - Name: `CLOUDFLARE_API_TOKEN`
-   - Secret: `mhJCle0uRfJEu6W8zKhxUCoM7pgrbWvW7ssStzqk`
+   - Secret: (Veja seu arquivo .dev.vars ou Cloudflare Dashboard)
    - Clique em "Add secret"
 
 3. **Adicione CLOUDFLARE_ACCOUNT_ID:**

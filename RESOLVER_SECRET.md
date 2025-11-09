@@ -43,7 +43,7 @@ git push --force
 
 ### Token Cloudflare (VALIDADO ✅)
 ```
-CLOUDFLARE_API_TOKEN: mhJCle0uRfJEu6W8zKhxUCoM7pgrbWvW7ssStzqk
+CLOUDFLARE_API_TOKEN: (Configure no GitHub - veja .dev.vars)
 CLOUDFLARE_ACCOUNT_ID: 55b0027975cda6f67a48ea231d2cef8d
 ```
 
