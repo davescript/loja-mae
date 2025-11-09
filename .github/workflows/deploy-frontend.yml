@@ -46,5 +46,7 @@ jobs:
           projectName: loja-mae-frontend
           directory: dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          # Wrangler version (opcional)
+          # Production deployment
           wranglerVersion: '3'
+          # Optional: branch for deployment
+          # branch: ${{ github.ref_name }}
