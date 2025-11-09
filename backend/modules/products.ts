@@ -200,17 +200,25 @@ export async function listProducts(
   }
 
   const offset = (page - 1) * pageSize;
-  const orderBy = `${sortBy} ${sortOrder.toUpperCase()}`;
+  
+  // Validate and sanitize sortBy to prevent SQL injection
+  const allowedSortFields = ['created_at', 'updated_at', 'title', 'price_cents', 'stock_quantity', 'featured'];
+  const safeSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'created_at';
+  const safeSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+  
+  // Build query with ORDER BY - must use string interpolation for ORDER BY (validated above)
+  const query = `SELECT * FROM products WHERE ${whereClause} ORDER BY ${safeSortBy} ${safeSortOrder} LIMIT ? OFFSET ?`;
+  const countQuery = `SELECT COUNT(*) as count FROM products WHERE ${whereClause}`;
 
   const [items, totalResult] = await Promise.all([
     executeQuery<Product>(
       db,
-      `SELECT * FROM products WHERE ${whereClause} ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
+      query,
       [...params, pageSize, offset]
     ),
     executeOne<{ count: number }>(
       db,
-      `SELECT COUNT(*) as count FROM products WHERE ${whereClause}`,
+      countQuery,
       params
     ),
   ]);

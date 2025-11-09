@@ -28,8 +28,16 @@ export async function handleImageRequest(request: Request, env: Env): Promise<Re
     const contentType = object.httpMetadata?.contentType || 'image/jpeg';
     const cacheControl = object.httpMetadata?.cacheControl || 'public, max-age=31536000';
     
+    // Convert R2 object body to Response
+    // object.body is a ReadableStream, which is compatible with Response
+    const body = object.body as ReadableStream<Uint8Array> | null;
+    
+    if (!body) {
+      return errorResponse('Image body not available', 500);
+    }
+    
     // Return image with proper headers
-    return new Response(object.body, {
+    return new Response(body, {
       headers: {
         'Content-Type': contentType,
         'Cache-Control': cacheControl,
