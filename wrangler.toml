@@ -1,4 +1,4 @@
-name = "loja-mae-api"
+name = "loja-mae-frontend"
 main = "backend/api/index.ts"
 compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat"]
