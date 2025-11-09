@@ -19,7 +19,10 @@ export async function apiRequest<T = any>(
     }
 
     const url = `${API_BASE_URL}${endpoint}`;
-    console.log('API Request:', url);
+    // Only log in development
+    if (import.meta.env.DEV) {
+      console.log('API Request:', url);
+    }
 
     const response = await fetch(url, {
       ...options,

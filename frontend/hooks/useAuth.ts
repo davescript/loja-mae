@@ -10,12 +10,18 @@ export function useAuth() {
   const { data, isLoading } = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: async () => {
-      const response = await apiRequest<{ user: AuthUser; type: string }>('/api/auth/me');
-      if (response.success && response.data) {
-        setUser(response.data.user);
-        return response.data;
+      try {
+        const response = await apiRequest<{ user: AuthUser; type: string }>('/api/auth/me');
+        if (response.success && response.data) {
+          setUser(response.data.user);
+          return response.data;
+        }
+        return null;
+      } catch (error) {
+        // Silently fail - user is not authenticated
+        console.log('User not authenticated');
+        return null;
       }
-      return null;
     },
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
