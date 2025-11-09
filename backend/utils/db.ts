@@ -20,14 +20,15 @@ export async function executeQuery<T = any>(
   params: any[] = []
 ): Promise<T[]> {
   try {
-    const stmt = db.prepare(query);
-    if (params.length > 0) {
-      stmt.bind(...params);
+    let stmt = db.prepare(query);
+    // Bind parameters one by one to avoid issues with spread operator
+    for (let i = 0; i < params.length; i++) {
+      stmt = stmt.bind(params[i]);
     }
     const result = await stmt.all<T>();
     return result.results || [];
   } catch (error) {
-    console.error('Database query error:', error);
+    console.error('Database query error:', error, 'Query:', query, 'Params:', params);
     throw error;
   }
 }
@@ -56,9 +57,10 @@ export async function executeRun(
   params: any[] = []
 ): Promise<{ success: boolean; meta: any }> {
   try {
-    const stmt = db.prepare(query);
-    if (params.length > 0) {
-      stmt.bind(...params);
+    let stmt = db.prepare(query);
+    // Bind parameters one by one to avoid issues with spread operator
+    for (let i = 0; i < params.length; i++) {
+      stmt = stmt.bind(params[i]);
     }
     const result = await stmt.run();
     return {
@@ -66,7 +68,7 @@ export async function executeRun(
       meta: result.meta,
     };
   } catch (error) {
-    console.error('Database execute error:', error);
+    console.error('Database execute error:', error, 'Query:', query, 'Params:', params);
     throw error;
   }
 }
