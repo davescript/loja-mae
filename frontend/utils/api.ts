@@ -1,6 +1,6 @@
 import type { ApiResponse } from '@shared/types';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8787';
+const API_BASE_URL = (import.meta.env as { VITE_API_BASE_URL?: string }).VITE_API_BASE_URL || 'http://localhost:8787';
 
 export async function apiRequest<T = any>(
   endpoint: string,
@@ -8,9 +8,9 @@ export async function apiRequest<T = any>(
 ): Promise<ApiResponse<T>> {
   const token = localStorage.getItem('token');
   
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...options.headers,
+    ...(options.headers as Record<string, string> || {}),
   };
 
   if (token) {
@@ -24,8 +24,9 @@ export async function apiRequest<T = any>(
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Network error' }));
-    throw new Error(error.error || `HTTP error! status: ${response.status}`);
+    const errorData = await response.json().catch(() => ({ error: 'Network error' }));
+    const errorMessage = (errorData as { error?: string }).error || `HTTP error! status: ${response.status}`;
+    throw new Error(errorMessage);
   }
 
   return response.json();
@@ -38,8 +39,8 @@ export async function apiFormData<T = any>(
 ): Promise<ApiResponse<T>> {
   const token = localStorage.getItem('token');
   
-  const headers: HeadersInit = {
-    ...options.headers,
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string> || {}),
   };
 
   if (token) {
@@ -55,8 +56,9 @@ export async function apiFormData<T = any>(
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Network error' }));
-    throw new Error(error.error || `HTTP error! status: ${response.status}`);
+    const errorData = await response.json().catch(() => ({ error: 'Network error' }));
+    const errorMessage = (errorData as { error?: string }).error || `HTTP error! status: ${response.status}`;
+    throw new Error(errorMessage);
   }
 
   return response.json();

@@ -28,7 +28,8 @@
     "frontend/**/*",
     "shared/**/*",
     "migrations/**/*",
-    "scripts/**/*"
+    "scripts/**/*",
+    "vite-env.d.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }

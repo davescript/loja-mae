@@ -22,25 +22,17 @@ export function useAuth() {
   });
 
   const loginMutation = useMutation({
-    mutationFn: async (credentials: { email: string; password: string }, options?: { onSuccess?: () => void; onError?: (err: Error) => void }) => {
-      try {
-        const response = await apiRequest<{ customer: AuthUser; token: string }>('/api/auth/login', {
-          method: 'POST',
-          body: JSON.stringify(credentials),
-        });
-        if (response.success && response.data) {
-          localStorage.setItem('token', response.data.token);
-          setUser(response.data.customer);
-          options?.onSuccess?.();
-          return response.data;
-        }
-        const error = new Error(response.error || 'Login failed');
-        options?.onError?.(error);
-        throw error;
-      } catch (err: any) {
-        options?.onError?.(err);
-        throw err;
+    mutationFn: async (credentials: { email: string; password: string }) => {
+      const response = await apiRequest<{ customer: AuthUser; token: string }>('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(credentials),
+      });
+      if (response.success && response.data) {
+        localStorage.setItem('token', response.data.token);
+        setUser(response.data.customer);
+        return response.data;
       }
+      throw new Error(response.error || 'Login failed');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
@@ -48,25 +40,17 @@ export function useAuth() {
   });
 
   const registerMutation = useMutation({
-    mutationFn: async (data: { email: string; password: string; first_name?: string; last_name?: string }, options?: { onSuccess?: () => void; onError?: (err: Error) => void }) => {
-      try {
-        const response = await apiRequest<{ customer: AuthUser; token: string }>('/api/auth/register', {
-          method: 'POST',
-          body: JSON.stringify(data),
-        });
-        if (response.success && response.data) {
-          localStorage.setItem('token', response.data.token);
-          setUser(response.data.customer);
-          options?.onSuccess?.();
-          return response.data;
-        }
-        const error = new Error(response.error || 'Registration failed');
-        options?.onError?.(error);
-        throw error;
-      } catch (err: any) {
-        options?.onError?.(err);
-        throw err;
+    mutationFn: async (data: { email: string; password: string; first_name?: string; last_name?: string }) => {
+      const response = await apiRequest<{ customer: AuthUser; token: string }>('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      if (response.success && response.data) {
+        localStorage.setItem('token', response.data.token);
+        setUser(response.data.customer);
+        return response.data;
       }
+      throw new Error(response.error || 'Registration failed');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
@@ -93,10 +77,24 @@ export function useAuth() {
     isLoading,
     isAuthenticated: !!user,
     login: (credentials: { email: string; password: string }, options?: { onSuccess?: () => void; onError?: (err: Error) => void }) => {
-      loginMutation.mutate(credentials as any, options as any);
+      loginMutation.mutate(credentials, {
+        onSuccess: () => {
+          options?.onSuccess?.();
+        },
+        onError: (err: Error) => {
+          options?.onError?.(err);
+        },
+      });
     },
     register: (data: { email: string; password: string; first_name?: string; last_name?: string }, options?: { onSuccess?: () => void; onError?: (err: Error) => void }) => {
-      registerMutation.mutate(data as any, options as any);
+      registerMutation.mutate(data, {
+        onSuccess: () => {
+          options?.onSuccess?.();
+        },
+        onError: (err: Error) => {
+          options?.onError?.(err);
+        },
+      });
     },
     logout,
     isLoggingIn: loginMutation.isPending,
