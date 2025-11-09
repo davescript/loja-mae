@@ -26,8 +26,19 @@ echo -e "${YELLOW}📋 Domínios a configurar:${NC}"
 echo "   ${ALL_ORIGINS}" | tr ',' '\n' | sed 's/^/   - /'
 echo ""
 
-echo -e "${BLUE}🚀 Atualizando secret ALLOWED_ORIGINS para produção...${NC}"
-echo "${ALL_ORIGINS}" | npx wrangler secret put ALLOWED_ORIGINS --name loja-mae-api --env production
+echo -e "${BLUE}🚀 Atualizando secret ALLOWED_ORIGINS...${NC}"
+echo ""
+echo -e "${YELLOW}⚠️  Nota: Execute manualmente para produção:${NC}"
+echo "   echo \"${ALL_ORIGINS}\" | npx wrangler secret put ALLOWED_ORIGINS --name loja-mae-api"
+echo ""
+echo -e "${YELLOW}Ou para desenvolvimento:${NC}"
+echo "   echo \"${ALL_ORIGINS}\" | npx wrangler secret put ALLOWED_ORIGINS --name loja-mae-api-dev"
+echo ""
+read -p "Deseja atualizar agora? (y/n) " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo "${ALL_ORIGINS}" | npx wrangler secret put ALLOWED_ORIGINS --name loja-mae-api
+fi
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✅ ALLOWED_ORIGINS atualizado com sucesso!${NC}"
