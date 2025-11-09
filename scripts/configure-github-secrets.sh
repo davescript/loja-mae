@@ -12,7 +12,7 @@ NC='\033[0m'
 
 GITHUB_USER="davescript"
 REPO_NAME="loja-mae"
-GITHUB_TOKEN="${GITHUB_TOKEN:-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}"
+GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 CLOUDFLARE_TOKEN="${CLOUDFLARE_TOKEN:-mhJCle0uRfJEu6W8zKhxUCoM7pgrbWvW7ssStzqk}"
 
 echo -e "${BLUE}🔐 Configurando secrets no GitHub...${NC}"
