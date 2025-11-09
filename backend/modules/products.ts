@@ -175,29 +175,33 @@ export async function listProducts(
     sortOrder = 'desc',
   } = filters;
 
-  let whereClause = '1=1';
+  const whereConditions: string[] = [];
   const params: any[] = [];
 
   if (search) {
-    whereClause += ' AND (title LIKE ? OR description LIKE ?)';
+    whereConditions.push('(title LIKE ? OR description LIKE ?)');
     const searchTerm = `%${search}%`;
     params.push(searchTerm, searchTerm);
   }
 
   if (category_id) {
-    whereClause += ' AND category_id = ?';
+    whereConditions.push('category_id = ?');
     params.push(category_id);
   }
 
   if (status) {
-    whereClause += ' AND status = ?';
+    whereConditions.push('status = ?');
     params.push(status);
   }
 
   if (featured !== undefined) {
-    whereClause += ' AND featured = ?';
+    whereConditions.push('featured = ?');
     params.push(featured);
   }
+
+  const whereClause = whereConditions.length > 0 
+    ? whereConditions.join(' AND ')
+    : '1=1';
 
   const offset = (page - 1) * pageSize;
   
@@ -210,16 +214,21 @@ export async function listProducts(
   const query = `SELECT * FROM products WHERE ${whereClause} ORDER BY ${safeSortBy} ${safeSortOrder} LIMIT ? OFFSET ?`;
   const countQuery = `SELECT COUNT(*) as count FROM products WHERE ${whereClause}`;
 
+  // Prepare params for query (include LIMIT and OFFSET)
+  const queryParams = [...params, pageSize, offset];
+  // Count query uses only WHERE params
+  const countParams = params;
+
   const [items, totalResult] = await Promise.all([
     executeQuery<Product>(
       db,
       query,
-      [...params, pageSize, offset]
+      queryParams
     ),
     executeOne<{ count: number }>(
       db,
       countQuery,
-      params
+      countParams
     ),
   ]);
 
