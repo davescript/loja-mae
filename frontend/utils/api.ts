@@ -1,6 +1,38 @@
 import type { ApiResponse } from '@shared/types';
 
-const API_BASE_URL = (import.meta.env as { VITE_API_BASE_URL?: string }).VITE_API_BASE_URL || 'http://localhost:8787';
+// Get API base URL from environment or use default
+// In production, this should be set in Cloudflare Pages environment variables
+const getApiBaseUrl = (): string => {
+  // Check if we're in browser environment
+  if (typeof window === 'undefined') {
+    return 'http://localhost:8787';
+  }
+  
+  // Try to get from environment variable (set at build time)
+  const envUrl = (import.meta.env as { VITE_API_BASE_URL?: string }).VITE_API_BASE_URL;
+  if (envUrl) {
+    return envUrl;
+  }
+  
+  // Fallback: use current origin for API (assuming API is on same domain)
+  // Or use production API URL as fallback
+  const hostname = window.location.hostname;
+  
+  // If on custom domain, assume API is on api subdomain
+  if (hostname.includes('leiasabores.pt')) {
+    return 'https://api.leiasabores.pt';
+  }
+  
+  // If on pages.dev, use workers.dev API
+  if (hostname.includes('pages.dev')) {
+    return 'https://loja-mae-api.davecdl.workers.dev';
+  }
+  
+  // Default fallback
+  return 'https://loja-mae-api.davecdl.workers.dev';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export async function apiRequest<T = any>(
   endpoint: string,
