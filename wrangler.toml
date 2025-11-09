@@ -20,8 +20,9 @@ ENVIRONMENT = "development"
 
 [env.production]
 name = "loja-mae-api"
-# route = { pattern = "api.loja-mae.com/*", zone_name = "loja-mae.com" }
-# Descomente acima quando o domínio estiver configurado no Cloudflare
+routes = [
+  { pattern = "api.leiasabores.pt/*", zone_name = "leiasabores.pt" }
+]
 
 # D1 Database para produção
 [[env.production.d1_databases]]
