@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Paleta pastel inspirada em confeitaria (creme, branco fosco, rosa claro, nude, dourado suave, lilás pastel) */
+    --background: 40 40% 98%; /* creme leve */
+    --foreground: 270 10% 20%; /* cinza-violeta suave para textos */
+    --card: 0 0% 100%;
+    --card-foreground: 270 10% 20%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 270 10% 20%;
+    --primary: 330 80% 80%; /* rosa claro */
+    --primary-foreground: 0 0% 15%;
+    --secondary: 280 40% 95%; /* lilás pastel muito leve */
+    --secondary-foreground: 270 10% 20%;
+    --muted: 40 30% 94%; /* creme suave */
+    --muted-foreground: 270 8% 40%;
+    --accent: 45 70% 75%; /* dourado suave */
+    --accent-foreground: 0 0% 15%;
+    --destructive: 0 70% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 280 15% 88%;
+    --input: 280 15% 88%;
+    --ring: 330 80% 60%;
+    --radius: 1rem; /* 16px, app cards 12–20px */
+  }
+
+  .dark {
+    --background: 270 15% 13%;
+    --foreground: 40 40% 98%;
+    --card: 270 15% 16%;
+    --card-foreground: 40 40% 98%;
+    --popover: 270 15% 16%;
+    --popover-foreground: 40 40% 98%;
+    --primary: 330 80% 70%;
+    --primary-foreground: 270 15% 13%;
+    --secondary: 270 15% 22%;
+    --secondary-foreground: 40 40% 98%;
+    --muted: 270 15% 22%;
+    --muted-foreground: 40 20% 85%;
+    --accent: 45 70% 60%;
+    --accent-foreground: 270 15% 13%;
+    --destructive: 0 70% 45%;
+    --destructive-foreground: 40 40% 98%;
+    --border: 270 15% 28%;
+    --input: 270 15% 28%;
+    --ring: 330 80% 70%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Sombras suaves e difusas inspiradas nas referências */
+.shadow-soft { box-shadow: 0 8px 20px rgba(30, 20, 60, 0.06); }
+.shadow-elevated { box-shadow: 0 16px 40px rgba(30, 20, 60, 0.08); }
+
+/* Tipografia base premium */
+:root {
+  --font-body: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: 'Playfair Display', Georgia, serif;
+}
+
+@layer base {
+  h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); }
+  body { font-family: var(--font-body); }
+}
+
+/* Componentes utilitários para estilo web app pastel */
+@layer components {
+  .card {
+    @apply rounded-xl bg-card shadow-soft border;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm transition;
+  }
+  .btn-primary {
+    @apply btn bg-primary text-primary-foreground hover:shadow-elevated;
+  }
+  .btn-muted {
+    @apply btn bg-muted hover:bg-secondary;
+  }
+  .input {
+    @apply w-full px-4 py-3 rounded-xl border bg-white shadow-soft;
+  }
+  .chip {
+    @apply inline-flex items-center rounded-full px-3 py-1 bg-muted text-xs;
+  }
+  .badge {
+    @apply inline-flex items-center rounded-full px-2 py-1 bg-secondary text-xs;
+  }
+  .section-title {
+    @apply text-lg font-medium;
+  }
+}

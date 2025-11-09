@@ -1,0 +1,27 @@
+export function handleCORS(response: Response, env: any): Response {
+  const allowedOrigins = env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173'];
+  const origin = response.headers.get('Origin') || '';
+
+  // Check if origin is allowed
+  const isAllowed = allowedOrigins.some((allowed: string) => 
+    origin.includes(allowed.trim()) || allowed.trim() === '*'
+  );
+
+  const headers = new Headers(response.headers);
+  
+  if (isAllowed) {
+    headers.set('Access-Control-Allow-Origin', origin);
+  }
+  
+  headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  headers.set('Access-Control-Allow-Credentials', 'true');
+  headers.set('Access-Control-Max-Age', '86400');
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+

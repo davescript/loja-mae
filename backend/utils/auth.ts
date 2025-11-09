@@ -1,0 +1,153 @@
+import bcrypt from 'bcryptjs';
+import type { D1Database } from '@cloudflare/workers-types';
+import { getDb, executeOne, executeQuery } from './db';
+import { verifyToken, getTokenFromHeader, getTokenFromCookie, type JWTPayload } from './jwt';
+import { UnauthorizedError, ForbiddenError } from './errors';
+
+export async function hashPassword(password: string): Promise<string> {
+  const salt = await bcrypt.genSalt(10);
+  return bcrypt.hash(password, salt);
+}
+
+export async function comparePassword(
+  password: string,
+  hash: string
+): Promise<boolean> {
+  return bcrypt.compare(password, hash);
+}
+
+export async function getCustomerFromToken(
+  db: D1Database,
+  token: string,
+  jwtSecret: string
+): Promise<{ id: number; email: string } | null> {
+  try {
+    const payload = verifyToken(token, jwtSecret);
+    if (payload.type !== 'customer') {
+      return null;
+    }
+
+    const customer = await executeOne<{ id: number; email: string; is_active: number }>(
+      db,
+      'SELECT id, email, is_active FROM customers WHERE id = ?',
+      [payload.id]
+    );
+
+    if (!customer || customer.is_active === 0) {
+      return null;
+    }
+
+    return { id: customer.id, email: customer.email };
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function getAdminFromToken(
+  db: D1Database,
+  token: string,
+  jwtSecret: string
+): Promise<{ id: number; email: string; role: string } | null> {
+  try {
+    const payload = verifyToken(token, jwtSecret);
+    if (payload.type !== 'admin') {
+      return null;
+    }
+
+    const admin = await executeOne<{ id: number; email: string; role: string; is_active: number }>(
+      db,
+      'SELECT id, email, role, is_active FROM admins WHERE id = ?',
+      [payload.id]
+    );
+
+    if (!admin || admin.is_active === 0) {
+      return null;
+    }
+
+    return { id: admin.id, email: admin.email, role: admin.role };
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function requireAuth(
+  request: Request,
+  env: any,
+  type: 'customer' | 'admin' | 'both' = 'both'
+): Promise<{ id: number; email: string; type: 'customer' | 'admin'; role?: string }> {
+  const db = getDb(env);
+  const jwtSecret = env.JWT_SECRET;
+
+  if (!jwtSecret) {
+    throw new Error('JWT_SECRET not configured');
+  }
+
+  // Try to get token from header or cookie
+  const authHeader = request.headers.get('Authorization');
+  const cookieHeader = request.headers.get('Cookie');
+  
+  let token: string | null = null;
+  
+  if (type === 'admin') {
+    token = getTokenFromCookie(cookieHeader, 'admin_token');
+  } else {
+    token = getTokenFromHeader(authHeader) || getTokenFromCookie(cookieHeader, 'customer_token');
+  }
+
+  if (!token) {
+    throw new UnauthorizedError('Authentication required');
+  }
+
+  // Verify token and get user
+  if (type === 'customer') {
+    const customer = await getCustomerFromToken(db, token, jwtSecret);
+    if (!customer) {
+      throw new UnauthorizedError('Invalid or expired token');
+    }
+    return { ...customer, type: 'customer' };
+  } else if (type === 'admin') {
+    const admin = await getAdminFromToken(db, token, jwtSecret);
+    if (!admin) {
+      throw new UnauthorizedError('Invalid or expired token');
+    }
+    return { ...admin, type: 'admin' };
+  } else {
+    // Try admin first, then customer
+    const admin = await getAdminFromToken(db, token, jwtSecret);
+    if (admin) {
+      return { ...admin, type: 'admin' };
+    }
+    const customer = await getCustomerFromToken(db, token, jwtSecret);
+    if (customer) {
+      return { ...customer, type: 'customer' };
+    }
+    throw new UnauthorizedError('Invalid or expired token');
+  }
+}
+
+export async function requireAdmin(
+  request: Request,
+  env: any,
+  roles: ('super_admin' | 'admin' | 'editor')[] = ['admin', 'super_admin']
+): Promise<{ id: number; email: string; role: string }> {
+  const user = await requireAuth(request, env, 'admin');
+  
+  if (!roles.includes(user.role as any)) {
+    throw new ForbiddenError('Insufficient permissions');
+  }
+
+  return user as { id: number; email: string; role: string };
+}
+
+export function setAuthCookie(
+  token: string,
+  name: string = 'admin_token',
+  maxAge: number = 7 * 24 * 60 * 60 // 7 days
+): string {
+  return `${name}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}`;
+}
+
+export function clearAuthCookie(name: string = 'admin_token'): string {
+  return `${name}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0`;
+}
+

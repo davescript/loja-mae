@@ -1,0 +1,131 @@
+# ===============================
+# ARQUITETURA DO PROJETO
+# ===============================
+stack:
+  frontend:
+    - React + Vite + TypeScript
+    - TailwindCSS + shadcn/ui
+    - Framer Motion
+    - React Query
+    - Page Router dividido em /storefront e /admin
+  backend:
+    - Cloudflare Workers (REST API modular)
+    - Cloudflare D1 como banco
+    - Cloudflare R2 para imagens
+    - Zod para validação
+    - JWT para autenticação (cliente e admin)
+    - Stripe Payment Intents + Webhook verificado
+
+# ===============================
+# REGRAS DO BACKEND
+# ===============================
+backend-rules:
+  - Toda rota deve retornar JSON no formato { success, data?, error? }
+  - Sempre validar payloads com Zod antes de executar lógica
+  - Não duplicar lógica: usar modules em /api/modules/*
+  - D1 deve usar prepare() → bind() → run() / all()
+  - R2 upload deve retornar { key, url } com URL pública
+  - Slug gerado automaticamente para produtos e categorias
+  - Logs de erro devem ser detalhados no Worker (importante p/ debug)
+  - CORS: permitir apenas origens definidas na env ALLOWED_ORIGINS
+  - Stripe: webhook deve verificar assinatura obrigatoriamente
+
+# ===============================
+# REGRAS DO FRONTEND
+# ===============================
+frontend-rules:
+  - UI altamente profissional estilo Shopify
+  - Usar shadcn/ui padronizado para toda UI
+  - Implementar dark mode e persistir em localStorage
+  - Forms com React Hook Form + Zod
+  - Paginação server-side
+  - Todas ações CRUD devem ter toasts visuais e loading states
+  - Uploads de imagem devem ter preview antes de enviar
+  - Admin deve ter sidebar fixa, dashboard com KPIs e gráficos
+  - Storefront deve carregar produtos do backend (sem mock)
+  - Checkout completo com Stripe + endereço + frete
+
+# ===============================
+# PÁGINAS DO FRONTEND
+# ===============================
+pages:
+  storefront:
+    - Home
+    - Lista de produtos (grid + filtros)
+    - Página do produto
+    - Carrinho
+    - Checkout (Stripe)
+    - Login / Registro / Recuperar senha
+    - Página de pedidos do cliente
+    - Página de favoritos
+    - Perfil do cliente
+
+  admin:
+    - Dashboard (vendas, pedidos, clientes, métricas)
+    - Produtos (CRUD completo)
+    - Categorias (CRUD + subcategorias)
+    - Clientes (listagem + detalhes)
+    - Pedidos (tracking + gestão)
+    - Cupons (CRUD)
+    - Settings gerais (loja, tema, stripe, domínios)
+    - Gestão de admins
+    - Logs
+
+# ===============================
+# BANCO DE DADOS (D1)
+# ===============================
+d1-schema:
+  - products
+  - product_images
+  - product_variants
+  - categories
+  - customers
+  - addresses
+  - orders
+  - order_items
+  - coupons
+  - sessions
+  - favorites
+  - cart_items
+
+rules:
+  - Sempre usar foreign keys
+  - Criar índices para buscas rápidas (title, slug, category_id)
+  - Implementar migrations versionadas
+
+# ===============================
+# SEGURANÇA
+# ===============================
+security:
+  - JWT assinado com HS256
+  - Cookies httpOnly para sessão admin
+  - Sanitização contra XSS
+  - Desabilitar eval e input perigoso
+  - Rate limit nas rotas sensíveis
+
+# ===============================
+# TAREFAS QUE O CURSOR PODE EXECUTAR
+# ===============================
+tasks:
+  - Criar a estrutura de pastas completa do projeto
+  - Criar backend completo com rotas REST
+  - Implementar admin profissional com modais avançados
+  - Criar UI de edição de produto com tabs (geral, preço, imagens, SEO)
+  - Implementar upload R2 com preview
+  - Implementar categorias hierárquicas
+  - Criar fluxo de checkout Stripe + webhook
+  - Criar login/registro/recuperação para clientes
+  - Criar dashboard admin com métricas
+  - Criar migrations D1
+  - Criar docs no README
+  - Criar testes unitários e de integração
+
+# ===============================
+# QUAIS QUER SOLICITAÇÕES DEVEM SEGUIR ESSAS REGRAS
+# ===============================
+instructions:
+  - Nunca usar bibliotecas que não estejam no stack aprovado
+  - Sempre explicar antes de modificar arquivos
+  - Respeitar a estrutura base sugerida
+  - Código deve ser limpo, tipado e sem warnings
+

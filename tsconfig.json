@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": false,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "types": ["@cloudflare/workers-types"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@backend/*": ["./backend/*"],
+      "@frontend/*": ["./frontend/*"],
+      "@shared/*": ["./shared/*"]
+    }
+  },
+  "include": [
+    "backend/**/*",
+    "frontend/**/*",
+    "shared/**/*",
+    "migrations/**/*",
+    "scripts/**/*"
+  ],
+  "exclude": ["node_modules", "dist"]
+}
+

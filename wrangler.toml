@@ -1,0 +1,33 @@
+name = "loja-mae-api"
+main = "backend/api/index.ts"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+[env.production]
+name = "loja-mae-api"
+route = { pattern = "api.loja-mae.com/*", zone_name = "loja-mae.com" }
+
+[env.development]
+name = "loja-mae-api-dev"
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "loja-mae-db"
+database_id = "9815d658-ce3b-4b8a-be98-90563c950182"
+
+# R2 Bucket
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "loja-mae-images"
+
+# Variables
+[vars]
+ENVIRONMENT = "development"
+
+# Secrets (configurados via wrangler secret put)
+# ✅ JWT_SECRET - Configurado
+# ✅ STRIPE_SECRET_KEY - Configurado
+# ✅ STRIPE_WEBHOOK_SECRET - Configurado
+# ✅ ALLOWED_ORIGINS - Configurado
+
