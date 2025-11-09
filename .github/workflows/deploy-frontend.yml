@@ -46,5 +46,5 @@ jobs:
           projectName: loja-mae-frontend
           directory: dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          # Opcional: configurar domínio customizado
-          # production: true
+          # Wrangler version (opcional)
+          wranglerVersion: '3'
