@@ -11,6 +11,7 @@ import { handleCustomersRoutes } from './customers';
 import { handleCouponsRoutes } from './coupons';
 import { handleAuthRoutes } from './auth';
 import { handleStripeRoutes } from './stripe';
+import { handleImageRequest } from './images';
 
 export async function handleRequest(request: Request, env: Env): Promise<Response> {
   // Handle CORS
@@ -49,6 +50,11 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
 
     if (path.startsWith('/api/stripe')) {
       return handleCORS(await handleStripeRoutes(request, env), env);
+    }
+
+    // Image serving (R2 proxy)
+    if (path.startsWith('/api/images')) {
+      return await handleImageRequest(request, env);
     }
 
     // Cart routes
