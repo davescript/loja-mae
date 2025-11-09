@@ -12,23 +12,35 @@ export default function HomePage() {
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | undefined>();
-  const { data: bestSellers, isLoading: loadingBest } = useQuery({
+  const { data: bestSellers, isLoading: loadingBest, error: errorBest } = useQuery({
     queryKey: ['products', 'best'],
     queryFn: async () => {
-      const response = await apiRequest<{ items: Product[] }>(
-        '/api/products?status=active&pageSize=10&featured=1'
-      );
-      return response.data?.items || [];
+      try {
+        const response = await apiRequest<{ items: Product[] }>(
+          '/api/products?status=active&pageSize=10&featured=1'
+        );
+        return response.data?.items || [];
+      } catch (error) {
+        console.error('Error loading best sellers:', error);
+        return [];
+      }
     },
+    retry: 1,
   });
-  const { data: essentials, isLoading: loadingEss } = useQuery({
+  const { data: essentials, isLoading: loadingEss, error: errorEss } = useQuery({
     queryKey: ['products', 'essentials'],
     queryFn: async () => {
-      const response = await apiRequest<{ items: Product[] }>(
-        '/api/products?status=active&pageSize=10'
-      );
-      return response.data?.items || [];
+      try {
+        const response = await apiRequest<{ items: Product[] }>(
+          '/api/products?status=active&pageSize=10'
+        );
+        return response.data?.items || [];
+      } catch (error) {
+        console.error('Error loading essentials:', error);
+        return [];
+      }
     },
+    retry: 1,
   });
 
   return (

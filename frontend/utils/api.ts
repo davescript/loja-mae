@@ -6,30 +6,39 @@ export async function apiRequest<T = any>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
-  const token = localStorage.getItem('token');
-  
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string> || {}),
-  };
+  try {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(options.headers as Record<string, string> || {}),
+    };
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const url = `${API_BASE_URL}${endpoint}`;
+    console.log('API Request:', url);
+
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Network error' }));
+      const errorMessage = (errorData as { error?: string }).error || `HTTP error! status: ${response.status}`;
+      console.error('API Error:', errorMessage, response.status);
+      throw new Error(errorMessage);
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('API Request failed:', error);
+    throw error;
   }
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Network error' }));
-    const errorMessage = (errorData as { error?: string }).error || `HTTP error! status: ${response.status}`;
-    throw new Error(errorMessage);
-  }
-
-  return response.json();
 }
 
 export async function apiFormData<T = any>(
