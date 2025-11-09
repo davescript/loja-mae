@@ -3,13 +3,6 @@ main = "backend/api/index.ts"
 compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat"]
 
-[env.production]
-name = "loja-mae-api"
-route = { pattern = "api.loja-mae.com/*", zone_name = "loja-mae.com" }
-
-[env.development]
-name = "loja-mae-api-dev"
-
 # D1 Database
 [[d1_databases]]
 binding = "DB"
@@ -23,6 +16,44 @@ bucket_name = "loja-mae-images"
 
 # Variables
 [vars]
+ENVIRONMENT = "development"
+
+[env.production]
+name = "loja-mae-api"
+# route = { pattern = "api.loja-mae.com/*", zone_name = "loja-mae.com" }
+# Descomente acima quando o domínio estiver configurado no Cloudflare
+
+# D1 Database para produção
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "loja-mae-db"
+database_id = "9815d658-ce3b-4b8a-be98-90563c950182"
+
+# R2 Bucket para produção
+[[env.production.r2_buckets]]
+binding = "R2"
+bucket_name = "loja-mae-images"
+
+# Variables para produção
+[env.production.vars]
+ENVIRONMENT = "production"
+
+[env.development]
+name = "loja-mae-api-dev"
+
+# D1 Database para desenvolvimento
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "loja-mae-db"
+database_id = "9815d658-ce3b-4b8a-be98-90563c950182"
+
+# R2 Bucket para desenvolvimento
+[[env.development.r2_buckets]]
+binding = "R2"
+bucket_name = "loja-mae-images"
+
+# Variables para desenvolvimento
+[env.development.vars]
 ENVIRONMENT = "development"
 
 # Secrets (configurados via wrangler secret put)
