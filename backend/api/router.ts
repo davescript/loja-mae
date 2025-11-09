@@ -66,6 +66,26 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
       return successResponse({ status: 'ok', timestamp: new Date().toISOString() });
     }
 
+    // Root endpoint - API information
+    if (path === '/' || path === '/api') {
+      return successResponse({
+        name: 'Loja Mãe API',
+        version: '1.0.0',
+        status: 'online',
+        endpoints: {
+          health: '/api/health',
+          products: '/api/products',
+          categories: '/api/categories',
+          orders: '/api/orders',
+          customers: '/api/customers',
+          coupons: '/api/coupons',
+          auth: '/api/auth',
+          stripe: '/api/stripe',
+        },
+        documentation: 'https://github.com/davescript/loja-mae',
+      });
+    }
+
     // 404
     return errorResponse('Not found', 404);
   } catch (error) {
