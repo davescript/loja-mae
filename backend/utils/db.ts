@@ -20,12 +20,10 @@ export async function executeQuery<T = any>(
   params: any[] = []
 ): Promise<T[]> {
   try {
-    let stmt = db.prepare(query);
-    // Bind parameters one by one to avoid issues with spread operator
-    for (let i = 0; i < params.length; i++) {
-      stmt = stmt.bind(params[i]);
-    }
-    const result = await stmt.all<T>();
+    const stmt = db.prepare(query);
+    // Bind all parameters at once if there are any
+    const boundStmt = params.length > 0 ? stmt.bind(...params) : stmt;
+    const result = await boundStmt.all<T>();
     return result.results || [];
   } catch (error) {
     console.error('Database query error:', error, 'Query:', query, 'Params:', params);
@@ -40,13 +38,12 @@ export async function executeOne<T = any>(
 ): Promise<T | null> {
   try {
     const stmt = db.prepare(query);
-    if (params.length > 0) {
-      stmt.bind(...params);
-    }
-    const result = await stmt.first<T>();
+    // Bind all parameters at once if there are any
+    const boundStmt = params.length > 0 ? stmt.bind(...params) : stmt;
+    const result = await boundStmt.first<T>();
     return result || null;
   } catch (error) {
-    console.error('Database query error:', error);
+    console.error('Database query error:', error, 'Query:', query, 'Params:', params);
     throw error;
   }
 }
@@ -57,12 +54,10 @@ export async function executeRun(
   params: any[] = []
 ): Promise<{ success: boolean; meta: any }> {
   try {
-    let stmt = db.prepare(query);
-    // Bind parameters one by one to avoid issues with spread operator
-    for (let i = 0; i < params.length; i++) {
-      stmt = stmt.bind(params[i]);
-    }
-    const result = await stmt.run();
+    const stmt = db.prepare(query);
+    // Bind all parameters at once if there are any
+    const boundStmt = params.length > 0 ? stmt.bind(...params) : stmt;
+    const result = await boundStmt.run();
     return {
       success: result.success,
       meta: result.meta,
