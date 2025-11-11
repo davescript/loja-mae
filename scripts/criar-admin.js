@@ -85,9 +85,7 @@ VALUES (
 }
 
 // Executar se chamado diretamente
-if (require.main === module) {
-  criarAdmin();
-}
+criarAdmin();
 
 export { criarAdmin };
 
