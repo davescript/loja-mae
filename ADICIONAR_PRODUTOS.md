@@ -175,6 +175,34 @@ curl -X POST http://localhost:8787/api/products \
   -F "images=@./test-image.jpg"
 ```
 
+## 🚀 Scripts de Exemplo
+
+### Script Bash (Linux/Mac):
+
+```bash
+# Executar script de exemplo
+./scripts/adicionar-produto-exemplo.sh
+
+# Ou com variáveis customizadas
+API_URL=https://loja-mae-api.davecdl.workers.dev \
+ADMIN_EMAIL=admin@loja-mae.com \
+ADMIN_PASSWORD=admin123 \
+./scripts/adicionar-produto-exemplo.sh
+```
+
+### Script Node.js:
+
+```bash
+# Executar script Node.js
+node scripts/adicionar-produto-exemplo.js
+
+# Ou com variáveis customizadas
+API_URL=https://loja-mae-api.davecdl.workers.dev \
+ADMIN_EMAIL=admin@loja-mae.com \
+ADMIN_PASSWORD=admin123 \
+node scripts/adicionar-produto-exemplo.js
+```
+
 ## 📊 Ver Produtos Criados
 
 ### Listar todos:
