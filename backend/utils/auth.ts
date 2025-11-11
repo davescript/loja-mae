@@ -89,7 +89,8 @@ export async function requireAuth(
   let token: string | null = null;
   
   if (type === 'admin') {
-    token = getTokenFromCookie(cookieHeader, 'admin_token');
+    // Admin can use either Authorization header or cookie
+    token = getTokenFromHeader(authHeader) || getTokenFromCookie(cookieHeader, 'admin_token');
   } else {
     token = getTokenFromHeader(authHeader) || getTokenFromCookie(cookieHeader, 'customer_token');
   }
