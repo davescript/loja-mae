@@ -1,16 +1,21 @@
-export function handleCORS(response: Response, env: any): Response {
+export function handleCORS(response: Response, env: any, request?: Request): Response {
   const allowedOrigins = env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173'];
-  const origin = response.headers.get('Origin') || '';
+  
+  // Get origin from request, not response
+  const origin = request?.headers.get('Origin') || '';
 
   // Check if origin is allowed
-  const isAllowed = allowedOrigins.some((allowed: string) => 
-    origin.includes(allowed.trim()) || allowed.trim() === '*'
-  );
+  const isAllowed = origin && allowedOrigins.some((allowed: string) => {
+    const trimmed = allowed.trim();
+    return trimmed === '*' || origin === trimmed || origin.includes(trimmed);
+  });
 
   const headers = new Headers(response.headers);
   
   if (isAllowed) {
     headers.set('Access-Control-Allow-Origin', origin);
+  } else if (allowedOrigins.includes('*')) {
+    headers.set('Access-Control-Allow-Origin', '*');
   }
   
   headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');

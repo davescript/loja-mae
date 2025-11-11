@@ -16,7 +16,7 @@ import { handleImageRequest } from './images';
 export async function handleRequest(request: Request, env: Env): Promise<Response> {
   // Handle CORS
   if (request.method === 'OPTIONS') {
-    return handleCORS(new Response(null, { status: 204 }), env);
+    return handleCORS(new Response(null, { status: 204 }), env, request);
   }
 
   const url = new URL(request.url);
@@ -25,31 +25,31 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
   try {
     // API routes
     if (path.startsWith('/api/products')) {
-      return handleCORS(await handleProductsRoutes(request, env), env);
+      return handleCORS(await handleProductsRoutes(request, env), env, request);
     }
 
     if (path.startsWith('/api/categories')) {
-      return handleCORS(await handleCategoriesRoutes(request, env), env);
+      return handleCORS(await handleCategoriesRoutes(request, env), env, request);
     }
 
     if (path.startsWith('/api/orders')) {
-      return handleCORS(await handleOrdersRoutes(request, env), env);
+      return handleCORS(await handleOrdersRoutes(request, env), env, request);
     }
 
     if (path.startsWith('/api/customers')) {
-      return handleCORS(await handleCustomersRoutes(request, env), env);
+      return handleCORS(await handleCustomersRoutes(request, env), env, request);
     }
 
     if (path.startsWith('/api/coupons')) {
-      return handleCORS(await handleCouponsRoutes(request, env), env);
+      return handleCORS(await handleCouponsRoutes(request, env), env, request);
     }
 
     if (path.startsWith('/api/auth')) {
-      return handleCORS(await handleAuthRoutes(request, env), env);
+      return handleCORS(await handleAuthRoutes(request, env), env, request);
     }
 
     if (path.startsWith('/api/stripe')) {
-      return handleCORS(await handleStripeRoutes(request, env), env);
+      return handleCORS(await handleStripeRoutes(request, env), env, request);
     }
 
     // Image serving (R2 proxy)
@@ -59,12 +59,12 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
 
     // Cart routes
     if (path.startsWith('/api/cart')) {
-      return handleCORS(await handleCartRoutes(request, env), env);
+      return handleCORS(await handleCartRoutes(request, env), env, request);
     }
 
     // Favorites routes
     if (path.startsWith('/api/favorites')) {
-      return handleCORS(await handleFavoritesRoutes(request, env), env);
+      return handleCORS(await handleFavoritesRoutes(request, env), env, request);
     }
 
     // Health check
@@ -97,7 +97,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
   } catch (error) {
     console.error('Request error:', error);
     const { message, status, details } = handleError(error);
-    return handleCORS(errorResponse(message, status, details), env);
+    return handleCORS(errorResponse(message, status, details), env, request);
   }
 }
 
