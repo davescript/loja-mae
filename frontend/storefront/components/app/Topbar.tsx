@@ -1,5 +1,7 @@
-import { Search, Menu, Filter } from 'lucide-react';
+import { Search, Menu, Filter, User } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../../hooks/useAuth';
 
 type TopbarProps = {
   onOpenCategories?: () => void;
@@ -8,6 +10,8 @@ type TopbarProps = {
 
 export default function Topbar({ onOpenCategories, onOpenFilters }: TopbarProps) {
   const [query, setQuery] = useState('');
+  const { isAuthenticated, user } = useAuth();
+  
   return (
     <header className="sticky top-0 z-40 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-b">
       <div className="flex items-center gap-3 h-16 px-4 lg:px-6">
@@ -26,6 +30,16 @@ export default function Topbar({ onOpenCategories, onOpenFilters }: TopbarProps)
         <button className="btn btn-muted" onClick={onOpenFilters} aria-label="Abrir filtros">
           <Filter className="w-5 h-5" />
         </button>
+        {isAuthenticated ? (
+          <Link to="/account" className="btn btn-muted" aria-label="Minha conta">
+            <User className="w-5 h-5" />
+          </Link>
+        ) : (
+          <Link to="/login" className="btn btn-primary text-sm" aria-label="Login">
+            <User className="w-4 h-4" />
+            <span className="hidden sm:inline">Entrar</span>
+          </Link>
+        )}
       </div>
     </header>
   );
