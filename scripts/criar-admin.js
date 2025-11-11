@@ -9,8 +9,9 @@
  * 2. Cria o usuário admin no banco D1
  */
 
-const bcrypt = require('bcryptjs');
-const { execSync } = require('child_process');
+import bcrypt from 'bcryptjs';
+import { execSync } from 'child_process';
+import fs from 'fs';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@loja-mae.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
@@ -50,7 +51,6 @@ VALUES (
 `;
 
     // Salvar SQL em arquivo temporário
-    const fs = require('fs');
     const tempFile = './scripts/temp-admin.sql';
     fs.writeFileSync(tempFile, sql);
     
@@ -89,5 +89,5 @@ if (require.main === module) {
   criarAdmin();
 }
 
-module.exports = { criarAdmin };
+export { criarAdmin };
 
