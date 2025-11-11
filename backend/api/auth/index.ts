@@ -158,6 +158,7 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
             email: adminRecord.email,
             role: adminRecord.role,
           },
+          token, // Also return token in JSON for API usage
         },
         'Admin login successful'
       );
