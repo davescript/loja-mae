@@ -7,6 +7,13 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login, isLoggingIn, loginError } = useAdminAuth();
+  
+  // Redirect if already authenticated
+  const { isAuthenticated } = useAdminAuth();
+  if (isAuthenticated) {
+    window.location.href = '/admin/dashboard';
+    return null;
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
