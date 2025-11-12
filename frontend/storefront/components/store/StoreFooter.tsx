@@ -122,8 +122,8 @@ export default function StoreFooter() {
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="w-5 h-5 flex-shrink-0" />
-                <a href="tel:+351912345678" className="text-sm hover:text-primary transition">
-                  +351 912 345 678
+                <a href="tel:+351969407406" className="text-sm hover:text-primary transition">
+                  +351 969 407 406
                 </a>
               </li>
               <li className="flex items-center gap-3">

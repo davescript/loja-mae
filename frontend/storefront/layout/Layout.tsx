@@ -4,6 +4,7 @@ import { ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 import StoreHeader from '../components/store/StoreHeader';
 import StoreFooter from '../components/store/StoreFooter';
+import WhatsAppButton from '../components/store/WhatsAppButton';
 
 export default function StorefrontLayout() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -20,6 +21,7 @@ export default function StorefrontLayout() {
         </div>
       </main>
       <StoreFooter />
+      <WhatsAppButton />
     </div>
   );
 }

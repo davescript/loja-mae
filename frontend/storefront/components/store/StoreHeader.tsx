@@ -55,7 +55,7 @@ export default function StoreHeader() {
             <div className="flex items-center gap-4">
               <a href="https://www.facebook.com/leiasabores" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Facebook</a>
               <a href="https://www.instagram.com/leiasabores/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Instagram</a>
-              <a href="https://wa.me/351912345678" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">WhatsApp</a>
+              <a href="https://wa.me/351969407406" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">WhatsApp</a>
             </div>
           </div>
 
