@@ -1,6 +1,8 @@
 import * as Dialog from '@radix-ui/react-dialog';
-import { X } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, ShoppingCart, Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { Product } from '@shared/types';
 
 type QuickViewModalProps = {
@@ -10,33 +12,242 @@ type QuickViewModalProps = {
 };
 
 export default function QuickViewModal({ open, onOpenChange, product }: QuickViewModalProps) {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  const images = product?.images && product.images.length > 0 
+    ? product.images 
+    : [];
+  
+  const currentImage = images[currentImageIndex] || images[0];
+  const imageUrl = currentImage?.image_url || 'https://via.placeholder.com/600x600?text=Produto';
+
+  // Reset image index when product changes
+  useEffect(() => {
+    setCurrentImageIndex(0);
+  }, [product?.id]);
+
+  // Scroll to modal when it opens
+  useEffect(() => {
+    if (open && modalRef.current) {
+      // Small delay to ensure modal is rendered
+      setTimeout(() => {
+        modalRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center',
+          inline: 'center'
+        });
+        // Also scroll window to center
+        window.scrollTo({
+          top: modalRef.current.offsetTop - window.innerHeight / 2 + modalRef.current.offsetHeight / 2,
+          behavior: 'smooth'
+        });
+      }, 100);
+    }
+  }, [open]);
+
+  const nextImage = () => {
+    if (images.length > 1) {
+      setCurrentImageIndex((prev) => (prev + 1) % images.length);
+    }
+  };
+
+  const prevImage = () => {
+    if (images.length > 1) {
+      setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+    }
+  };
+
+  const price = product ? (product.price_cents / 100).toFixed(2).replace('.', ',') : '0,00';
+  const comparePrice = product?.compare_at_price_cents 
+    ? (product.compare_at_price_cents / 100).toFixed(2).replace('.', ',')
+    : null;
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/30" />
-        <Dialog.Content className="fixed inset-0 m-auto w-[95%] max-w-xl rounded-2xl bg-white p-6 shadow-elevated">
-          <div className="flex items-center justify-between">
-            <Dialog.Title className="text-lg font-medium">Quick View</Dialog.Title>
+        <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
+        <Dialog.Content 
+          ref={modalRef}
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] max-w-4xl max-h-[90vh] rounded-2xl bg-white shadow-2xl z-50 overflow-hidden flex flex-col"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <Dialog.Title className="text-xl font-bold">Visualização Rápida</Dialog.Title>
             <Dialog.Close asChild>
-              <button aria-label="Fechar" className="p-2 rounded-xl hover:bg-muted">
+              <button 
+                aria-label="Fechar" 
+                className="p-2 rounded-xl hover:bg-muted transition-colors"
+              >
                 <X className="w-5 h-5" />
               </button>
             </Dialog.Close>
           </div>
-          {product ? (
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {product.images?.[0]?.image_url && (
-                <img src={product.images[0].image_url} alt={product.title} className="w-full rounded-xl" />
-              )}
-              <div>
-                <p className="font-medium">{product.title}</p>
-                <p className="mt-2 text-primary font-semibold">R$ {(product.price_cents / 100).toFixed(2).replace('.', ',')}</p>
-                <Link to={`/product/${product.slug}`} className="mt-4 inline-block px-4 py-2 rounded-full bg-primary text-primary-foreground">Ver detalhes</Link>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto">
+            {product ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
+                {/* Images Section */}
+                <div className="space-y-4">
+                  {/* Main Image */}
+                  <div className="relative aspect-square overflow-hidden rounded-xl bg-gray-100">
+                    <AnimatePresence mode="wait">
+                      <motion.img
+                        key={currentImageIndex}
+                        src={imageUrl}
+                        alt={currentImage?.alt_text || product.title}
+                        className="w-full h-full object-cover"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    </AnimatePresence>
+
+                    {/* Navigation Arrows */}
+                    {images.length > 1 && (
+                      <>
+                        <button
+                          onClick={prevImage}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg hover:bg-white transition-colors z-10"
+                          aria-label="Imagem anterior"
+                        >
+                          <ChevronLeft className="w-5 h-5 text-gray-800" />
+                        </button>
+                        <button
+                          onClick={nextImage}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg hover:bg-white transition-colors z-10"
+                          aria-label="Próxima imagem"
+                        >
+                          <ChevronRight className="w-5 h-5 text-gray-800" />
+                        </button>
+                      </>
+                    )}
+
+                    {/* Image Counter */}
+                    {images.length > 1 && (
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded-full text-sm">
+                        {currentImageIndex + 1} / {images.length}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Thumbnail Gallery */}
+                  {images.length > 1 && (
+                    <div className="grid grid-cols-4 gap-2">
+                      {images.map((img, index) => (
+                        <button
+                          key={img.id}
+                          onClick={() => setCurrentImageIndex(index)}
+                          className={`aspect-square overflow-hidden rounded-lg border-2 transition-all ${
+                            currentImageIndex === index
+                              ? 'border-primary scale-105 shadow-md'
+                              : 'border-gray-200 hover:border-primary/50'
+                          }`}
+                        >
+                          <img
+                            src={img.image_url}
+                            alt={img.alt_text || `${product.title} - Imagem ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Product Info */}
+                <div className="flex flex-col">
+                  {/* Category */}
+                  {product.category && (
+                    <span className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
+                      {product.category.name}
+                    </span>
+                  )}
+
+                  {/* Title */}
+                  <h2 className="text-2xl font-bold mb-4">{product.title}</h2>
+
+                  {/* Price */}
+                  <div className="mb-6">
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-3xl font-bold text-primary">
+                        R$ {price}
+                      </span>
+                      {comparePrice && (
+                        <span className="text-lg text-muted-foreground line-through">
+                          R$ {comparePrice}
+                        </span>
+                      )}
+                    </div>
+                    {comparePrice && (
+                      <span className="text-sm text-green-600 font-medium">
+                        Economize {Math.round(((product.compare_at_price_cents! - product.price_cents) / product.compare_at_price_cents!) * 100)}%
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Description */}
+                  {product.short_description && (
+                    <p className="text-muted-foreground mb-6 leading-relaxed">
+                      {product.short_description}
+                    </p>
+                  )}
+
+                  {/* Stock Status */}
+                  {product.stock_quantity !== undefined && (
+                    <div className="mb-6">
+                      {product.stock_quantity > 0 ? (
+                        <span className="inline-flex items-center gap-2 text-green-600 font-medium">
+                          <span className="w-2 h-2 bg-green-600 rounded-full"></span>
+                          Em estoque ({product.stock_quantity} unidades)
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-2 text-red-600 font-medium">
+                          <span className="w-2 h-2 bg-red-600 rounded-full"></span>
+                          Esgotado
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="mt-auto space-y-3">
+                    <div className="flex gap-3">
+                      <Link
+                        to={`/product/${product.slug}`}
+                        className="flex-1 btn btn-primary flex items-center justify-center gap-2"
+                      >
+                        Ver Detalhes Completos
+                      </Link>
+                      <button
+                        onClick={() => setIsFavorite(!isFavorite)}
+                        className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+                          isFavorite
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted hover:bg-muted/80'
+                        }`}
+                        aria-label="Adicionar aos favoritos"
+                      >
+                        <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+                      </button>
+                    </div>
+                    <button className="w-full btn btn-primary flex items-center justify-center gap-2">
+                      <ShoppingCart className="w-5 h-5" />
+                      Adicionar ao Carrinho
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          ) : (
-            <p className="mt-6 text-muted-foreground">Carregando produto...</p>
-          )}
+            ) : (
+              <div className="p-12 text-center">
+                <p className="text-muted-foreground">Carregando produto...</p>
+              </div>
+            )}
+          </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

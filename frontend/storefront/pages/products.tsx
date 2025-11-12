@@ -273,6 +273,10 @@ export default function ProductsPage() {
                   onQuickView={(prod) => {
                     setSelectedProduct(prod);
                     setQuickOpen(true);
+                    // Scroll to top to ensure modal is visible
+                    setTimeout(() => {
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }, 100);
                   }}
                   onAddToCart={handleAddToCart}
                 />

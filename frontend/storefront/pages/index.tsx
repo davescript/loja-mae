@@ -239,10 +239,14 @@ export default function HomePage() {
               <ProductCard
                 key={p.id}
                 product={p}
-                onQuickView={(prod) => {
-                  setSelectedProduct(prod);
-                  setQuickOpen(true);
-                }}
+                    onQuickView={(prod) => {
+                      setSelectedProduct(prod);
+                      setQuickOpen(true);
+                      // Scroll to top to ensure modal is visible
+                      setTimeout(() => {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }, 100);
+                    }}
               />
             ))}
           </div>
@@ -277,10 +281,14 @@ export default function HomePage() {
               <ProductCard
                 key={p.id}
                 product={p}
-                onQuickView={(prod) => {
-                  setSelectedProduct(prod);
-                  setQuickOpen(true);
-                }}
+                    onQuickView={(prod) => {
+                      setSelectedProduct(prod);
+                      setQuickOpen(true);
+                      // Scroll to top to ensure modal is visible
+                      setTimeout(() => {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }, 100);
+                    }}
               />
             ))}
           </div>
