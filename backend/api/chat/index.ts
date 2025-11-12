@@ -36,9 +36,14 @@ async function handleChatMessage(request: Request, env: Env): Promise<Response> 
     // Tentar usar OpenAI se estiver configurado
     const openaiApiKey = env.OPENAI_API_KEY;
     
+    console.log('OpenAI API Key present:', !!openaiApiKey);
+    console.log('OpenAI API Key length:', openaiApiKey?.length || 0);
+    
     if (openaiApiKey) {
       try {
+        console.log('Calling OpenAI API...');
         const aiResponse = await callOpenAI(body.message, body.conversation || [], openaiApiKey);
+        console.log('OpenAI response received, length:', aiResponse.length);
         return successResponse({
           response: aiResponse,
           timestamp: new Date().toISOString(),
@@ -48,6 +53,8 @@ async function handleChatMessage(request: Request, env: Env): Promise<Response> 
         console.error('OpenAI error, falling back to keyword responses:', aiError);
         // Fallback para respostas baseadas em palavras-chave
       }
+    } else {
+      console.log('OpenAI API Key not found, using keyword fallback');
     }
 
     // Respostas inteligentes baseadas em palavras-chave (fallback)

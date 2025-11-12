@@ -20,8 +20,7 @@ export default function AccountPage() {
         <div className="rounded-xl bg-card p-4 shadow-soft">
           <p className="font-medium">Dados pessoais</p>
           <div className="mt-3 grid grid-cols-1 gap-2 text-sm">
-            <input className="px-3 py-2 rounded-xl border bg-white" placeholder="Nome" defaultValue={user?.first_name || ''} />
-            <input className="px-3 py-2 rounded-xl border bg-white" placeholder="Sobrenome" defaultValue={user?.last_name || ''} />
+            <input className="px-3 py-2 rounded-xl border bg-white" placeholder="Nome" defaultValue={user?.name || ''} />
             <input className="px-3 py-2 rounded-xl border bg-white" placeholder="Email" defaultValue={user?.email || ''} />
           </div>
           <button className="mt-3 px-4 py-2 rounded-full bg-muted text-sm" onClick={() => logout()}>Sair</button>

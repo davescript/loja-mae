@@ -63,7 +63,10 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     // Load Stripe publishable key from backend
-    fetch(`${API_BASE_URL}/api/stripe/config`).then(res => res.json()).then(data => setPublishableKey(data.publishableKey || null)).catch(() => setPublishableKey(null));
+    fetch(`${API_BASE_URL}/api/stripe/config`)
+      .then(res => res.json())
+      .then((data: { publishableKey?: string }) => setPublishableKey(data.publishableKey || null))
+      .catch(() => setPublishableKey(null));
   }, []);
 
   const stripePromise = useMemo(() => publishableKey ? loadStripe(publishableKey) : null, [publishableKey]);
@@ -82,9 +85,9 @@ export default function CheckoutPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
+      const data = await res.json() as { client_secret?: string; order_number?: string; error?: string };
       if (!res.ok) throw new Error(data.error || 'Falha ao iniciar checkout');
-      setClientSecret(data.client_secret);
+      setClientSecret(data.client_secret || null);
       setOrderNumber(data.order_number || null);
     } catch (e: any) {
       alert(e.message || 'Erro ao criar pedido');
