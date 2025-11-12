@@ -7,6 +7,10 @@ const getApiBaseUrl = (): string => {
   if (typeof window === 'undefined') {
     return 'http://localhost:8787';
   }
+  // Force local API in development to avoid workers.dev fallback
+  if ((import.meta as any).env?.DEV) {
+    return 'http://localhost:8787';
+  }
   
   // Try to get from environment variable (set at build time)
   const envUrl = (import.meta.env as { VITE_API_BASE_URL?: string }).VITE_API_BASE_URL;
@@ -28,7 +32,7 @@ const getApiBaseUrl = (): string => {
     return 'https://loja-mae-api.davecdl.workers.dev';
   }
   
-  // Default fallback
+  // Default fallback (production)
   return 'https://loja-mae-api.davecdl.workers.dev';
 };
 
@@ -107,4 +111,3 @@ export async function apiFormData<T = any>(
 
   return response.json();
 }
-

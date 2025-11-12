@@ -1,5 +1,5 @@
 export function handleCORS(response: Response, env: any, request?: Request): Response {
-  const allowedOrigins = env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173'];
+  const allowedOrigins = env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173', 'http://localhost:5174'];
   
   // Get origin from request, not response
   const origin = request?.headers.get('Origin') || '';
@@ -29,4 +29,3 @@ export function handleCORS(response: Response, env: any, request?: Request): Res
     headers,
   });
 }
-

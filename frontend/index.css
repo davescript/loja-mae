@@ -4,27 +4,27 @@
 
 @layer base {
   :root {
-    /* Paleta pastel inspirada em confeitaria (creme, branco fosco, rosa claro, nude, dourado suave, lilás pastel) */
-    --background: 40 40% 98%; /* creme leve */
-    --foreground: 270 10% 20%; /* cinza-violeta suave para textos */
+    /* Paleta inspirada no VegPoint Coffee - tons de café/marrom elegante */
+    --background: 40 30% 98%; /* creme muito claro */
+    --foreground: 25 15% 15%; /* marrom escuro para textos */
     --card: 0 0% 100%;
-    --card-foreground: 270 10% 20%;
+    --card-foreground: 25 15% 15%;
     --popover: 0 0% 100%;
-    --popover-foreground: 270 10% 20%;
-    --primary: 330 80% 80%; /* rosa claro */
-    --primary-foreground: 0 0% 15%;
-    --secondary: 280 40% 95%; /* lilás pastel muito leve */
-    --secondary-foreground: 270 10% 20%;
-    --muted: 40 30% 94%; /* creme suave */
-    --muted-foreground: 270 8% 40%;
-    --accent: 45 70% 75%; /* dourado suave */
-    --accent-foreground: 0 0% 15%;
+    --popover-foreground: 25 15% 15%;
+    --primary: 25 70% 45%; /* marrom café (#b86927) */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 40 20% 95%; /* creme suave */
+    --secondary-foreground: 25 15% 15%;
+    --muted: 40 15% 94%; /* creme neutro */
+    --muted-foreground: 25 10% 40%;
+    --accent: 25 60% 55%; /* marrom médio */
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 70% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 280 15% 88%;
-    --input: 280 15% 88%;
-    --ring: 330 80% 60%;
-    --radius: 1rem; /* 16px, app cards 12–20px */
+    --border: 40 10% 88%;
+    --input: 40 10% 88%;
+    --ring: 25 70% 45%;
+    --radius: 0.75rem; /* 12px, mais moderno */
   }
 
   .dark {

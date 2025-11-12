@@ -5,11 +5,13 @@ import type { Product } from '@shared/types';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Carousel from '../../components/app/Carousel';
+import { Star } from 'lucide-react';
 
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
   const [selectedVariant, setSelectedVariant] = useState<number | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [activeImage, setActiveImage] = useState(0);
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', slug],
@@ -44,7 +46,7 @@ export default function ProductPage() {
   return (
     <div className="container mx-auto px-4 md:px-8 py-16">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        {/* Galeria em carrossel */}
+        {/* Galeria com zoom + miniaturas */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -52,16 +54,25 @@ export default function ProductPage() {
         >
           <div className="rounded-[var(--radius)] overflow-hidden shadow-elevated">
             {product.images && product.images.length > 0 ? (
-              <Carousel>
-                {product.images.map((img) => (
+              <div>
+                <div className="group relative">
                   <img
-                    key={img.id}
-                    src={img.image_url}
-                    alt={img.alt_text || product.title}
-                    className="snap-start w-full h-[420px] md:h-[560px] object-cover"
+                    src={product.images[activeImage]?.image_url}
+                    alt={product.images[activeImage]?.alt_text || product.title}
+                    className="w-full h-[420px] md:h-[560px] object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                   />
-                ))}
-              </Carousel>
+                  {/* Zoom hint */}
+                  <div className="absolute bottom-3 right-3 text-xs px-2 py-1 rounded-full bg-black/30 text-white">Zoom</div>
+                </div>
+                {/* Miniaturas */}
+                <div className="mt-3 grid grid-cols-5 gap-2">
+                  {product.images.map((img, idx) => (
+                    <button key={img.id} onClick={() => setActiveImage(idx)} className={`rounded-md overflow-hidden border ${activeImage===idx ? 'border-primary' : 'border-border'}`}>
+                      <img src={img.image_url} alt={img.alt_text || product.title} className="w-full h-16 object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </div>
             ) : (
               <div className="h-[420px] md:h-[560px] bg-secondary" />
             )}
@@ -80,6 +91,13 @@ export default function ProductPage() {
             {product.featured ? <span className="badge">Novo</span> : null}
             {product.compare_at_price_cents ? <span className="badge">Promo</span> : null}
             <span className="chip">{stock > 0 ? 'Em stock' : 'Fora de stock'}</span>
+          </div>
+          {/* Avaliações */}
+          <div className="mt-3 flex items-center gap-1 text-amber-500">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Star key={i} className={`w-4 h-4 ${i < Math.round((product as any).average_rating || 4) ? '' : 'opacity-30'}`} />
+            ))}
+            <span className="ml-2 text-xs text-muted-foreground">{(product as any).reviews_count || 24} avaliações</span>
           </div>
           <p className="mt-3 text-2xl font-semibold text-primary">
             R$ {(price / 100).toFixed(2).replace('.', ',')}
@@ -123,13 +141,15 @@ export default function ProductPage() {
             </div>
           </div>
 
-          <button
+          <motion.button
             onClick={handleAddToCart}
             disabled={stock === 0}
+            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: 1.01 }}
             className="mt-8 w-full bg-primary text-primary-foreground py-4 rounded-full font-semibold shadow-soft hover:shadow-elevated transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {stock === 0 ? 'Fora de estoque' : 'Adicionar ao Carrinho'}
-          </button>
+          </motion.button>
           <div className="mt-8">
             <p className="font-medium mb-3">Itens que combinam</p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
