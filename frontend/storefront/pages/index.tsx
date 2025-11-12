@@ -45,18 +45,29 @@ export default function HomePage() {
 
   return (
     <div className="space-y-10">
-      {/* Hero pequeno com banner pastel */}
-      <section className="rounded-xl bg-secondary p-6 shadow-soft flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-medium">Acessórios para bolos & eventos</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Tudo o que precisa para confeitaria, toppers, balões, caixas e decoração.</p>
-          <div className="mt-4 flex gap-2">
-            <button className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm">Explorar</button>
-            <button className="px-4 py-2 rounded-full bg-muted text-sm" onClick={() => setCategoriesOpen(true)}>Categorias</button>
+      {/* Hero Section - Melhorado */}
+      <section className="relative overflow-hidden rounded-2xl md:rounded-[var(--radius)] shadow-elevated bg-gradient-to-br from-secondary via-background to-accent/20">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+        <div className="relative container mx-auto px-6 md:px-8 py-16 md:py-24">
+          <div className="max-w-2xl">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold mb-4 text-foreground">
+              Acessórios para Bolos & Eventos
+            </h1>
+            <p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed">
+              Tudo o que precisa para confeitaria, toppers, balões, caixas e decoração. Qualidade premium para seus eventos especiais.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <button className="btn btn-primary text-base px-6 py-3">
+                Explorar Produtos
+              </button>
+              <button 
+                className="btn btn-muted text-base px-6 py-3" 
+                onClick={() => setCategoriesOpen(true)}
+              >
+                Ver Categorias
+              </button>
+            </div>
           </div>
-        </div>
-        <div className="hidden sm:block">
-          <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=800&auto=format&fit=crop" alt="Banner pastel" className="w-40 h-24 rounded-lg object-cover" />
         </div>
       </section>
 
