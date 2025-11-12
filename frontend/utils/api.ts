@@ -36,7 +36,7 @@ const getApiBaseUrl = (): string => {
   return 'https://loja-mae-api.davecdl.workers.dev';
 };
 
-const API_BASE_URL = getApiBaseUrl();
+export const API_BASE_URL = getApiBaseUrl();
 
 export async function apiRequest<T = any>(
   endpoint: string,

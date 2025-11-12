@@ -39,8 +39,26 @@ export default function ProductPage() {
     : product.stock_quantity;
 
   const handleAddToCart = () => {
-    // TODO: Implement add to cart
-    console.log('Add to cart', { productId: product.id, variantId: selectedVariant, quantity });
+    try {
+      const priceCents = selectedVariant
+        ? (product.variants?.find(v => v.id === selectedVariant)?.price_cents || product.price_cents)
+        : product.price_cents;
+      const title = selectedVariant
+        ? `${product.title} - ${product.variants?.find(v => v.id === selectedVariant)?.title ?? ''}`
+        : product.title;
+      const imageUrl = product.images?.[0]?.image_url || null;
+      const { addItem } = require('../../../utils/cart');
+      addItem({
+        product_id: product.id,
+        variant_id: selectedVariant || null,
+        title,
+        price_cents: priceCents,
+        quantity,
+        image_url: imageUrl,
+      });
+    } catch (e) {
+      console.error('Falha ao adicionar ao carrinho', e);
+    }
   };
 
   return (

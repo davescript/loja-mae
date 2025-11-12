@@ -1,6 +1,7 @@
 import type { Env } from '../../types';
 import { handleCheckout } from './checkout';
 import { handleWebhook } from './webhook';
+import { successResponse } from '../../utils/response';
 
 export async function handleStripeRoutes(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
@@ -17,9 +18,13 @@ export async function handleStripeRoutes(request: Request, env: Env): Promise<Re
     return handleWebhook(request, env);
   }
 
+  // Config: GET /api/stripe/config
+  if (method === 'GET' && path === '/api/stripe/config') {
+    return successResponse({ publishableKey: env.STRIPE_PUBLISHABLE_KEY || '' });
+  }
+
   return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), {
     status: 405,
     headers: { 'Content-Type': 'application/json' },
   });
 }
-
