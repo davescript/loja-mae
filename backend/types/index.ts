@@ -7,5 +7,6 @@ export interface Env {
   STRIPE_PUBLISHABLE_KEY: string;
   ALLOWED_ORIGINS: string;
   ENVIRONMENT: string;
+  OPENAI_API_KEY?: string; // Opcional - se não configurado, usa fallback
 }
 
