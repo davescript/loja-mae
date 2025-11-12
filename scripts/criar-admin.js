@@ -52,19 +52,29 @@ VALUES (
 
     // Salvar SQL em arquivo temporário
     const tempFile = './scripts/temp-admin.sql';
-    fs.writeFileSync(tempFile, sql);
     
-    // Executar no D1
-    const remoteFlag = REMOTE ? '--remote' : '';
-    const command = `npx wrangler d1 execute ${DB_NAME} ${remoteFlag} --file=${tempFile}`;
-    
-    console.log('🚀 Executando comando:', command);
-    console.log('');
-    
-    const output = execSync(command, { encoding: 'utf-8', stdio: 'inherit' });
-    
-    // Limpar arquivo temporário
-    fs.unlinkSync(tempFile);
+    try {
+      fs.writeFileSync(tempFile, sql, 'utf8');
+      
+      // Executar no D1
+      const remoteFlag = REMOTE ? '--remote' : '';
+      const command = `npx wrangler d1 execute ${DB_NAME} ${remoteFlag} --file=${tempFile}`;
+      
+      console.log('🚀 Executando comando:', command);
+      console.log('');
+      
+      execSync(command, { encoding: 'utf-8', stdio: 'inherit' });
+    } finally {
+      // Limpar arquivo temporário (sempre, mesmo se houver erro)
+      try {
+        if (fs.existsSync(tempFile)) {
+          fs.unlinkSync(tempFile);
+        }
+      } catch (unlinkError) {
+        // Ignorar erros ao deletar arquivo temporário
+        console.warn('⚠️  Aviso: Não foi possível deletar arquivo temporário:', unlinkError.message);
+      }
+    }
     
     console.log('');
     console.log('✅ Admin criado com sucesso!');
