@@ -21,7 +21,7 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
     : [];
   
   const currentImage = images[currentImageIndex] || images[0];
-  const imageUrl = currentImage?.image_url || 'https://via.placeholder.com/600x600?text=Produto';
+  const imageUrl = currentImage?.image_url || null;
 
   // Reset image index when product changes
   useEffect(() => {
@@ -96,19 +96,25 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
                 {/* Images Section */}
                 <div className="space-y-4">
                   {/* Main Image */}
-                  <div className="relative aspect-square overflow-hidden rounded-xl bg-gray-100">
-                    <AnimatePresence mode="wait">
-                      <motion.img
-                        key={currentImageIndex}
-                        src={imageUrl}
-                        alt={currentImage?.alt_text || product.title}
-                        className="w-full h-full object-cover"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                      />
-                    </AnimatePresence>
+                  <div className="relative aspect-square overflow-hidden rounded-xl bg-gray-100 flex items-center justify-center">
+                    {imageUrl ? (
+                      <AnimatePresence mode="wait">
+                        <motion.img
+                          key={currentImageIndex}
+                          src={imageUrl}
+                          alt={currentImage?.alt_text || product.title}
+                          className="w-full h-full object-cover"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                        />
+                      </AnimatePresence>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                        <span className="text-6xl">📦</span>
+                      </div>
+                    )}
 
                     {/* Navigation Arrows */}
                     {images.length > 1 && (

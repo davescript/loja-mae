@@ -23,7 +23,7 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
   const previewImages = displayImages.slice(1, 5); // 4 imagens de preview
   
   const currentImage = displayImages[currentImageIndex] || displayImages[0];
-  const imageUrl = currentImage?.image_url || 'https://via.placeholder.com/400x400?text=Produto';
+  const imageUrl = currentImage?.image_url || null;
 
   const price = (product.price_cents / 100).toFixed(2).replace('.', ',');
   const comparePrice = product.compare_at_price_cents 
@@ -72,20 +72,26 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
         {/* Image Container */}
         <Link 
           to={`/product/${product.slug}`} 
-          className="relative aspect-square overflow-hidden bg-muted"
+          className="relative aspect-square overflow-hidden bg-muted flex items-center justify-center"
         >
-          <AnimatePresence mode="wait">
-            <motion.img
-              key={currentImageIndex}
-              src={imageUrl}
-              alt={currentImage?.alt_text || product.title}
-              className="w-full h-full object-cover"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            />
-          </AnimatePresence>
+          {imageUrl ? (
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={currentImageIndex}
+                src={imageUrl}
+                alt={currentImage?.alt_text || product.title}
+                className="w-full h-full object-cover"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              />
+            </AnimatePresence>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+              <span className="text-4xl">📦</span>
+            </div>
+          )}
           
           {/* Badge de destaque */}
           {product.featured && (
