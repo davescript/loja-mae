@@ -33,17 +33,121 @@ async function handleChatMessage(request: Request, env: Env): Promise<Response> 
       return errorResponse('Mensagem é obrigatória', 400);
     }
 
-    // Respostas inteligentes baseadas em palavras-chave
+    // Tentar usar OpenAI se estiver configurado
+    const openaiApiKey = env.OPENAI_API_KEY;
+    
+    if (openaiApiKey) {
+      try {
+        const aiResponse = await callOpenAI(body.message, body.conversation || [], openaiApiKey);
+        return successResponse({
+          response: aiResponse,
+          timestamp: new Date().toISOString(),
+          source: 'openai',
+        });
+      } catch (aiError) {
+        console.error('OpenAI error, falling back to keyword responses:', aiError);
+        // Fallback para respostas baseadas em palavras-chave
+      }
+    }
+
+    // Respostas inteligentes baseadas em palavras-chave (fallback)
     const response = generateAIResponse(body.message, body.conversation || []);
 
     return successResponse({
       response,
       timestamp: new Date().toISOString(),
+      source: 'keyword',
     });
   } catch (error) {
     console.error('Error processing chat message:', error);
     return errorResponse('Erro ao processar mensagem', 500);
   }
+}
+
+async function callOpenAI(
+  message: string,
+  conversation: Array<{ role: string; content: string }>,
+  apiKey: string
+): Promise<string> {
+  // Construir histórico de conversa para contexto
+  const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+    {
+      role: 'system',
+      content: `Você é um assistente virtual amigável e prestativo da Loja Mãe, uma loja especializada em acessórios premium para confeitaria, bolos e eventos.
+
+INFORMAÇÕES DA LOJA:
+- Nome: Loja Mãe
+- Produtos: Formas para bolos, toppers decorativos, acessórios de confeitaria, caixas e embalagens, balões e decorações
+- WhatsApp: +351 969 407 406
+- Email: contato@lojama.com
+- Instagram: @leiasabores
+- Entrega: 2-5 dias úteis, frete calculado no checkout
+- Política de devolução: 7 dias após recebimento
+- Cupom de desconto: GET20OFF (20% de desconto)
+
+DIRETRIZES:
+- Seja sempre educado, prestativo e entusiasmado
+- Use emojis moderadamente para tornar a conversa mais amigável
+- Se não souber algo específico, oriente o cliente a entrar em contato pelo WhatsApp
+- Mantenha respostas concisas mas informativas
+- Foque em ajudar o cliente a encontrar produtos e resolver dúvidas
+- Seja natural e conversacional, como um vendedor amigável`,
+    },
+  ];
+
+  // Adicionar histórico da conversa (últimas 10 mensagens para contexto)
+  const recentConversation = conversation.slice(-10);
+  for (const msg of recentConversation) {
+    if (msg.role === 'user' || msg.role === 'assistant') {
+      messages.push({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content,
+      });
+    }
+  }
+
+  // Adicionar mensagem atual
+  messages.push({
+    role: 'user',
+    content: message,
+  });
+
+  // Chamar API do OpenAI
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini', // Modelo mais econômico e rápido
+      messages: messages,
+      temperature: 0.7,
+      max_tokens: 500,
+      stream: false,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(`OpenAI API error: ${response.status} - ${JSON.stringify(errorData)}`);
+  }
+
+  const data = await response.json() as {
+    choices?: Array<{
+      message?: {
+        content?: string;
+      };
+    }>;
+  };
+
+  const aiResponse = data.choices?.[0]?.message?.content;
+  
+  if (!aiResponse) {
+    throw new Error('Resposta vazia da OpenAI');
+  }
+
+  return aiResponse.trim();
 }
 
 function generateAIResponse(message: string, conversation: Array<{ role: string; content: string }>): string {
