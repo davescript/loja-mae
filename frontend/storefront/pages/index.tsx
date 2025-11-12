@@ -101,45 +101,114 @@ export default function HomePage() {
         ))}
       </section>
 
-      {/* Categories Quick Access - Moderno */}
-      <section>
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="section-title">Categorias</h2>
+      {/* Categories Quick Access - Design Aprimorado */}
+      <section className="py-8">
+        <div className="flex items-center justify-between mb-10">
+          <div>
+            <h2 className="section-title mb-2">Nossas Categorias</h2>
+            <p className="text-muted-foreground text-sm">Explore nossa seleção especial</p>
+          </div>
           <Link
             to="/categories"
-            className="text-sm font-medium text-primary hover:underline flex items-center gap-1"
+            className="text-sm font-semibold text-primary hover:underline flex items-center gap-2 group"
           >
             Ver todas
-            <span>→</span>
+            <motion.span
+              animate={{ x: [0, 4, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              className="inline-block"
+            >
+              →
+            </motion.span>
           </Link>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
           {[
-            { label: 'Formas', emoji: '🍰', slug: 'formas', color: 'from-rose-100 to-pink-100' },
-            { label: 'Toppers', emoji: '✨', slug: 'toppers', color: 'from-amber-100 to-yellow-100' },
-            { label: 'Confeitaria', emoji: '🧁', slug: 'confeitaria', color: 'from-purple-100 to-indigo-100' },
-            { label: 'Caixas', emoji: '🎁', slug: 'caixas', color: 'from-emerald-100 to-teal-100' },
-            { label: 'Balões', emoji: '🎈', slug: 'baloes', color: 'from-blue-100 to-cyan-100' },
+            { 
+              label: 'Formas', 
+              emoji: '🍰', 
+              slug: 'formas', 
+              gradient: 'from-rose-200 via-pink-200 to-rose-300',
+              hoverGradient: 'from-rose-300 via-pink-300 to-rose-400',
+              iconBg: 'bg-rose-100'
+            },
+            { 
+              label: 'Toppers', 
+              emoji: '✨', 
+              slug: 'toppers', 
+              gradient: 'from-amber-200 via-yellow-200 to-amber-300',
+              hoverGradient: 'from-amber-300 via-yellow-300 to-amber-400',
+              iconBg: 'bg-amber-100'
+            },
+            { 
+              label: 'Confeitaria', 
+              emoji: '🧁', 
+              slug: 'confeitaria', 
+              gradient: 'from-purple-200 via-indigo-200 to-purple-300',
+              hoverGradient: 'from-purple-300 via-indigo-300 to-purple-400',
+              iconBg: 'bg-purple-100'
+            },
+            { 
+              label: 'Caixas', 
+              emoji: '🎁', 
+              slug: 'caixas', 
+              gradient: 'from-emerald-200 via-teal-200 to-emerald-300',
+              hoverGradient: 'from-emerald-300 via-teal-300 to-emerald-400',
+              iconBg: 'bg-emerald-100'
+            },
+            { 
+              label: 'Balões', 
+              emoji: '🎈', 
+              slug: 'baloes', 
+              gradient: 'from-blue-200 via-cyan-200 to-blue-300',
+              hoverGradient: 'from-blue-300 via-cyan-300 to-blue-400',
+              iconBg: 'bg-blue-100'
+            },
           ].map((c, index) => (
             <motion.div
               key={c.slug}
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              whileHover={{ y: -8, scale: 1.02 }}
+              transition={{ delay: index * 0.1, duration: 0.5 }}
+              whileHover={{ y: -12, scale: 1.05 }}
+              className="group"
             >
               <Link
                 to={`/products?category=${c.slug}`}
-                className={`block glass-card p-6 md:p-8 text-center group bg-gradient-to-br ${c.color} hover:shadow-2xl transition-all duration-300`}
+                className="block relative overflow-hidden rounded-2xl bg-white border-2 border-border/50 hover:border-primary/50 transition-all duration-300 shadow-md hover:shadow-2xl"
               >
-                <motion.div
-                  whileHover={{ scale: 1.2, rotate: 10 }}
-                  className="text-5xl md:text-6xl mb-3"
-                >
-                  {c.emoji}
-                </motion.div>
-                <p className="font-bold text-base">{c.label}</p>
+                {/* Background Gradient */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${c.gradient} opacity-50 group-hover:opacity-70 transition-opacity duration-300`}></div>
+                
+                {/* Content */}
+                <div className="relative p-6 md:p-8 text-center">
+                  {/* Icon Container */}
+                  <motion.div
+                    whileHover={{ scale: 1.15, rotate: 5 }}
+                    className={`w-20 h-20 mx-auto mb-4 rounded-2xl ${c.iconBg} flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all`}
+                  >
+                    <span className="text-4xl md:text-5xl">{c.emoji}</span>
+                  </motion.div>
+                  
+                  {/* Label */}
+                  <h3 className="font-bold text-base md:text-lg text-foreground group-hover:text-primary transition-colors">
+                    {c.label}
+                  </h3>
+                  
+                  {/* Hover Arrow */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    whileHover={{ opacity: 1, x: 0 }}
+                    className="mt-3 text-primary text-sm font-medium flex items-center justify-center gap-1"
+                  >
+                    Explorar
+                    <span>→</span>
+                  </motion.div>
+                </div>
+                
+                {/* Shine Effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
               </Link>
             </motion.div>
           ))}

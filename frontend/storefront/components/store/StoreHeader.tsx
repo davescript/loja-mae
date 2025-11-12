@@ -59,8 +59,8 @@ export default function StoreHeader() {
             </div>
           </div>
 
-          {/* Header Main - Logo, Search, Actions */}
-          <div className="flex items-center gap-4 py-4">
+          {/* Header Main - Logo, Search, Actions - Centralizado */}
+          <div className="flex items-center justify-between gap-4 py-4">
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -70,20 +70,20 @@ export default function StoreHeader() {
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
 
-            {/* Logo */}
-            <Link to="/" className="flex-shrink-0">
+            {/* Logo - Centralizado */}
+            <Link to="/" className="flex-shrink-0 mx-auto lg:mx-0">
               <motion.h1
                 whileHover={{ scale: 1.05 }}
-                className="text-2xl font-heading font-bold gradient-text"
+                className="text-2xl md:text-3xl font-heading font-bold gradient-text"
               >
                 Loja Mãe
               </motion.h1>
             </Link>
 
-            {/* Search Bar - Desktop */}
+            {/* Search Bar - Desktop - Centralizado */}
             <form
               onSubmit={handleSearch}
-              className="hidden md:flex flex-1 max-w-2xl mx-4"
+              className="hidden lg:flex flex-1 max-w-xl mx-8"
             >
               <div className="flex-1 relative group">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -105,8 +105,8 @@ export default function StoreHeader() {
               </motion.button>
             </form>
 
-            {/* Actions */}
-            <div className="flex items-center gap-2 ml-auto">
+            {/* Actions - Direita */}
+            <div className="flex items-center gap-2">
               {/* Search Button - Mobile */}
               <button
                 onClick={() => setSearchOpen(!searchOpen)}
@@ -161,8 +161,8 @@ export default function StoreHeader() {
             </div>
           </div>
 
-          {/* Navigation Menu - Desktop */}
-          <nav className="hidden lg:flex items-center gap-6 py-3 border-t border-border/50">
+          {/* Navigation Menu - Desktop - Centralizado */}
+          <nav className="hidden lg:flex items-center justify-center gap-8 py-4 border-t border-border/50">
             {[
               { to: '/', label: 'Home' },
               { to: '/products', label: 'Produtos' },
@@ -174,7 +174,7 @@ export default function StoreHeader() {
               <Link
                 key={item.to}
                 to={item.to}
-                className="text-sm font-medium hover:text-primary transition-colors relative group"
+                className="text-sm font-semibold hover:text-primary transition-colors relative group px-2 py-1"
               >
                 {item.label}
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300" />
