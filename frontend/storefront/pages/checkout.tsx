@@ -65,7 +65,10 @@ export default function CheckoutPage() {
     // Load Stripe publishable key from backend
     fetch(`${API_BASE_URL}/api/stripe/config`)
       .then(res => res.json())
-      .then((data: { publishableKey?: string }) => setPublishableKey(data.publishableKey || null))
+      .then((data: unknown) => {
+        const typedData = data as { publishableKey?: string };
+        setPublishableKey(typedData.publishableKey || null);
+      })
       .catch(() => setPublishableKey(null));
   }, []);
 
