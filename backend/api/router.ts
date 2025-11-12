@@ -12,6 +12,7 @@ import { handleCouponsRoutes } from './coupons';
 import { handleAuthRoutes } from './auth';
 import { handleStripeRoutes } from './stripe';
 import { handleImageRequest } from './images';
+import { handleChatRoutes } from './chat';
 
 export async function handleRequest(request: Request, env: Env): Promise<Response> {
   // Handle CORS
@@ -52,20 +53,25 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
       return handleCORS(await handleStripeRoutes(request, env), env, request);
     }
 
-    // Image serving (R2 proxy)
-    if (path.startsWith('/api/images')) {
-      return await handleImageRequest(request, env);
-    }
+        // Image serving (R2 proxy)
+        if (path.startsWith('/api/images')) {
+          return await handleImageRequest(request, env);
+        }
 
-    // Cart routes
-    if (path.startsWith('/api/cart')) {
-      return handleCORS(await handleCartRoutes(request, env), env, request);
-    }
+        // Chat routes
+        if (path.startsWith('/api/chat')) {
+          return handleCORS(await handleChatRoutes(request, env), env, request);
+        }
 
-    // Favorites routes
-    if (path.startsWith('/api/favorites')) {
-      return handleCORS(await handleFavoritesRoutes(request, env), env, request);
-    }
+        // Cart routes
+        if (path.startsWith('/api/cart')) {
+          return handleCORS(await handleCartRoutes(request, env), env, request);
+        }
+
+        // Favorites routes
+        if (path.startsWith('/api/favorites')) {
+          return handleCORS(await handleFavoritesRoutes(request, env), env, request);
+        }
 
     // Health check
     if (path === '/api/health') {

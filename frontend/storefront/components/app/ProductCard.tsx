@@ -95,7 +95,7 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
           )}
 
           {/* Badge de desconto */}
-          {comparePrice && (
+          {comparePrice && product.compare_at_price_cents && (
             <div className="absolute top-3 right-3 badge bg-destructive text-destructive-foreground z-10">
               -{Math.round(((product.compare_at_price_cents - product.price_cents) / product.compare_at_price_cents) * 100)}%
             </div>
