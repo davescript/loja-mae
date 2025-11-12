@@ -83,32 +83,33 @@ export default function ProductsPage() {
 
   return (
     <div className="min-h-screen pb-20">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-secondary/20 to-accent/10 py-12 md:py-16 mb-8">
-        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+      {/* Hero Section - Compacto */}
+      <section className="relative py-6 md:py-8 mb-6">
         <div className="container mx-auto px-4 relative">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center max-w-3xl mx-auto"
+            className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
           >
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-heading font-bold mb-4">
-              Nossos Produtos
-            </h1>
-            <p className="text-lg text-muted-foreground mb-8">
-              Descubra nossa seleção completa de acessórios premium
-            </p>
+            <div className="flex-1">
+              <h1 className="text-xl md:text-2xl font-heading font-bold mb-2">
+                Nossos Produtos
+              </h1>
+              <p className="text-sm text-muted-foreground hidden md:block">
+                Descubra nossa seleção completa de acessórios premium
+              </p>
+            </div>
             
-            {/* Search Bar */}
-            <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
+            {/* Search Bar - Compacta */}
+            <form onSubmit={handleSearch} className="flex-1 max-w-md">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type="search"
                   value={localSearch}
                   onChange={(e) => setLocalSearch(e.target.value)}
                   placeholder="Buscar produtos..."
-                  className="input pl-12 w-full bg-white/80 backdrop-blur-sm border-2 focus:border-primary"
+                  className="input pl-10 pr-10 py-2 text-sm bg-white/80 backdrop-blur-sm border focus:border-primary"
                 />
                 {localSearch && (
                   <button
@@ -119,9 +120,9 @@ export default function ProductsPage() {
                       newParams.delete('search');
                       setSearchParams(newParams);
                     }}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-4 h-4" />
                   </button>
                 )}
               </div>
