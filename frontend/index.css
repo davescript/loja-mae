@@ -4,49 +4,61 @@
 
 @layer base {
   :root {
-    /* Paleta inspirada no VegPoint Coffee - tons de café/marrom elegante */
-    --background: 40 30% 98%; /* creme muito claro */
-    --foreground: 25 15% 15%; /* marrom escuro para textos */
+    /* Paleta moderna inspirada em web apps premium */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 4%;
     --card: 0 0% 100%;
-    --card-foreground: 25 15% 15%;
+    --card-foreground: 240 10% 4%;
     --popover: 0 0% 100%;
-    --popover-foreground: 25 15% 15%;
-    --primary: 25 70% 45%; /* marrom café (#b86927) */
+    --popover-foreground: 240 10% 4%;
+    --primary: 25 95% 53%; /* Laranja vibrante moderno */
     --primary-foreground: 0 0% 100%;
-    --secondary: 40 20% 95%; /* creme suave */
-    --secondary-foreground: 25 15% 15%;
-    --muted: 40 15% 94%; /* creme neutro */
-    --muted-foreground: 25 10% 40%;
-    --accent: 25 60% 55%; /* marrom médio */
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 70% 60%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 240 5% 96%;
+    --accent-foreground: 240 6% 10%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 40 10% 88%;
-    --input: 40 10% 88%;
-    --ring: 25 70% 45%;
-    --radius: 0.75rem; /* 12px, mais moderno */
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 25 95% 53%;
+    --radius: 1rem;
+    
+    /* Variáveis customizadas para web app moderno */
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.18);
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   }
 
   .dark {
-    --background: 270 15% 13%;
-    --foreground: 40 40% 98%;
-    --card: 270 15% 16%;
-    --card-foreground: 40 40% 98%;
-    --popover: 270 15% 16%;
-    --popover-foreground: 40 40% 98%;
-    --primary: 330 80% 70%;
-    --primary-foreground: 270 15% 13%;
-    --secondary: 270 15% 22%;
-    --secondary-foreground: 40 40% 98%;
-    --muted: 270 15% 22%;
-    --muted-foreground: 40 20% 85%;
-    --accent: 45 70% 60%;
-    --accent-foreground: 270 15% 13%;
-    --destructive: 0 70% 45%;
-    --destructive-foreground: 40 40% 98%;
-    --border: 270 15% 28%;
-    --input: 270 15% 28%;
-    --ring: 330 80% 70%;
+    --background: 240 10% 4%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 4%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 4%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 25 95% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 240 4% 16%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 25 95% 53%;
+    
+    --glass-bg: rgba(0, 0, 0, 0.4);
+    --glass-border: rgba(255, 255, 255, 0.1);
   }
 }
 
@@ -56,48 +68,186 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-/* Sombras suaves e difusas inspiradas nas referências */
-.shadow-soft { box-shadow: 0 8px 20px rgba(30, 20, 60, 0.06); }
-.shadow-elevated { box-shadow: 0 16px 40px rgba(30, 20, 60, 0.08); }
-
-/* Tipografia base premium */
+/* Tipografia moderna */
 :root {
-  --font-body: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-  --font-heading: 'Playfair Display', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  --font-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 @layer base {
-  h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); }
-  body { font-family: var(--font-body); }
+  h1, h2, h3, h4, h5, h6 { 
+    font-family: var(--font-heading);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  body { 
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 }
 
-/* Componentes utilitários para estilo web app pastel */
+/* Componentes modernos estilo web app */
 @layer components {
+  /* Glassmorphism Card */
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-xl border border-white/20 rounded-2xl;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  }
+  
+  .glass-card-dark {
+    @apply bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl;
+  }
+
+  /* Card moderno com hover */
   .card {
-    @apply rounded-xl bg-card shadow-soft border;
+    @apply rounded-2xl bg-card border border-border/50 transition-all duration-300;
+    box-shadow: var(--shadow-sm);
   }
+  
+  .card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+    border-color: hsl(var(--border));
+  }
+
+  /* Botão moderno */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm transition;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary;
   }
+  
   .btn-primary {
-    @apply btn bg-primary text-primary-foreground hover:shadow-elevated;
+    @apply bg-primary text-primary-foreground shadow-md;
+    @apply hover:bg-primary/90 hover:shadow-lg hover:scale-[1.02];
+    @apply active:scale-[0.98];
   }
+  
   .btn-muted {
-    @apply btn bg-muted hover:bg-secondary;
+    @apply bg-muted text-muted-foreground;
+    @apply hover:bg-muted/80 hover:shadow-md;
   }
+  
+  .btn-ghost {
+    @apply bg-transparent hover:bg-muted;
+  }
+
+  /* Input moderno */
   .input {
-    @apply w-full px-4 py-3 rounded-xl border bg-white shadow-soft;
+    @apply w-full px-4 py-3 rounded-xl border border-input bg-background;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+    @apply transition-all duration-200;
+    box-shadow: var(--shadow-sm);
   }
+  
+  .input:focus {
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Chip moderno */
   .chip {
-    @apply inline-flex items-center rounded-full px-3 py-1 bg-muted text-xs;
+    @apply inline-flex items-center rounded-full px-4 py-1.5 bg-muted text-sm font-medium;
+    @apply transition-all duration-200 hover:bg-muted/80 hover:scale-105;
   }
+
+  /* Badge moderno */
   .badge {
-    @apply inline-flex items-center rounded-full px-2 py-1 bg-secondary text-xs;
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 bg-primary/10 text-primary text-xs font-semibold;
   }
+
+  /* Section Title */
   .section-title {
-    @apply text-lg font-medium;
+    @apply text-2xl md:text-3xl font-bold tracking-tight;
   }
+
+  /* Container moderno */
+  .container-modern {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent;
+  }
+
+  /* Skeleton loading */
+  .skeleton {
+    @apply animate-pulse bg-muted rounded-xl;
+  }
+}
+
+/* Animações customizadas */
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Scrollbar moderna */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Seleção de texto */
+::selection {
+  background: hsl(var(--primary) / 0.2);
+  color: hsl(var(--foreground));
 }
