@@ -43,7 +43,10 @@ export async function apiRequest<T = any>(
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   try {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    // Admin token takes priority, then customer token, then regular token
+    const token = typeof window !== 'undefined' 
+      ? localStorage.getItem('admin_token') || localStorage.getItem('customer_token') || localStorage.getItem('token')
+      : null;
     
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -85,7 +88,8 @@ export async function apiFormData<T = any>(
   formData: FormData,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
-  const token = localStorage.getItem('token');
+  // Admin token takes priority, then customer token, then regular token
+  const token = localStorage.getItem('admin_token') || localStorage.getItem('customer_token') || localStorage.getItem('token');
   
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string> || {}),
