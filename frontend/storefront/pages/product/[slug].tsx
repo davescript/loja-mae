@@ -92,7 +92,9 @@ export default function ProductPage() {
                 </div>
               </div>
             ) : (
-              <div className="h-[420px] md:h-[560px] bg-secondary" />
+              <div className="h-[420px] md:h-[560px] bg-secondary flex items-center justify-center">
+                <span className="text-6xl text-muted-foreground">📦</span>
+              </div>
             )}
           </div>
         </motion.div>
