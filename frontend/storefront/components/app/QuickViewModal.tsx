@@ -33,16 +33,19 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
     if (open && modalRef.current) {
       // Small delay to ensure modal is rendered
       setTimeout(() => {
-        modalRef.current?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center',
-          inline: 'center'
-        });
-        // Also scroll window to center
-        window.scrollTo({
-          top: modalRef.current.offsetTop - window.innerHeight / 2 + modalRef.current.offsetHeight / 2,
-          behavior: 'smooth'
-        });
+        const modal = modalRef.current;
+        if (modal) {
+          modal.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center',
+            inline: 'center'
+          });
+          // Also scroll window to center
+          window.scrollTo({
+            top: modal.offsetTop - window.innerHeight / 2 + modal.offsetHeight / 2,
+            behavior: 'smooth'
+          });
+        }
       }, 100);
     }
   }, [open]);
@@ -183,9 +186,9 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
                         </span>
                       )}
                     </div>
-                    {comparePrice && (
+                    {comparePrice && product.compare_at_price_cents && (
                       <span className="text-sm text-green-600 font-medium">
-                        Economize {Math.round(((product.compare_at_price_cents! - product.price_cents) / product.compare_at_price_cents!) * 100)}%
+                        Economize {Math.round(((product.compare_at_price_cents - product.price_cents) / product.compare_at_price_cents) * 100)}%
                       </span>
                     )}
                   </div>
