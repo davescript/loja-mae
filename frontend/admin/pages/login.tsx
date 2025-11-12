@@ -1,17 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Lock, Mail, AlertCircle } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, isLoggingIn, loginError } = useAdminAuth();
+  const navigate = useNavigate();
+  const { login, isLoggingIn, loginError, isAuthenticated } = useAdminAuth();
   
   // Redirect if already authenticated
-  const { isAuthenticated } = useAdminAuth();
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/admin/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+  
   if (isAuthenticated) {
-    window.location.href = '/admin/dashboard';
     return null;
   }
 
