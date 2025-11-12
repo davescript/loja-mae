@@ -46,6 +46,7 @@ export default function ProductsPage() {
       }
     },
     retry: 1,
+    staleTime: 0, // Sempre buscar dados atualizados do servidor
   });
 
   // Fetch categories for filter

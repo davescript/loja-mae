@@ -20,6 +20,7 @@ export default function ProductPage() {
       return response.data;
     },
     enabled: !!slug,
+    staleTime: 0, // Sempre buscar dados atualizados do servidor
   });
 
   if (isLoading) {
