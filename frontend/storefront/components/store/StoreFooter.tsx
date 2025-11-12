@@ -17,21 +17,25 @@ export default function StoreFooter() {
             </p>
             <div className="flex gap-3">
               <a
-                href="#"
+                href="https://www.facebook.com/leiasabores"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-gray-800 hover:bg-primary flex items-center justify-center transition"
                 aria-label="Facebook"
               >
                 <Facebook className="w-5 h-5" />
               </a>
               <a
-                href="#"
+                href="https://www.instagram.com/leiasabores/"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-gray-800 hover:bg-primary flex items-center justify-center transition"
                 aria-label="Instagram"
               >
                 <Instagram className="w-5 h-5" />
               </a>
               <a
-                href="#"
+                href="mailto:contato@lojama.com"
                 className="w-10 h-10 rounded-full bg-gray-800 hover:bg-primary flex items-center justify-center transition"
                 aria-label="Email"
               >
