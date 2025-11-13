@@ -38,12 +38,20 @@ export default function AdminCategoriesPageAdvanced() {
         pageSize: "100",
         ...(search && { search }),
       })
-      const response = await apiRequest<Category[]>(`/api/categories?${params.toString()}`)
-      return response.data || []
+      const response = await apiRequest<{ items: Category[] } | Category[]>(`/api/categories?${params.toString()}`)
+      // API pode retornar { items: [] } ou [] diretamente
+      if (Array.isArray(response.data)) {
+        return response.data
+      }
+      return response.data?.items || []
     },
   })
 
   const buildCategoryTree = (categories: Category[]): CategoryWithChildren[] => {
+    if (!Array.isArray(categories) || categories.length === 0) {
+      return []
+    }
+
     const categoryMap = new Map<number, CategoryWithChildren>()
     const rootCategories: CategoryWithChildren[] = []
 
@@ -67,7 +75,9 @@ export default function AdminCategoriesPageAdvanced() {
     return rootCategories
   }
 
-  const categoryTree = categoriesData ? buildCategoryTree(categoriesData) : []
+  const categoryTree = Array.isArray(categoriesData) && categoriesData.length > 0 
+    ? buildCategoryTree(categoriesData) 
+    : []
 
   const saveMutation = useMutation({
     mutationFn: async (data: Partial<Category>) => {
@@ -239,7 +249,9 @@ export default function AdminCategoriesPageAdvanced() {
       header: "Categoria Pai",
       accessor: (category) => {
         if (!category.parent_id) return "—"
-        const parent = categoriesData?.find((c) => c.id === category.parent_id)
+        const parent = Array.isArray(categoriesData) 
+          ? categoriesData.find((c) => c.id === category.parent_id)
+          : null
         return parent?.name || "—"
       },
     },
@@ -316,7 +328,7 @@ export default function AdminCategoriesPageAdvanced() {
         </Card>
       ) : (
         <DataTable
-          data={categoriesData || []}
+          data={Array.isArray(categoriesData) ? categoriesData : []}
           columns={columns}
           loading={isLoading}
           searchable
@@ -403,9 +415,11 @@ function CategoryForm({
   }
 
   // Filter out current category and its children from parent options
-  const availableParents = categories.filter(
-    (c) => c.id !== category?.id && c.parent_id !== category?.id
-  )
+  const availableParents = Array.isArray(categories) 
+    ? categories.filter(
+        (c) => c.id !== category?.id && c.parent_id !== category?.id
+      )
+    : []
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
