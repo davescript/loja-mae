@@ -58,12 +58,16 @@ export async function apiRequest<T = any>(
 
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+      // Log para debug
+      console.log(`[API] Request para ${endpoint} com token: ${token.substring(0, 20)}...`);
+    } else {
+      console.warn(`[API] Request para ${endpoint} SEM TOKEN`);
     }
 
     const url = `${API_BASE_URL}${endpoint}`;
     // Only log in development
     if (import.meta.env.DEV) {
-      console.log('API Request:', url);
+      console.log('API Request:', url, { hasToken: !!token });
     }
 
     const response = await fetch(url, {

@@ -95,19 +95,27 @@ export async function requireAuth(
     token = getTokenFromHeader(authHeader) || getTokenFromCookie(cookieHeader, 'customer_token');
   }
 
+  // Log para debug
+  console.log(`[AUTH] RequireAuth - type: ${type}, hasToken: ${!!token}, authHeader: ${!!authHeader}, cookieHeader: ${!!cookieHeader}`);
+
   if (!token) {
+    console.error('[AUTH] No token found in request');
     throw new UnauthorizedError('Authentication required');
   }
 
   // Verify token and get user
   if (type === 'customer') {
     try {
+      console.log(`[AUTH] Verificando token de cliente: ${token.substring(0, 20)}...`);
       const customer = await getCustomerFromToken(db, token, jwtSecret);
       if (!customer) {
+        console.error('[AUTH] Cliente não encontrado ou token inválido');
         throw new UnauthorizedError('Invalid or expired token');
       }
+      console.log(`[AUTH] Cliente autenticado: ${customer.email} (ID: ${customer.id})`);
       return { ...customer, type: 'customer' };
     } catch (error: any) {
+      console.error('[AUTH] Erro ao verificar token de cliente:', error.message);
       // Se for erro de JWT, dar mensagem mais clara
       if (error.message && error.message.includes('Invalid or expired token')) {
         throw new UnauthorizedError('Token inválido ou expirado. Por favor, faça login novamente.');

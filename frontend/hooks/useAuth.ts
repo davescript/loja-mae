@@ -15,26 +15,33 @@ export function useAuth() {
     queryKey: ['auth', 'me'],
     queryFn: async () => {
       try {
+        const token = localStorage.getItem('customer_token') || localStorage.getItem('token');
+        console.log('[AUTH] Verificando autenticação, token:', token ? token.substring(0, 20) + '...' : 'NENHUM');
+        
         const response = await apiRequest<{ user: AuthUser; type: string }>('/api/auth/me');
         if (response.success && response.data) {
+          console.log('[AUTH] Autenticação bem-sucedida:', response.data.user.email);
           setUser(response.data.user);
           return response.data;
         }
         // NÃO limpar tokens automaticamente - apenas quando o usuário clicar em "Sair"
         // Preservar sessão mesmo se a resposta não for sucesso
+        console.warn('[AUTH] Resposta não foi sucesso, mas preservando token');
         setUser(null);
         return null;
       } catch (error: any) {
         // NUNCA limpar tokens automaticamente - apenas quando o usuário clicar em "Sair"
         // Isso preserva a sessão mesmo em caso de erro de rede ou hard refresh
         const errorMessage = error?.message || '';
+        console.error('[AUTH] Erro ao verificar autenticação:', errorMessage);
+        
         if (errorMessage.includes('Authentication') || errorMessage.includes('401') || errorMessage.includes('Invalid or expired token')) {
           // Token pode estar inválido, mas não limpar automaticamente
           // Deixar o usuário decidir quando fazer logout
-          console.log('Auth check failed - token may be invalid, but keeping it:', errorMessage);
+          console.warn('[AUTH] Token pode estar inválido, mas preservando para o usuário decidir');
         } else {
           // Não limpar tokens em caso de erro de rede ou outros erros temporários
-          console.log('Auth check failed but keeping token:', errorMessage);
+          console.warn('[AUTH] Erro temporário, preservando token');
         }
         // Não limpar tokens - preservar sessão
         return null;
