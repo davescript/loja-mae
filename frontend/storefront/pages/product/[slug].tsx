@@ -144,10 +144,6 @@ export default function ProductPage() {
   };
 
   const images = product.images && product.images.length > 0 ? product.images : [];
-  const hasDiscount = product.compare_at_price_cents && product.compare_at_price_cents > price;
-  const discountPercent = hasDiscount && product.compare_at_price_cents
-    ? Math.round(((product.compare_at_price_cents - price) / product.compare_at_price_cents) * 100)
-    : 0;
 
   return (
     <div className="container mx-auto px-4 md:px-8 py-8 md:py-16">
@@ -186,11 +182,6 @@ export default function ProductPage() {
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 cursor-zoom-in"
                     onClick={() => setZoomImage(true)}
                   />
-                  {hasDiscount && (
-                    <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full font-bold text-sm">
-                      -{discountPercent}%
-                    </div>
-                  )}
                   {product.featured && (
                     <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1 rounded-full font-bold text-sm">
                       Destaque
@@ -254,11 +245,6 @@ export default function ProductPage() {
                   Novo
                 </span>
               )}
-              {hasDiscount && (
-                <span className="px-3 py-1 bg-red-500 text-white rounded-full text-sm font-medium">
-                  Promoção
-                </span>
-              )}
               <span
                 className={`px-3 py-1 rounded-full text-sm font-medium ${
                   stock > 0
@@ -293,17 +279,7 @@ export default function ProductPage() {
             <div className="mb-6">
               <div className="flex items-baseline gap-3">
                 <span className="text-4xl font-bold text-primary">{formatPrice(price)}</span>
-                {product.compare_at_price_cents && product.compare_at_price_cents > price && (
-                  <span className="text-xl text-muted-foreground line-through">
-                    {formatPrice(product.compare_at_price_cents)}
-                  </span>
-                )}
               </div>
-              {hasDiscount && (
-                <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                  Economize {formatPrice(product.compare_at_price_cents! - price)}!
-                </p>
-              )}
             </div>
           </div>
 

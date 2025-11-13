@@ -29,9 +29,6 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
   const imageUrl = currentImage?.image_url || null;
 
   const price = formatPrice(product.price_cents);
-  const comparePrice = product.compare_at_price_cents 
-    ? formatPrice(product.compare_at_price_cents)
-    : null;
 
   const { addItem } = useCartStore();
   const { toast } = useToast();
@@ -148,12 +145,6 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
             </div>
           )}
 
-          {/* Badge de desconto */}
-          {comparePrice && product.compare_at_price_cents && (
-            <div className="absolute top-3 right-3 badge bg-destructive text-destructive-foreground z-10">
-              -{Math.round(((product.compare_at_price_cents - product.price_cents) / product.compare_at_price_cents) * 100)}%
-            </div>
-          )}
 
           {/* Navigation Arrows - aparecem no hover se houver múltiplas imagens */}
           {displayImages.length > 1 && isHovered && (
@@ -275,11 +266,6 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
             <span className="text-xl md:text-2xl font-bold text-foreground">
               {price}
             </span>
-            {comparePrice && (
-              <span className="text-sm text-muted-foreground line-through">
-                {comparePrice}
-              </span>
-            )}
           </div>
 
           {/* Rating - Placeholder */}

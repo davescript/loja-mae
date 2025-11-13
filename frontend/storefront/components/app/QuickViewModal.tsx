@@ -70,9 +70,6 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
   };
 
   const price = product ? formatPrice(product.price_cents) : formatPrice(0);
-  const comparePrice = product?.compare_at_price_cents 
-    ? formatPrice(product.compare_at_price_cents)
-    : null;
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -191,10 +188,10 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
                     )}
                   </div>
 
-                  {/* Thumbnail Gallery - Mostrar todas as imagens (mínimo 4 se houver) */}
+                  {/* Thumbnail Gallery - Mostrar 7 imagens de preview */}
                   {images.length > 1 && (
                     <div className="grid grid-cols-4 gap-2">
-                      {images.slice(0, Math.max(4, images.length)).map((img, index) => (
+                      {images.slice(0, Math.min(7, images.length)).map((img, index) => (
                         <button
                           key={img.id}
                           onClick={() => setCurrentImageIndex(index)}
@@ -211,9 +208,9 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
                           />
                         </button>
                       ))}
-                      {images.length > 4 && (
+                      {images.length > 7 && (
                         <div className="aspect-square rounded-lg border-2 border-gray-200 bg-gray-100 flex items-center justify-center text-xs text-muted-foreground">
-                          +{images.length - 4}
+                          +{images.length - 7}
                         </div>
                       )}
                     </div>
@@ -238,17 +235,7 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
                       <span className="text-3xl font-bold text-primary">
                         {price}
                       </span>
-                      {comparePrice && (
-                        <span className="text-lg text-muted-foreground line-through">
-                          {comparePrice}
-                        </span>
-                      )}
                     </div>
-                    {comparePrice && product.compare_at_price_cents && (
-                      <span className="text-sm text-green-600 font-medium">
-                        Economize {Math.round(((product.compare_at_price_cents - product.price_cents) / product.compare_at_price_cents) * 100)}%
-                      </span>
-                    )}
                   </div>
 
                   {/* Short Description */}
@@ -340,16 +327,9 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
                   {/* Actions */}
                   <div className="mt-auto space-y-3">
                     <div className="flex gap-3">
-                      <Link
-                        to={`/product/${product.slug}`}
-                        className="flex-1 btn btn-outline flex items-center justify-center gap-2"
-                        onClick={() => onOpenChange(false)}
-                      >
-                        Ver Página Completa
-                      </Link>
                       <button
                         onClick={() => setIsFavorite(!isFavorite)}
-                        className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+                        className={`flex-1 h-12 rounded-lg flex items-center justify-center gap-2 transition-colors ${
                           isFavorite
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-muted hover:bg-muted/80'
@@ -357,6 +337,7 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
                         aria-label="Adicionar aos favoritos"
                       >
                         <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+                        {isFavorite ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos'}
                       </button>
                     </div>
                     <button 
