@@ -296,13 +296,23 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
               </span>
             </motion.button>
             
-            <Link
-              to={`/product/${product.slug}`}
-              className="btn btn-muted px-4 flex items-center justify-center"
-              aria-label="Ver detalhes"
-            >
-              <Eye className="w-4 h-4" />
-            </Link>
+            {product.slug ? (
+              <Link
+                to={`/product/${product.slug}`}
+                className="btn btn-muted px-4 flex items-center justify-center"
+                aria-label="Ver detalhes"
+              >
+                <Eye className="w-4 h-4" />
+              </Link>
+            ) : (
+              <button
+                onClick={() => onQuickView?.(product)}
+                className="btn btn-muted px-4 flex items-center justify-center"
+                aria-label="Ver detalhes"
+              >
+                <Eye className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           {/* Stock indicator */}
