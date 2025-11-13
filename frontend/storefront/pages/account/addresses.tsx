@@ -44,6 +44,12 @@ export default function CustomerAddressesPage() {
   // Create/Update address mutation
   const saveAddressMutation = useMutation({
     mutationFn: async (data: typeof formData & { id?: number }) => {
+      // Verificar se há token antes de fazer a requisição
+      const token = localStorage.getItem('customer_token') || localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Você precisa estar autenticado para salvar endereços. Por favor, faça login novamente.');
+      }
+
       const url = editingAddress 
         ? `/api/customers/addresses/${editingAddress.id}`
         : '/api/customers/addresses';

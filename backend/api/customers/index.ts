@@ -3,6 +3,7 @@ import { getDb } from '../../utils/db';
 import { successResponse, errorResponse, notFoundResponse } from '../../utils/response';
 import { handleError } from '../../utils/errors';
 import { requireAuth, requireAdmin } from '../../utils/auth';
+import { executeQuery } from '../../utils/db';
 import {
   getCustomer,
   listCustomers,
