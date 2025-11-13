@@ -501,8 +501,8 @@ export async function handleGetPayments(request: Request, env: Env): Promise<Res
     const user = await requireAuth(request, env, 'customer');
     const db = getDb(env);
 
-    // Get payments from orders (since payments table may not exist yet)
-    // We'll use order payment info instead
+    // Get payments from orders (by customer_id OR email for guest orders)
+    // Include orders with payment_status = 'paid' OR with stripe_payment_intent_id (payment initiated)
     const orders = await executeQuery(
       db,
       `SELECT 
@@ -517,9 +517,10 @@ export async function handleGetPayments(request: Request, env: Env): Promise<Res
         'eur' as currency,
         created_at
        FROM orders 
-       WHERE customer_id = ? AND payment_status = 'paid'
+       WHERE (customer_id = ? OR email = ?) 
+         AND (payment_status = 'paid' OR stripe_payment_intent_id IS NOT NULL)
        ORDER BY created_at DESC`,
-      [user.id]
+      [user.id, user.email]
     );
 
     // Transform to match Payment type
