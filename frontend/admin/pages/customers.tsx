@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { MapPin, Mail, Phone, Calendar, User } from 'lucide-react';
+import { MapPin, Mail, Phone, Calendar, User, RefreshCw } from 'lucide-react';
 import { formatPrice } from '../../utils/format';
 
 export default function AdminCustomersPage() {
@@ -181,7 +181,18 @@ export default function AdminCustomersPage() {
           {selectedCustomer && (
             <>
               <DialogHeader>
-                <DialogTitle>Detalhes do Cliente</DialogTitle>
+                <div className="flex items-center justify-between">
+                  <DialogTitle>Detalhes do Cliente</DialogTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => selectedCustomer && handleViewCustomer(selectedCustomer, true)}
+                    className="flex items-center gap-2"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Atualizar
+                  </Button>
+                </div>
               </DialogHeader>
               <div className="space-y-6">
                 {/* Customer Info */}

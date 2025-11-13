@@ -37,10 +37,17 @@ export function useAdminAuth() {
           return response.data.user;
         }
         throw new Error('Not an admin');
-      } catch (error) {
-        // Se for erro de autenticação, limpar token
-        if (error instanceof Error && (error.message.includes('Authentication') || error.message.includes('401'))) {
-          localStorage.removeItem('admin_token');
+      } catch (error: any) {
+        // Se for erro de autenticação real (token inválido/expirado), limpar token
+        // Mas não limpar em caso de erro de rede ou outros erros temporários
+        if (error instanceof Error && error.message.includes('Authentication') && error.message.includes('required')) {
+          // Token inválido ou expirado - limpar apenas se realmente necessário
+          // Não limpar em hard refresh - o token pode estar válido
+          const errorResponse = error as any;
+          if (errorResponse?.status === 401 || errorResponse?.response?.status === 401) {
+            // Só limpar se for realmente um erro 401 de autenticação
+            localStorage.removeItem('admin_token');
+          }
         }
         // Silently fail if not authenticated
         return null;
@@ -48,6 +55,8 @@ export function useAdminAuth() {
     },
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true, // Refetch when window gains focus
+    refetchOnMount: true, // Always refetch on mount (including hard refresh)
   });
 
   // Admin login mutation
