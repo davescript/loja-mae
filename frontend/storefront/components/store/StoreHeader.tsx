@@ -152,15 +152,77 @@ export default function StoreHeader() {
               onSubmit={handleSearch}
               className="hidden lg:flex flex-1 max-w-xl mx-8"
             >
-              <div className="flex-1 relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <div ref={searchRef} className="flex-1 relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors z-10" />
                 <input
                   type="search"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => {
+                    if (searchQuery.length >= 2) {
+                      setShowSuggestions(true);
+                    }
+                  }}
                   placeholder="Buscar produtos..."
                   className="input pl-12 w-full bg-white/50 backdrop-blur-sm border-border/50 focus:bg-white focus:border-primary"
                 />
+                
+                {/* Loading indicator */}
+                {isSearching && searchQuery.length >= 2 && (
+                  <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground animate-spin" />
+                )}
+                
+                {/* Suggestions Dropdown */}
+                <AnimatePresence>
+                  {showSuggestions && searchQuery.length >= 2 && searchResults && searchResults.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute top-full left-0 right-0 mt-2 bg-white border border-border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto"
+                    >
+                      <div className="p-2">
+                        {searchResults.map((product) => (
+                          <button
+                            key={product.id}
+                            onClick={() => handleProductClick(product)}
+                            className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
+                          >
+                            {product.images && product.images.length > 0 ? (
+                              <img
+                                src={product.images[0].image_url}
+                                alt={product.title}
+                                className="w-12 h-12 object-cover rounded-md"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center">
+                                <Search className="w-5 h-5 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{product.title}</p>
+                              {product.short_description && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {product.short_description}
+                                </p>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                        <button
+                          onClick={handleSearch}
+                          className="w-full mt-2 p-2 text-sm font-medium text-primary hover:bg-muted rounded-lg transition-colors"
+                        >
+                          Ver todos os resultados para "{searchQuery}"
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
               <motion.button
                 whileHover={{ scale: 1.02 }}
@@ -271,23 +333,88 @@ export default function StoreHeader() {
               exit={{ height: 0, opacity: 0 }}
               className="md:hidden border-t border-border/50 bg-white/95 backdrop-blur-sm p-4"
             >
-              <form onSubmit={handleSearch} className="flex gap-2">
-                <input
-                  type="search"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Buscar produtos..."
-                  className="input flex-1"
-                  autoFocus
-                />
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  type="submit"
-                  className="btn btn-primary"
-                >
-                  <Search className="w-5 h-5" />
-                </motion.button>
-              </form>
+              <div ref={searchRef} className="relative">
+                <form onSubmit={handleSearch} className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <input
+                      type="search"
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setShowSuggestions(true);
+                      }}
+                      onFocus={() => {
+                        if (searchQuery.length >= 2) {
+                          setShowSuggestions(true);
+                        }
+                      }}
+                      placeholder="Buscar produtos..."
+                      className="input pl-10 flex-1"
+                      autoFocus
+                    />
+                    {isSearching && searchQuery.length >= 2 && (
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground animate-spin" />
+                    )}
+                  </div>
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    type="submit"
+                    className="btn btn-primary"
+                  >
+                    <Search className="w-5 h-5" />
+                  </motion.button>
+                </form>
+                
+                {/* Mobile Suggestions Dropdown */}
+                <AnimatePresence>
+                  {showSuggestions && searchQuery.length >= 2 && searchResults && searchResults.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute top-full left-0 right-0 mt-2 bg-white border border-border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto"
+                    >
+                      <div className="p-2">
+                        {searchResults.map((product) => (
+                          <button
+                            key={product.id}
+                            onClick={() => handleProductClick(product)}
+                            className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
+                          >
+                            {product.images && product.images.length > 0 ? (
+                              <img
+                                src={product.images[0].image_url}
+                                alt={product.title}
+                                className="w-12 h-12 object-cover rounded-md"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center">
+                                <Search className="w-5 h-5 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{product.title}</p>
+                              {product.short_description && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {product.short_description}
+                                </p>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                        <button
+                          onClick={handleSearch}
+                          className="w-full mt-2 p-2 text-sm font-medium text-primary hover:bg-muted rounded-lg transition-colors"
+                        >
+                          Ver todos os resultados para "{searchQuery}"
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
