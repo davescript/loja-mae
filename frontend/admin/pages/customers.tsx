@@ -32,14 +32,16 @@ export default function AdminCustomersPage() {
     },
   });
 
-  const handleViewCustomer = async (customer: Customer) => {
+  const handleViewCustomer = async (customer: Customer, forceRefresh = false) => {
     try {
       // Invalidar cache para garantir dados frescos
-      queryClient.invalidateQueries({ queryKey: ['admin', 'customer', customer.id] });
+      if (forceRefresh) {
+        queryClient.invalidateQueries({ queryKey: ['admin', 'customer', customer.id] });
+      }
       
-      // Buscar dados atualizados do cliente
+      // Buscar dados atualizados do cliente (sempre buscar do servidor)
       const response = await apiRequest<Customer & { addresses?: Address[] }>(
-        `/api/customers/${customer.id}`
+        `/api/customers/${customer.id}?t=${Date.now()}` // Adicionar timestamp para evitar cache
       );
       
       if (response.data) {
@@ -54,7 +56,7 @@ export default function AdminCustomersPage() {
       }
     } catch (error) {
       console.error('Erro ao carregar detalhes do cliente:', error);
-      setSelectedCustomer(null);
+      // Não limpar selectedCustomer em caso de erro, apenas logar
     }
   };
 
