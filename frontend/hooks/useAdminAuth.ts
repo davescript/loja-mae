@@ -50,6 +50,11 @@ export function useAdminAuth() {
           body: JSON.stringify(credentials),
         }
       );
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Login failed');
+      }
+      
       return response.data;
     },
     onSuccess: (data) => {
@@ -60,6 +65,9 @@ export function useAdminAuth() {
       // Invalidate and refetch admin data
       queryClient.invalidateQueries({ queryKey: ['admin', 'me'] });
       navigate('/admin/dashboard');
+    },
+    onError: (error: Error) => {
+      console.error('Login error:', error);
     },
   });
 

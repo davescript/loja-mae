@@ -69,14 +69,15 @@ export async function apiRequest<T = any>(
       credentials: 'include',
     });
 
+    const data = await response.json();
+    
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Network error' }));
-      const errorMessage = (errorData as { error?: string }).error || `HTTP error! status: ${response.status}`;
+      const errorMessage = (data as { error?: string }).error || `HTTP error! status: ${response.status}`;
       console.error('API Error:', errorMessage, response.status);
       throw new Error(errorMessage);
     }
 
-    return response.json();
+    return data;
   } catch (error) {
     console.error('API Request failed:', error);
     throw error;

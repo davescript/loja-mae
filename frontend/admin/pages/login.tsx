@@ -21,9 +21,13 @@ export default function AdminLoginPage() {
     return null;
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    login({ email, password });
+    try {
+      await login({ email, password });
+    } catch (error) {
+      console.error('Erro no login:', error);
+    }
   };
 
   return (
