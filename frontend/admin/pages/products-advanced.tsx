@@ -301,20 +301,31 @@ export default function AdminProductsPageAdvanced() {
               <TabsContent value="geral" className="space-y-4 mt-4">
                 <div className="space-y-2">
                   <Label htmlFor="title">Título *</Label>
-                  <Input id="title" {...form.register("title")} />
-                  {form.formState.errors.title && (
-                    <p className="text-sm text-red-600">{form.formState.errors.title.message}</p>
-                  )}
+                  <Input
+                    id="title"
+                    value={form.watch("title")}
+                    onChange={(e) => form.setValue("title", e.target.value)}
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="short_description">Descrição Curta</Label>
-                  <Textarea id="short_description" {...form.register("short_description")} rows={2} />
+                  <Textarea
+                    id="short_description"
+                    value={form.watch("short_description") || ""}
+                    onChange={(e) => form.setValue("short_description", e.target.value)}
+                    rows={2}
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="description">Descrição Completa</Label>
-                  <Textarea id="description" {...form.register("description")} rows={4} />
+                  <Textarea
+                    id="description"
+                    value={form.watch("description") || ""}
+                    onChange={(e) => form.setValue("description", e.target.value)}
+                    rows={4}
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
