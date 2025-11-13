@@ -6,38 +6,38 @@ export interface ImageValidationResult {
   error?: string
 }
 
-export function validateImage(file: File): ImageValidationResult {
+export function validateImage(file: File): Promise<ImageValidationResult> {
   const maxSize = 5 * 1024 * 1024 // 5MB
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
   const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
 
   // Validar tipo MIME
   if (!allowedTypes.includes(file.type)) {
-    return {
+    return Promise.resolve({
       valid: false,
       error: 'Tipo de arquivo não permitido. Use JPG, PNG, WebP ou GIF.',
-    }
+    })
   }
 
   // Validar extensão
   const extension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'))
   if (!allowedExtensions.includes(extension)) {
-    return {
+    return Promise.resolve({
       valid: false,
       error: 'Extensão de arquivo não permitida.',
-    }
+    })
   }
 
   // Validar tamanho
   if (file.size > maxSize) {
-    return {
+    return Promise.resolve({
       valid: false,
       error: `Arquivo muito grande. Tamanho máximo: ${(maxSize / 1024 / 1024).toFixed(0)}MB`,
-    }
+    })
   }
 
   // Validar se é realmente uma imagem (verificar dimensões)
-  return new Promise((resolve) => {
+  return new Promise<ImageValidationResult>((resolve) => {
     const img = new Image()
     const objectUrl = URL.createObjectURL(file)
 

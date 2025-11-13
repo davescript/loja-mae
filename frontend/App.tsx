@@ -13,6 +13,8 @@ import ContactPage from './storefront/pages/contact';
 import ProductPage from './storefront/pages/product/[slug]';
 import CartPage from './storefront/pages/cart';
 import CheckoutPage from './storefront/pages/checkout';
+import CheckoutSuccessPage from './storefront/pages/checkout/success';
+import CheckoutFailedPage from './storefront/pages/checkout/failed';
 import LoginPage from './storefront/pages/login';
 import RegisterPage from './storefront/pages/register';
 import AccountPage from './storefront/pages/account';
@@ -50,6 +52,8 @@ function App() {
         <Route path="contact" element={<ContactPage />} />
         <Route path="cart" element={<CartPage />} />
         <Route path="checkout" element={<CheckoutPage />} />
+        <Route path="checkout/success" element={<CheckoutSuccessPage />} />
+        <Route path="checkout/failed" element={<CheckoutFailedPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
         <Route path="account" element={<AccountPage />} />

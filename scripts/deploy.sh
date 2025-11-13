@@ -27,7 +27,7 @@ npm run typecheck || {
 
 # Deploy
 echo -e "${YELLOW}📦 Fazendo deploy do backend...${NC}"
-npx wrangler deploy
+npx wrangler deploy --env production
 
 echo -e "${GREEN}✅ Deploy concluído com sucesso!${NC}"
 echo -e "${YELLOW}📍 URL do Worker: https://loja-mae-api.workers.dev${NC}"

@@ -4,6 +4,8 @@ import { Heart, ShoppingCart, Eye, ChevronLeft, ChevronRight } from 'lucide-reac
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import { formatPrice } from '../../../utils/format';
+import { useCartStore } from '../../../store/cartStore';
+import { useToast } from '../../../admin/hooks/useToast';
 
 type Props = {
   product: Product;
@@ -31,9 +33,37 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
     ? formatPrice(product.compare_at_price_cents)
     : null;
 
+  const { addItem } = useCartStore();
+  const { toast } = useToast();
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    if (product.stock_quantity <= 0) {
+      toast({
+        title: 'Produto esgotado',
+        description: 'Este produto não está disponível no momento.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    addItem({
+      product_id: product.id,
+      variant_id: null,
+      title: product.title,
+      price_cents: product.price_cents,
+      quantity: 1,
+      image_url: product.images?.[0]?.image_url || null,
+      sku: product.sku || null,
+    });
+
+    toast({
+      title: 'Adicionado ao carrinho',
+      description: `${product.title} foi adicionado ao carrinho.`,
+    });
+
     onAddToCart?.(product);
   };
 

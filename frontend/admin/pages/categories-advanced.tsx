@@ -240,12 +240,12 @@ export default function AdminCategoriesPageAdvanced() {
       accessor: (category) => (
         <span
           className={`px-2 py-1 text-xs font-semibold rounded-full ${
-            category.status === "active"
+            category.is_active === 1
               ? "bg-green-100 text-green-800"
               : "bg-gray-100 text-gray-800"
           }`}
         >
-          {category.status === "active" ? "Ativo" : "Inativo"}
+          {category.is_active === 1 ? "Ativo" : "Inativo"}
         </span>
       ),
     },
@@ -361,19 +361,19 @@ function CategoryForm({
   const [slug, setSlug] = useState(category?.slug || "")
   const [description, setDescription] = useState(category?.description || "")
   const [parentId, setParentId] = useState<number | null>(category?.parent_id || null)
-  const [status, setStatus] = useState<"active" | "inactive">(
-    (category?.status as "active" | "inactive") || "active"
+  const [isActive, setIsActive] = useState<number>(
+    category?.is_active ?? 1
   )
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSave({
-      name,
-      slug: slug || undefined,
-      description: description || undefined,
-      parent_id: parentId || undefined,
-      status,
-    })
+      onSave({
+        name,
+        slug: slug || undefined,
+        description: description || undefined,
+        parent_id: parentId || undefined,
+        is_active: isActive,
+      })
   }
 
   // Filter out current category and its children from parent options
@@ -448,7 +448,7 @@ function CategoryForm({
 
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select value={status} onValueChange={(value) => setStatus(value as "active" | "inactive")}>
+              <Select value={isActive === 1 ? "active" : "inactive"} onValueChange={(value) => setIsActive(value === "active" ? 1 : 0)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

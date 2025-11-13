@@ -75,6 +75,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
 
         // Cart routes
         if (path.startsWith('/api/cart')) {
+          const { handleCartRoutes } = await import('./cart');
           return handleCORS(await handleCartRoutes(request, env), env, request);
         }
 
@@ -117,10 +118,6 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
   }
 }
 
-async function handleCartRoutes(request: Request, env: Env): Promise<Response> {
-  // TODO: Implement cart routes
-  return errorResponse('Cart routes not implemented yet', 501);
-}
 
 async function handleFavoritesRoutes(request: Request, env: Env): Promise<Response> {
   // TODO: Implement favorites routes

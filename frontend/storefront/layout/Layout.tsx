@@ -1,15 +1,24 @@
 import { Outlet, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { ShoppingCart } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import StoreHeader from '../components/store/StoreHeader';
 import StoreFooter from '../components/store/StoreFooter';
 import WhatsAppButton from '../components/store/WhatsAppButton';
 import AIChat from '../components/store/AIChat';
+import { useCartStore } from '../../store/cartStore';
 
 export default function StorefrontLayout() {
   const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { loadFromServer } = useCartStore();
+
+  // Load cart from server when user logs in
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadFromServer();
+    }
+  }, [isAuthenticated, loadFromServer]);
 
   // Removido AppShell (Sidebar/Topbar) em favor de layout estilo loja
 

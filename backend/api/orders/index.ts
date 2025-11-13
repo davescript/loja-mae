@@ -73,6 +73,12 @@ export async function handleOrdersRoutes(request: Request, env: Env): Promise<Re
       return successResponse(order);
     }
 
+    // Get invoice: GET /api/orders/:id/invoice
+    if (method === 'GET' && path.match(/^\/api\/orders\/\d+\/invoice$/)) {
+      const { handleGetInvoice } = await import('./invoice');
+      return await handleGetInvoice(request, env);
+    }
+
     // Create order: POST /api/orders
     if (method === 'POST' && path === '/api/orders') {
       const body = await request.json();
