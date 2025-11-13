@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { loadStripe, StripeElementsOptions } from '@stripe/stripe-js'
-import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
+import { Elements, PaymentElement, AddressElement, useElements, useStripe } from '@stripe/react-stripe-js'
 import { useCartStore } from '../../store/cartStore'
 import { formatPrice } from '../../utils/format'
 import { API_BASE_URL } from '../../utils/api'
