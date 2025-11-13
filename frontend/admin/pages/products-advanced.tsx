@@ -514,7 +514,54 @@ export default function AdminProductsPageAdvanced() {
               </TabsContent>
 
               <TabsContent value="imagens" className="space-y-4 mt-4">
-                <p className="text-sm text-muted-foreground">Upload de imagens será implementado aqui</p>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="images">Imagens do Produto</Label>
+                    <Input
+                      id="images"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      multiple
+                      onChange={handleImageChange}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Formatos aceitos: JPG, PNG, WebP, GIF. Máximo 5MB por imagem.
+                    </p>
+                  </div>
+
+                  {imageErrors.length > 0 && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                      <p className="text-sm font-medium text-red-800">Erros de validação:</p>
+                      <ul className="mt-1 text-sm text-red-700 list-disc list-inside">
+                        {imageErrors.map((error: string, index: number) => (
+                          <li key={index}>{error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {uploadingImages.length > 0 && (
+                    <div className="grid grid-cols-4 gap-4">
+                      {uploadingImages.map((file: File, index: number) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-lg border"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                          <p className="mt-1 text-xs text-muted-foreground truncate">{file.name}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </TabsContent>
 
               <TabsContent value="seo" className="space-y-4 mt-4">
