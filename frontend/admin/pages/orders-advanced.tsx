@@ -23,6 +23,8 @@ type Order = {
   customer_id?: number | null
   email: string
   stripe_payment_intent_id?: string | null
+  shipping_address_json?: string | null
+  billing_address_json?: string | null
   customer?: {
     id: number
     email: string
