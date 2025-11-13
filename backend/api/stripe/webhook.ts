@@ -50,6 +50,16 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
           if (order) {
             finalOrderId = order.id;
           }
+        } else {
+          // Try to find order by stripe_payment_intent_id as fallback
+          const order = await executeOne<{ id: number }>(
+            db,
+            'SELECT id FROM orders WHERE stripe_payment_intent_id = ?',
+            [paymentIntent.id]
+          );
+          if (order) {
+            finalOrderId = order.id;
+          }
         }
 
         if (finalOrderId) {
@@ -60,6 +70,26 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
             paymentIntent.id,
             paymentIntent.latest_charge as string
           );
+
+          // Adicionar tracking history
+          try {
+            await executeRun(
+              db,
+              `INSERT INTO order_status_history (
+                order_id, status, payment_status, fulfillment_status, notes, created_at
+              ) VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+              [
+                finalOrderId,
+                'paid',
+                'paid',
+                'unfulfilled',
+                `Pagamento confirmado via Stripe - Payment Intent: ${paymentIntent.id}`,
+              ]
+            );
+          } catch (err) {
+            console.error('Error adding tracking history:', err);
+            // Não falhar se a tabela não existir ainda
+          }
 
           // Diminuir estoque dos produtos
           const orderItems = await executeQuery<{
