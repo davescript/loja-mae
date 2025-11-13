@@ -27,6 +27,8 @@ import AdminCategoriesPage from './admin/pages/categories';
 import AdminOrdersPage from './admin/pages/orders-advanced';
 import AdminCustomersPage from './admin/pages/customers-advanced';
 import AdminCouponsPage from './admin/pages/coupons-advanced';
+import AdminBlogPage from './admin/pages/blog';
+import AdminAnalyticsPage from './admin/pages/analytics';
 import AdminSettingsPage from './admin/pages/settings-advanced';
 
 function App() {
