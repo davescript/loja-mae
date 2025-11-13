@@ -27,6 +27,7 @@ import AdminCategoriesPage from './admin/pages/categories-advanced';
 import AdminCollectionsPage from './admin/pages/collections';
 import AdminOrdersPage from './admin/pages/orders-advanced';
 import AdminCustomersPage from './admin/pages/customers-advanced';
+import AdminMarketingPage from './admin/pages/marketing';
 import AdminCouponsPage from './admin/pages/coupons-advanced';
 import AdminCampaignsPage from './admin/pages/campaigns';
 import AdminBannersPage from './admin/pages/banners';
@@ -64,6 +65,7 @@ function App() {
         <Route path="collections" element={<AdminCollectionsPage />} />
         <Route path="orders" element={<AdminOrdersPage />} />
         <Route path="customers" element={<AdminCustomersPage />} />
+        <Route path="marketing" element={<AdminMarketingPage />} />
         <Route path="coupons" element={<AdminCouponsPage />} />
         <Route path="campaigns" element={<AdminCampaignsPage />} />
         <Route path="banners" element={<AdminBannersPage />} />
