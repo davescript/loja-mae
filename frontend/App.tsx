@@ -21,6 +21,17 @@ import AccountPage from './storefront/pages/account';
 import FavoritesPage from './storefront/pages/favorites';
 import OrdersPage from './storefront/pages/orders';
 
+// Customer Portal Layout and Pages
+import CustomerPortalLayout from './storefront/layout/CustomerPortalLayout';
+import CustomerDashboardPage from './storefront/pages/account/dashboard';
+import CustomerOrdersPage from './storefront/pages/account/orders';
+import CustomerOrderDetailsPage from './storefront/pages/account/orders/[orderNumber]';
+import CustomerProfilePage from './storefront/pages/account/profile';
+import CustomerAddressesPage from './storefront/pages/account/addresses';
+import CustomerPaymentsPage from './storefront/pages/account/payments';
+import CustomerSupportPage from './storefront/pages/account/support';
+import CustomerNotificationsPage from './storefront/pages/account/notifications';
+
 // Admin routes
 import AdminLayout from './admin/layout/AdvancedLayout';
 import AdminLoginPage from './admin/pages/login';
@@ -56,9 +67,20 @@ function App() {
         <Route path="checkout/failed" element={<CheckoutFailedPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
-        <Route path="account" element={<AccountPage />} />
         <Route path="favorites" element={<FavoritesPage />} />
         <Route path="orders" element={<OrdersPage />} />
+        
+        {/* Customer Portal Routes - New Portal */}
+        <Route path="account" element={<CustomerPortalLayout />}>
+          <Route index element={<CustomerDashboardPage />} />
+          <Route path="orders" element={<CustomerOrdersPage />} />
+          <Route path="orders/:orderNumber" element={<CustomerOrderDetailsPage />} />
+          <Route path="profile" element={<CustomerProfilePage />} />
+          <Route path="addresses" element={<CustomerAddressesPage />} />
+          <Route path="payments" element={<CustomerPaymentsPage />} />
+          <Route path="support" element={<CustomerSupportPage />} />
+          <Route path="notifications" element={<CustomerNotificationsPage />} />
+        </Route>
       </Route>
 
       {/* Admin Routes */}
