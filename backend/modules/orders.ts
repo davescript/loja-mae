@@ -175,9 +175,21 @@ export async function getOrder(
   id: number,
   includeItems: boolean = false
 ): Promise<Order | null> {
-  const order = await executeOne<Order>(
+  // Buscar pedido com dados do cliente via JOIN
+  const order = await executeOne<Order & {
+    customer_first_name: string | null;
+    customer_last_name: string | null;
+    customer_email: string | null;
+  }>(
     db,
-    'SELECT * FROM orders WHERE id = ?',
+    `SELECT 
+      o.*,
+      c.first_name as customer_first_name,
+      c.last_name as customer_last_name,
+      c.email as customer_email
+    FROM orders o
+    LEFT JOIN customers c ON o.customer_id = c.id
+    WHERE o.id = ?`,
     [id]
   );
 
@@ -185,16 +197,41 @@ export async function getOrder(
     return null;
   }
 
+  // Montar objeto customer se existir
+  const customer = order.customer_id ? {
+    id: order.customer_id,
+    email: order.customer_email || order.email,
+    first_name: order.customer_first_name,
+    last_name: order.customer_last_name,
+    phone: null,
+    date_of_birth: null,
+    gender: null,
+    is_active: 1,
+    email_verified: 0,
+    created_at: '',
+    updated_at: '',
+  } : undefined;
+
+  const orderResult: Order = {
+    ...order,
+    customer: customer,
+  };
+
+  // Remover campos temporários
+  delete (orderResult as any).customer_first_name;
+  delete (orderResult as any).customer_last_name;
+  delete (orderResult as any).customer_email;
+
   if (includeItems) {
     const items = await executeQuery<OrderItem>(
       db,
       'SELECT * FROM order_items WHERE order_id = ?',
       [id]
     );
-    return { ...order, items: items || [] };
+    return { ...orderResult, items: items || [] };
   }
 
-  return order;
+  return orderResult;
 }
 
 export async function getOrderByNumber(
@@ -260,9 +297,20 @@ export async function listOrders(
   const orderBy = `${sortBy} ${sortOrder.toUpperCase()}`;
 
   const [items, totalResult] = await Promise.all([
-    executeQuery<Order>(
+    executeQuery<Order & {
+      customer_first_name: string | null;
+      customer_last_name: string | null;
+      customer_email: string | null;
+    }>(
       db,
-      `SELECT * FROM orders WHERE ${whereClause} ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
+      `SELECT 
+        o.*,
+        c.first_name as customer_first_name,
+        c.last_name as customer_last_name,
+        c.email as customer_email
+      FROM orders o
+      LEFT JOIN customers c ON o.customer_id = c.id
+      WHERE ${whereClause} ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
       [...params, pageSize, offset]
     ),
     executeOne<{ count: number }>(
@@ -272,8 +320,37 @@ export async function listOrders(
     ),
   ]);
 
+  // Mapear resultados para incluir objeto customer
+  const mappedItems = (items || []).map(order => {
+    const customer = order.customer_id ? {
+      id: order.customer_id,
+      email: order.customer_email || order.email,
+      first_name: order.customer_first_name,
+      last_name: order.customer_last_name,
+      phone: null,
+      date_of_birth: null,
+      gender: null,
+      is_active: 1,
+      email_verified: 0,
+      created_at: '',
+      updated_at: '',
+    } : undefined;
+
+    const result: Order = {
+      ...order,
+      customer: customer,
+    };
+
+    // Remover campos temporários
+    delete (result as any).customer_first_name;
+    delete (result as any).customer_last_name;
+    delete (result as any).customer_email;
+
+    return result;
+  });
+
   return {
-    items: items || [],
+    items: mappedItems,
     total: totalResult?.count || 0,
   };
 }

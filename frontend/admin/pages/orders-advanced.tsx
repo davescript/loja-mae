@@ -20,10 +20,15 @@ type Order = {
   total_cents: number
   created_at: string
   updated_at?: string
+  customer_id?: number | null
+  email: string
   stripe_payment_intent_id?: string | null
   customer?: {
-    name: string
+    id: number
     email: string
+    first_name: string | null
+    last_name: string | null
+    phone: string | null
   }
 }
 
@@ -394,12 +399,28 @@ export default function AdminOrdersPageAdvanced() {
                   <div className="space-y-2">
                     <div>
                       <span className="text-sm font-medium">Nome: </span>
-                      <span className="text-sm">{orderDetails.customer?.name || "N/A"}</span>
+                      <span className="text-sm">
+                        {orderDetails.customer?.first_name || orderDetails.customer?.last_name
+                          ? `${orderDetails.customer.first_name || ''} ${orderDetails.customer.last_name || ''}`.trim()
+                          : orderDetails.email || "N/A"}
+                      </span>
                     </div>
                     <div>
                       <span className="text-sm font-medium">Email: </span>
-                      <span className="text-sm">{orderDetails.customer?.email || "N/A"}</span>
+                      <span className="text-sm">{orderDetails.customer?.email || orderDetails.email || "N/A"}</span>
                     </div>
+                    {orderDetails.customer?.phone && (
+                      <div>
+                        <span className="text-sm font-medium">Telefone: </span>
+                        <span className="text-sm">{orderDetails.customer.phone}</span>
+                      </div>
+                    )}
+                    {orderDetails.customer_id && (
+                      <div>
+                        <span className="text-sm font-medium">ID Cliente: </span>
+                        <span className="text-sm">#{orderDetails.customer_id}</span>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
