@@ -207,7 +207,9 @@ export default function AdminProductsPageAdvanced() {
     }
   }
 
-  const onSubmit = (data: ProductFormData) => {
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const data = form.getValues()
     saveMutation.mutate({
       ...data,
       price_cents: Math.round(data.price_cents * 100),
