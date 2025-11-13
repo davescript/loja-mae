@@ -221,7 +221,7 @@ export default function AdminProductsPageAdvanced() {
         sku: product.sku || "",
         stock_quantity: product.stock_quantity || 0,
         status: (product.status || "draft") as "draft" | "active" | "archived",
-        featured: product.featured === 1,
+        featured: (product.featured === 1 || product.featured === true),
         category_id: product.category_id || null,
         meta_title: (product as any).meta_title || "",
         meta_description: (product as any).meta_description || "",
@@ -373,6 +373,14 @@ export default function AdminProductsPageAdvanced() {
         </Button>
       </div>
 
+      {productsError && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg mb-4">
+          <p className="text-sm text-red-800">
+            Erro ao carregar produtos. Por favor, recarregue a página.
+          </p>
+        </div>
+      )}
+
       <DataTable
         data={productsData?.items || []}
         columns={columns}
@@ -406,7 +414,18 @@ export default function AdminProductsPageAdvanced() {
               <DropdownMenu.Content className="bg-white rounded-md shadow-lg border p-1 min-w-[150px]">
                 <DropdownMenu.Item
                   className="px-3 py-2 text-sm hover:bg-muted rounded-sm cursor-pointer flex items-center gap-2"
-                  onClick={() => handleEdit(product)}
+                  onClick={() => {
+                    try {
+                      handleEdit(product)
+                    } catch (error) {
+                      console.error('Erro ao abrir edição:', error)
+                      toast({
+                        title: "Erro",
+                        description: "Não foi possível abrir o formulário de edição",
+                        variant: "destructive",
+                      })
+                    }
+                  }}
                 >
                   <Edit className="w-4 h-4" />
                   Editar
