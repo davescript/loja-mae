@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../../../utils/api';
 import { formatPrice } from '../../../utils/format';
 import { Order } from '../../../../shared/types';
@@ -10,7 +10,8 @@ import {
   Truck, 
   DollarSign,
   TrendingUp,
-  ShoppingBag
+  ShoppingBag,
+  RefreshCw
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../admin/components/ui/card';
 import { Badge } from '../../../admin/components/ui/badge';
@@ -23,6 +24,12 @@ import { ptBR } from 'date-fns/locale';
 export default function CustomerDashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['customer-orders'] });
+    queryClient.invalidateQueries({ queryKey: ['customer-stats'] });
+  };
 
   // Fetch customer orders
   const { data: ordersData, isLoading: ordersLoading } = useQuery({
@@ -83,13 +90,25 @@ export default function CustomerDashboardPage() {
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
-      <div>
-        <h1 className="text-3xl font-bold mb-2">
-          Olá, {user?.name || (user?.email ? user.email.split('@')[0] : 'Cliente')}! 👋
-        </h1>
-        <p className="text-muted-foreground">
-          Bem-vindo ao seu portal. Acompanhe seus pedidos e gerencie sua conta.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">
+            Olá, {user?.name || (user?.email ? user.email.split('@')[0] : 'Cliente')}! 👋
+          </h1>
+          <p className="text-muted-foreground">
+            Bem-vindo ao seu portal. Acompanhe seus pedidos e gerencie sua conta.
+          </p>
+        </div>
+        <Button
+          onClick={handleRefresh}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+          disabled={ordersLoading}
+        >
+          <RefreshCw className={`w-4 h-4 ${ordersLoading ? 'animate-spin' : ''}`} />
+          Atualizar
+        </Button>
       </div>
 
       {/* Stats Cards */}

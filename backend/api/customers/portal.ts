@@ -192,10 +192,27 @@ export async function handleGetOrders(request: Request, env: Env): Promise<Respo
     const finalPage = limit ? 1 : page; // If limit is set, ignore pagination
     const offset = limit ? 0 : (finalPage - 1) * pageSize;
 
-    // Get orders
-    const orders = await executeQuery(
+    // Get orders with items count
+    const orders = await executeQuery<{
+      id: number;
+      order_number: string;
+      customer_id: number | null;
+      email: string;
+      status: string;
+      payment_status: string;
+      total_cents: number;
+      created_at: string;
+      updated_at: string;
+      items_count?: number;
+    }>(
       db,
-      `SELECT * FROM orders ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      `SELECT 
+        o.*,
+        (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as items_count
+      FROM orders o
+      ${whereClause} 
+      ORDER BY o.created_at DESC 
+      LIMIT ? OFFSET ?`,
       [...params, finalLimit, offset]
     );
 
@@ -219,6 +236,8 @@ export async function handleGetOrders(request: Request, env: Env): Promise<Respo
         return {
           ...order,
           items: items || [],
+          // Garantir que items_count esteja disponível
+          items_count: order.items_count || (items?.length || 0),
         };
       })
     );
