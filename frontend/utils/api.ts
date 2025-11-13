@@ -71,10 +71,10 @@ export async function apiRequest<T = any>(
       credentials: 'include',
     });
 
-    const data = await response.json();
+    const data = await response.json() as ApiResponse<T>;
     
     if (!response.ok) {
-      const errorMessage = (data as { error?: string }).error || `HTTP error! status: ${response.status}`;
+      const errorMessage = data.error || `HTTP error! status: ${response.status}`;
       console.error('API Error:', errorMessage, response.status);
       throw new Error(errorMessage);
     }

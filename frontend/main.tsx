@@ -12,7 +12,7 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       retry: 1,
       staleTime: 0, // Sempre buscar dados atualizados (0 = sempre stale)
-      cacheTime: 5 * 60 * 1000, // Manter cache por 5 minutos
+      gcTime: 5 * 60 * 1000, // Manter cache por 5 minutos (gcTime substitui cacheTime no React Query v5)
     },
   },
 });
