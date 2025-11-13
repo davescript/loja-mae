@@ -272,7 +272,7 @@ export default function AdminCustomersPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {selectedCustomer.addresses && selectedCustomer.addresses.length > 0 ? (
+                    {selectedCustomer.addresses && Array.isArray(selectedCustomer.addresses) && selectedCustomer.addresses.length > 0 ? (
                       <div className="space-y-4">
                         {selectedCustomer.addresses.map((address) => (
                           <div
