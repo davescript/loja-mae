@@ -35,7 +35,7 @@ export default function CustomerDashboardPage() {
   };
 
   // Fetch customer orders
-  const { data: ordersData, isLoading: ordersLoading } = useQuery({
+  const { data: ordersData, isLoading: ordersLoading, refetch: refetchOrders } = useQuery({
     queryKey: ['customer-orders', 'dashboard'],
     queryFn: async () => {
       const response = await apiRequest<{ items: Order[]; total: number }>('/api/customers/orders?limit=5');
