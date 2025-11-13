@@ -34,50 +34,50 @@ export const useCartStore = create<CartStore>()(
       isLoading: false,
 
       addItem: (item) => {
-          try {
-            console.log('🛒 addItem chamado com:', item);
-            const { items } = get()
-            console.log('📦 Itens atuais no carrinho:', items);
-            
-            const existingIndex = items.findIndex(
-              (i) => i.product_id === item.product_id && i.variant_id === item.variant_id
-            )
+        try {
+          console.log('🛒 addItem chamado com:', item);
+          const { items } = get()
+          console.log('📦 Itens atuais no carrinho:', items);
+          
+          const existingIndex = items.findIndex(
+            (i) => i.product_id === item.product_id && i.variant_id === item.variant_id
+          )
 
-            if (existingIndex >= 0) {
-              // Atualizar quantidade se já existe
-              const updatedItems = [...items]
-              updatedItems[existingIndex] = {
-                ...updatedItems[existingIndex],
-                quantity: updatedItems[existingIndex].quantity + (item.quantity || 1),
-              }
-              console.log('➕ Atualizando quantidade do item existente');
-              set({ items: updatedItems })
-            } else {
-              // Adicionar novo item
-              const newItem = { ...item, quantity: item.quantity || 1 };
-              console.log('➕ Adicionando novo item:', newItem);
-              set({
-                items: [...items, newItem],
-              })
+          if (existingIndex >= 0) {
+            // Atualizar quantidade se já existe
+            const updatedItems = [...items]
+            updatedItems[existingIndex] = {
+              ...updatedItems[existingIndex],
+              quantity: updatedItems[existingIndex].quantity + (item.quantity || 1),
             }
-
-            // Sincronizar com servidor se usuário estiver logado
-            const token = localStorage.getItem('customer_token') || localStorage.getItem('token')
-            if (token) {
-              console.log('🔄 Sincronizando carrinho com servidor...');
-              get().syncWithServer().catch(err => {
-                console.error('❌ Erro ao sincronizar carrinho:', err);
-              });
-            } else {
-              console.log('ℹ️ Usuário não logado, carrinho apenas no localStorage');
-            }
-            
-            console.log('✅ addItem concluído. Novo estado:', get().items);
-          } catch (error) {
-            console.error('❌ Erro em addItem:', error);
-            throw error;
+            console.log('➕ Atualizando quantidade do item existente');
+            set({ items: updatedItems })
+          } else {
+            // Adicionar novo item
+            const newItem = { ...item, quantity: item.quantity || 1 };
+            console.log('➕ Adicionando novo item:', newItem);
+            set({
+              items: [...items, newItem],
+            })
           }
-        },
+
+          // Sincronizar com servidor se usuário estiver logado
+          const token = localStorage.getItem('customer_token') || localStorage.getItem('token')
+          if (token) {
+            console.log('🔄 Sincronizando carrinho com servidor...');
+            get().syncWithServer().catch(err => {
+              console.error('❌ Erro ao sincronizar carrinho:', err);
+            });
+          } else {
+            console.log('ℹ️ Usuário não logado, carrinho apenas no localStorage');
+          }
+          
+          console.log('✅ addItem concluído. Novo estado:', get().items);
+        } catch (error) {
+          console.error('❌ Erro em addItem:', error);
+          throw error;
+        }
+      },
 
       removeItem: (productId, variantId = null) => {
         const { items } = get()
