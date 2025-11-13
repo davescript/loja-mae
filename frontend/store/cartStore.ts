@@ -29,11 +29,25 @@ const CART_KEY = 'loja-mae-cart'
 
 export const useCartStore = create<CartStore>()(
   persist(
-    (set, get) => ({
-      items: [],
-      isLoading: false,
+    (set, get) => {
+      // Carregar do servidor na inicialização se usuário estiver logado
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('customer_token') || localStorage.getItem('token');
+        if (token) {
+          // Carregar do servidor após um pequeno delay para garantir que a store está inicializada
+          setTimeout(() => {
+            get().loadFromServer().catch(err => {
+              console.error('Erro ao carregar carrinho na inicialização:', err);
+            });
+          }, 100);
+        }
+      }
 
-      addItem: (item) => {
+      return {
+        items: [],
+        isLoading: false,
+
+        addItem: (item) => {
         try {
           console.log('🛒 addItem chamado com:', item);
           const { items } = get()
@@ -152,16 +166,24 @@ export const useCartStore = create<CartStore>()(
 
       loadFromServer: async () => {
         const token = localStorage.getItem('customer_token') || localStorage.getItem('token')
-        if (!token) return
+        if (!token) {
+          console.log('🛒 Usuário não logado, mantendo carrinho do localStorage');
+          return
+        }
 
         set({ isLoading: true })
         try {
+          console.log('🛒 Carregando carrinho do servidor...');
           const response = await apiRequest<{ items: CartItem[] }>('/api/cart')
-          if (response.data?.items) {
+          if (response.data?.items && Array.isArray(response.data.items)) {
+            console.log('🛒 Carrinho carregado do servidor:', response.data.items.length, 'itens');
             set({ items: response.data.items })
+          } else {
+            console.log('🛒 Nenhum item no carrinho do servidor, mantendo localStorage');
           }
         } catch (error) {
-          console.error('Erro ao carregar carrinho:', error)
+          console.error('❌ Erro ao carregar carrinho do servidor:', error);
+          // Em caso de erro, manter itens do localStorage
         } finally {
           set({ isLoading: false })
         }
