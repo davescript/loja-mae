@@ -118,11 +118,33 @@ export default function CheckoutPage() {
   // Carregar chave pública do Stripe
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/stripe/config`)
-      .then((res) => res.json())
-      .then((data: any) => {
-        setPublishableKey(data.publishableKey || null)
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`)
+        }
+        return res.json()
       })
-      .catch(() => setPublishableKey(null))
+      .then((data: any) => {
+        const key = data.data?.publishableKey || data.publishableKey
+        if (!key) {
+          console.error('Publishable key não encontrada na resposta:', data)
+          toast({
+            title: 'Erro de configuração',
+            description: 'Stripe não está configurado corretamente',
+            variant: 'destructive',
+          })
+        }
+        setPublishableKey(key || null)
+      })
+      .catch((error) => {
+        console.error('Erro ao carregar chave pública do Stripe:', error)
+        toast({
+          title: 'Erro',
+          description: 'Não foi possível carregar a configuração do Stripe',
+          variant: 'destructive',
+        })
+        setPublishableKey(null)
+      })
   }, [])
 
   // Criar Payment Intent quando a página carregar
@@ -193,13 +215,15 @@ export default function CheckoutPage() {
       setClientSecret(clientSecret)
       setOrderNumber(orderNum || null)
     } catch (error: any) {
+      console.error('Erro ao criar Payment Intent:', error)
       const { message } = handleError(error)
       toast({
-        title: 'Erro',
-        description: message || 'Erro ao iniciar checkout',
+        title: 'Erro ao criar pedido',
+        description: message || 'Erro ao iniciar checkout. Verifique se há produtos no carrinho.',
         variant: 'destructive',
       })
-      navigate('/cart')
+      // Não navegar automaticamente - deixar usuário tentar novamente
+      // navigate('/cart')
     } finally {
       setCreating(false)
     }
@@ -267,14 +291,38 @@ export default function CheckoutPage() {
   }
 
   if (!clientSecret || !stripePromise) {
+    const errorMessage = !publishableKey 
+      ? 'Chave pública do Stripe não carregada'
+      : !clientSecret
+      ? 'Payment Intent não foi criado'
+      : 'Erro ao carregar checkout'
+    
     return (
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-2xl mx-auto text-center">
           <XCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
-          <p className="text-lg">Erro ao carregar checkout. Tente novamente.</p>
-          <Button onClick={() => navigate('/cart')} className="mt-4">
-            Voltar ao Carrinho
-          </Button>
+          <p className="text-lg mb-2">{errorMessage}</p>
+          {creating && (
+            <p className="text-sm text-muted-foreground mb-4">Aguarde, estamos processando...</p>
+          )}
+          <div className="space-y-2">
+            <Button onClick={() => navigate('/cart')} className="mt-4">
+              Voltar ao Carrinho
+            </Button>
+            {!creating && (
+              <Button 
+                onClick={() => {
+                  setClientSecret(null)
+                  setPublishableKey(null)
+                  createPaymentIntent()
+                }} 
+                variant="outline"
+                className="ml-2"
+              >
+                Tentar Novamente
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     )
