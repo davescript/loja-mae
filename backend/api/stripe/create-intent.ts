@@ -153,6 +153,25 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
       // Guest checkout - email padrão
     }
     
+    // Criar endereço padrão se não fornecido (shipping_address_json é NOT NULL)
+    const defaultAddress = {
+      street: '',
+      city: '',
+      postal_code: '',
+      country: 'PT',
+      address_line1: '',
+      address_line2: '',
+      state: '',
+    };
+    
+    const shippingAddressJson = body.shipping_address 
+      ? JSON.stringify(body.shipping_address)
+      : JSON.stringify(defaultAddress);
+    
+    const billingAddressJson = body.shipping_address 
+      ? JSON.stringify(body.shipping_address)
+      : JSON.stringify(defaultAddress);
+    
     const orderResult = await executeRun(
       db,
       `INSERT INTO orders (
@@ -172,8 +191,8 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
         shippingCents,
         discountCents,
         totalCents,
-        body.shipping_address ? JSON.stringify(body.shipping_address) : null,
-        body.shipping_address ? JSON.stringify(body.shipping_address) : null, // billing same as shipping for now
+        shippingAddressJson,
+        billingAddressJson,
       ]
     );
 
