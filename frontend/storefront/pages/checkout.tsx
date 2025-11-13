@@ -376,19 +376,8 @@ export default function CheckoutPage() {
           colorPrimary: '#8B4513',
         },
       },
-      // IMPORTANTE: Configurar PaymentElement para coletar endereço de entrega
-      fields: {
-        billingDetails: {
-          name: 'never', // Não coletar nome separadamente (já está no endereço)
-          email: 'never', // Não coletar email (já temos)
-          phone: 'auto', // Coletar telefone se necessário
-          address: {
-            country: 'never', // País já definido como PT
-          },
-        },
-      },
-      // Solicitar endereço de entrega
-      paymentMethodTypes: ['card'],
+      // Remover paymentMethodTypes - não é necessário aqui
+      // O AddressElement e PaymentElement são configurados separadamente
     }
   }, [clientSecret])
 
