@@ -223,7 +223,14 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
       );
     }
 
+    // Validar valor mínimo para EUR (Stripe requer mínimo de 0.50 EUR = 50 centavos)
+    if (totalCents < 50) {
+      return errorResponse('Valor mínimo do pedido é €0,50', 400);
+    }
+
     // Criar Payment Intent no Stripe
+    // Nota: Para EUR, o valor mínimo é 0.50 EUR (50 centavos)
+    // Para métodos como Klarna, Bancontact, etc., pode haver requisitos adicionais
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalCents,
       currency: 'eur',
@@ -232,10 +239,16 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
         order_number: orderNumber,
         customer_id: customerId?.toString() || 'guest',
       },
-      automatic_payment_methods: {
-        enabled: true,
-      },
+      // Usar apenas card para evitar problemas com métodos que requerem configuração adicional
+      payment_method_types: ['card'],
+      // Manter automatic_payment_methods desabilitado para evitar métodos não configurados
+      // automatic_payment_methods: {
+      //   enabled: true,
+      // },
       description: `Pedido ${orderNumber} - Loja Mãe`,
+      capture_method: 'automatic',
+      // Adicionar informações de confirmação
+      confirmation_method: 'automatic',
     });
 
     if (!paymentIntent.client_secret) {
