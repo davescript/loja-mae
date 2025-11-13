@@ -77,22 +77,21 @@ export async function apiRequest<T = any>(
       
       // Handle specific status codes
       if (response.status === 401) {
-        // Only clear the token that was used for this request
-        // Don't clear admin_token if this was a customer request and vice versa
+        // Only clear tokens if this was an authentication error
+        // Don't clear admin_token automatically - let useAdminAuth handle it
+        // This prevents clearing tokens on hard refresh or network errors
         if (typeof window !== 'undefined') {
-          const tokenUsed = localStorage.getItem('admin_token') || localStorage.getItem('customer_token') || localStorage.getItem('token');
-          // Only clear if we actually used a token
-          if (tokenUsed) {
-            // Clear the specific token that was used
-            if (localStorage.getItem('admin_token') === tokenUsed) {
-              // Only clear admin token if this was an admin request
-              // Don't clear on hard refresh - let useAdminAuth handle it
-            } else {
-              // Clear customer tokens
-              localStorage.removeItem('customer_token');
-              localStorage.removeItem('token');
-            }
+          const adminToken = localStorage.getItem('admin_token');
+          const tokenUsed = adminToken || localStorage.getItem('customer_token') || localStorage.getItem('token');
+          
+          // Only clear if we actually used a token AND it's not an admin token
+          // Admin tokens should only be cleared by useAdminAuth when truly invalid
+          if (tokenUsed && !adminToken) {
+            // Clear customer tokens only
+            localStorage.removeItem('customer_token');
+            localStorage.removeItem('token');
           }
+          // Don't clear admin_token here - let useAdminAuth handle it
         }
         throw new AuthenticationError(data.error || 'Não autenticado');
       }
