@@ -19,7 +19,7 @@ import FavoritesPage from './storefront/pages/favorites';
 import OrdersPage from './storefront/pages/orders';
 
 // Admin routes
-import AdminLayout from './admin/layout/Layout';
+import AdminLayout from './admin/layout/AdvancedLayout';
 import AdminLoginPage from './admin/pages/login';
 import AdminDashboardPage from './admin/pages/dashboard';
 import AdminProductsPage from './admin/pages/products';
