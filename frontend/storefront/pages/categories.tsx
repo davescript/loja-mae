@@ -2,14 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { apiRequest } from '../../utils/api';
 import { motion } from 'framer-motion';
-import { Search, Grid, List, Filter, ChevronRight, Package, Sparkles } from 'lucide-react';
+import { Search, Grid, List, ChevronRight, Package, X } from 'lucide-react';
 import { useState } from 'react';
 import type { Category } from '@shared/types';
 
 export default function CategoriesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
 
   const { data: categories, isLoading } = useQuery({
     queryKey: ['categories', 'active'],
@@ -47,46 +46,59 @@ export default function CategoriesPage() {
     return categoryColors[index % categoryColors.length];
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+  };
+
   return (
     <div className="min-h-screen pb-20">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-secondary/20 to-accent/10 py-16 md:py-24 mb-12">
-        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+      {/* Hero Section - Compacto */}
+      <section className="relative py-6 md:py-8 mb-6">
         <div className="container mx-auto px-4 relative">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center max-w-3xl mx-auto"
+            className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
           >
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold mb-4">
-              Nossas Categorias
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-8">
-              Explore nossa seleção completa de produtos organizados por categoria
-            </p>
+            <div className="flex-1">
+              <h1 className="text-xl md:text-2xl font-heading font-bold mb-2">
+                Nossas Categorias
+              </h1>
+              <p className="text-sm text-muted-foreground hidden md:block">
+                Explore nossa seleção completa de produtos organizados por categoria
+              </p>
+            </div>
             
-            {/* Search Bar */}
-            <div className="max-w-2xl mx-auto">
+            {/* Search Bar - Compacta */}
+            <form onSubmit={handleSearch} className="flex-1 max-w-md">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type="search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Buscar categorias..."
-                  className="input pl-12 w-full bg-white/80 backdrop-blur-sm border-2 focus:border-primary"
+                  className="input pl-10 pr-10 py-2 text-sm bg-white/80 backdrop-blur-sm border focus:border-primary"
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
-            </div>
+            </form>
           </motion.div>
         </div>
       </section>
 
       {/* Controls Bar */}
-      <div className="container mx-auto px-4 mb-8">
+      <div className="container mx-auto px-4 mb-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">
               {filteredCategories.length} {filteredCategories.length === 1 ? 'categoria' : 'categorias'}
             </span>
@@ -133,24 +145,35 @@ export default function CategoriesPage() {
           </div>
         ) : filteredCategories.length === 0 ? (
           <div className="card p-12 text-center">
-            <Package className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+            <Search className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-xl font-semibold mb-2">Nenhuma categoria encontrada</h3>
-            <p className="text-muted-foreground">
-              {searchQuery ? 'Tente buscar com outros termos' : 'Nenhuma categoria disponível no momento'}
+            <p className="text-muted-foreground mb-6">
+              {searchQuery ? 'Tente buscar com outros termos ou limpe a busca' : 'Nenhuma categoria disponível no momento'}
             </p>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="btn btn-primary"
+              >
+                Limpar busca
+              </button>
+            )}
           </div>
         ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className={`grid gap-6 ${
+            viewMode === 'grid' 
+              ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
+              : 'grid-cols-1'
+          }`}>
             {filteredCategories.map((category, index) => {
               const color = getCategoryColor(index);
               return (
                 <motion.div
                   key={category.id}
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: index * 0.05, duration: 0.5 }}
-                  whileHover={{ y: -8, scale: 1.02 }}
+                  transition={{ delay: index * 0.05, duration: 0.3 }}
                 >
                   <Link
                     to={`/products?category_id=${category.id}`}
@@ -162,12 +185,11 @@ export default function CategoriesPage() {
                     {/* Content */}
                     <div className="relative p-6 md:p-8 flex flex-col h-full">
                       {/* Icon */}
-                      <motion.div
-                        whileHover={{ scale: 1.1, rotate: 5 }}
+                      <div
                         className={`w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 rounded-2xl ${color.bg} flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all`}
                       >
                         <Package className={`w-8 h-8 md:w-10 md:h-10 ${color.text}`} />
-                      </motion.div>
+                      </div>
                       
                       {/* Title */}
                       <h3 className="font-bold text-lg md:text-xl text-center mb-2 group-hover:text-primary transition-colors">
@@ -182,14 +204,10 @@ export default function CategoriesPage() {
                       )}
                       
                       {/* CTA */}
-                      <motion.div
-                        initial={{ opacity: 0, x: -10 }}
-                        whileHover={{ opacity: 1, x: 0 }}
-                        className="mt-auto flex items-center justify-center gap-2 text-primary font-semibold text-sm"
-                      >
+                      <div className="mt-auto flex items-center justify-center gap-2 text-primary font-semibold text-sm">
                         <span>Explorar</span>
                         <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </motion.div>
+                      </div>
                     </div>
                     
                     {/* Shine Effect */}
@@ -209,8 +227,7 @@ export default function CategoriesPage() {
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: index * 0.05, duration: 0.5 }}
-                  whileHover={{ x: 4 }}
+                  transition={{ delay: index * 0.05, duration: 0.3 }}
                 >
                   <Link
                     to={`/products?category_id=${category.id}`}
@@ -218,12 +235,11 @@ export default function CategoriesPage() {
                   >
                     <div className="flex items-center gap-6">
                       {/* Icon */}
-                      <motion.div
-                        whileHover={{ scale: 1.1, rotate: 5 }}
+                      <div
                         className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl ${color.bg} flex items-center justify-center shadow-lg flex-shrink-0`}
                       >
                         <Package className={`w-8 h-8 md:w-10 md:h-10 ${color.text}`} />
-                      </motion.div>
+                      </div>
                       
                       {/* Content */}
                       <div className="flex-1 min-w-0">
@@ -238,12 +254,9 @@ export default function CategoriesPage() {
                       </div>
                       
                       {/* Arrow */}
-                      <motion.div
-                        whileHover={{ x: 4 }}
-                        className="flex-shrink-0 text-primary"
-                      >
-                        <ChevronRight className="w-6 h-6" />
-                      </motion.div>
+                      <div className="flex-shrink-0 text-primary">
+                        <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                      </div>
                     </div>
                   </Link>
                 </motion.div>
@@ -252,29 +265,6 @@ export default function CategoriesPage() {
           </div>
         )}
       </div>
-
-      {/* Empty State Illustration */}
-      {!isLoading && filteredCategories.length === 0 && searchQuery && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="container mx-auto px-4 mt-12"
-        >
-          <div className="card p-12 text-center max-w-md mx-auto">
-            <Sparkles className="w-16 h-16 mx-auto mb-4 text-primary" />
-            <h3 className="text-xl font-semibold mb-2">Nenhum resultado encontrado</h3>
-            <p className="text-muted-foreground mb-6">
-              Não encontramos categorias com "{searchQuery}". Tente buscar com outros termos.
-            </p>
-            <button
-              onClick={() => setSearchQuery('')}
-              className="btn btn-primary"
-            >
-              Limpar busca
-            </button>
-          </div>
-        </motion.div>
-      )}
     </div>
   );
 }
