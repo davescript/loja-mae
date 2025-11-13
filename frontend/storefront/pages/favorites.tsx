@@ -24,7 +24,7 @@ export default function FavoritesPage() {
       try {
         // Fetch products by IDs
         const productPromises = favorites.map((id) =>
-          apiRequest<Product>(`/api/products/${id}?include=images`).catch(() => null)
+          apiRequest<Product>(`/api/products/${id}?include=all`).catch(() => null)
         );
         
         const results = await Promise.all(productPromises);
