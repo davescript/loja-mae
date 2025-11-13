@@ -125,7 +125,9 @@ export async function apiFormData<T = any>(
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   // Admin token takes priority, then customer token, then regular token
-  const token = localStorage.getItem('admin_token') || localStorage.getItem('customer_token') || localStorage.getItem('token');
+  const token = typeof window !== 'undefined'
+    ? localStorage.getItem('admin_token') || localStorage.getItem('customer_token') || localStorage.getItem('token')
+    : null;
   
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string> || {}),
@@ -133,9 +135,20 @@ export async function apiFormData<T = any>(
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+  } else if (typeof window !== 'undefined') {
+    // Log warning in development if no token found
+    if (import.meta.env.DEV) {
+      console.warn('No authentication token found for FormData request:', endpoint);
+    }
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  const url = `${API_BASE_URL}${endpoint}`;
+  // Only log in development
+  if (import.meta.env.DEV) {
+    console.log('API FormData Request:', url, { hasToken: !!token });
+  }
+
+  const response = await fetch(url, {
     ...options,
     method: options.method || 'POST',
     headers,

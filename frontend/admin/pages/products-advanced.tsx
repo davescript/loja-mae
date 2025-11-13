@@ -103,6 +103,12 @@ export default function AdminProductsPageAdvanced() {
 
   const saveMutation = useMutation({
     mutationFn: async (formData: FormData) => {
+      // Verificar se há token antes de fazer a requisição
+      const token = localStorage.getItem('admin_token');
+      if (!token) {
+        throw new Error('Você precisa estar autenticado para criar/editar produtos. Por favor, faça login novamente.');
+      }
+
       const endpoint = editingProduct ? `/api/products/${editingProduct.id}` : "/api/products"
       return apiFormData<Product>(endpoint, formData, {
         method: editingProduct ? "PUT" : "POST",
@@ -125,6 +131,22 @@ export default function AdminProductsPageAdvanced() {
     },
     onError: (error: any) => {
       console.error('Erro ao salvar produto:', error)
+      
+      // Se for erro de autenticação, redirecionar para login
+      if (error?.message?.includes('Authentication') || error?.message?.includes('autenticado') || error?.message?.includes('401')) {
+        toast({
+          title: "Sessão expirada",
+          description: "Sua sessão expirou. Por favor, faça login novamente.",
+          variant: "destructive",
+        })
+        // Limpar tokens e redirecionar após um breve delay
+        setTimeout(() => {
+          localStorage.removeItem('admin_token');
+          window.location.href = '/admin/login';
+        }, 1500);
+        return;
+      }
+
       const errorMessage = error?.message || error?.error || "Erro ao salvar produto"
       toast({
         title: "Erro",

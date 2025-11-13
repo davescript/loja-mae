@@ -26,12 +26,22 @@ export function useAdminAuth() {
     queryKey: ['admin', 'me'],
     queryFn: async () => {
       try {
+        // Verificar se há token antes de fazer a requisição
+        const token = localStorage.getItem('admin_token');
+        if (!token) {
+          return null;
+        }
+
         const response = await apiRequest<{ user: AdminUser; type: 'admin' }>('/api/auth/me');
         if (response.data?.type === 'admin') {
           return response.data.user;
         }
         throw new Error('Not an admin');
       } catch (error) {
+        // Se for erro de autenticação, limpar token
+        if (error instanceof Error && (error.message.includes('Authentication') || error.message.includes('401'))) {
+          localStorage.removeItem('admin_token');
+        }
         // Silently fail if not authenticated
         return null;
       }
