@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Search, ShoppingCart, User, Menu, X, Heart } from 'lucide-react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useCartStore } from '../../../store/cartStore';
+import { useFavoritesStore } from '../../../store/favoritesStore';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function StoreHeader() {
@@ -11,9 +12,11 @@ export default function StoreHeader() {
   const [searchQuery, setSearchQuery] = useState('');
   const { isAuthenticated, user } = useAuth();
   const { getItemCount } = useCartStore();
+  const { getCount: getFavoritesCount } = useFavoritesStore();
   const navigate = useNavigate();
   
   const cartItemCount = getItemCount();
+  const favoritesCount = getFavoritesCount();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,9 +130,15 @@ export default function StoreHeader() {
                 aria-label="Favoritos"
               >
                 <Heart className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center font-semibold shadow-md">
-                  0
-                </span>
+                {favoritesCount > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-1 -right-1 min-w-[1.25rem] h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center font-semibold shadow-md px-1"
+                  >
+                    {favoritesCount > 99 ? '99+' : favoritesCount}
+                  </motion.span>
+                )}
               </Link>
 
               {/* Cart */}
