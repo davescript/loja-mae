@@ -1,5 +1,5 @@
 import * as Dialog from '@radix-ui/react-dialog';
-import { X, ChevronLeft, ChevronRight, ShoppingCart, Heart } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, ShoppingCart, Heart, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,7 +19,12 @@ type QuickViewModalProps = {
 export default function QuickViewModal({ open, onOpenChange, product }: QuickViewModalProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [zoomLevel, setZoomLevel] = useState(1); // 1 = 100%, 2 = 200%, etc.
+  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const modalRef = useRef<HTMLDivElement>(null);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
   const { addItem } = useCartStore();
   const { toggleFavorite, isFavorite } = useFavoritesStore();
   const { toast } = useToast();
@@ -33,10 +38,18 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
   const currentImage = images[currentImageIndex] || images[0];
   const imageUrl = currentImage?.image_url || null;
 
-  // Reset image index when product changes
+  // Reset image index and zoom when product changes
   useEffect(() => {
     setCurrentImageIndex(0);
+    setZoomLevel(1);
+    setImagePosition({ x: 0, y: 0 });
   }, [product?.id]);
+
+  // Reset zoom when image changes
+  useEffect(() => {
+    setZoomLevel(1);
+    setImagePosition({ x: 0, y: 0 });
+  }, [currentImageIndex]);
 
   // Scroll to modal when it opens
   useEffect(() => {
@@ -69,6 +82,60 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
   const prevImage = () => {
     if (images.length > 1) {
       setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+    }
+  };
+
+  const handleZoomIn = () => {
+    setZoomLevel((prev) => Math.min(prev + 0.5, 3)); // Máximo 300%
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel((prev) => Math.max(prev - 0.5, 1)); // Mínimo 100%
+  };
+
+  const handleResetZoom = () => {
+    setZoomLevel(1);
+    setImagePosition({ x: 0, y: 0 });
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (zoomLevel > 1) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - imagePosition.x,
+        y: e.clientY - imagePosition.y,
+      });
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging && zoomLevel > 1) {
+      const container = imageContainerRef.current;
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        const maxX = (rect.width * (zoomLevel - 1)) / 2;
+        const maxY = (rect.height * (zoomLevel - 1)) / 2;
+        
+        setImagePosition({
+          x: Math.max(-maxX, Math.min(maxX, e.clientX - dragStart.x)),
+          y: Math.max(-maxY, Math.min(maxY, e.clientY - dragStart.y)),
+        });
+      }
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      if (e.deltaY < 0) {
+        handleZoomIn();
+      } else {
+        handleZoomOut();
+      }
     }
   };
 
@@ -143,23 +210,77 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
                 {/* Images Section */}
                 <div className="space-y-4">
                   {/* Main Image */}
-                  <div className="relative aspect-square overflow-hidden rounded-xl bg-gray-100 flex items-center justify-center">
+                  <div 
+                    ref={imageContainerRef}
+                    className="relative aspect-square overflow-hidden rounded-xl bg-gray-100 flex items-center justify-center cursor-move"
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                    onWheel={handleWheel}
+                  >
                     {imageUrl ? (
                       <AnimatePresence mode="wait">
                         <motion.img
                           key={currentImageIndex}
                           src={imageUrl}
                           alt={currentImage?.alt_text || product.title}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain select-none"
+                          style={{
+                            transform: `scale(${zoomLevel}) translate(${imagePosition.x / zoomLevel}px, ${imagePosition.y / zoomLevel}px)`,
+                            transformOrigin: 'center center',
+                            transition: isDragging ? 'none' : 'transform 0.2s ease-out',
+                            cursor: zoomLevel > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+                          }}
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
                           transition={{ duration: 0.3 }}
+                          draggable={false}
                         />
                       </AnimatePresence>
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                         <span className="text-6xl">📦</span>
+                      </div>
+                    )}
+
+                    {/* Zoom Controls */}
+                    <div className="absolute top-4 right-4 flex flex-col gap-2 z-20">
+                      <button
+                        onClick={handleZoomIn}
+                        disabled={zoomLevel >= 3}
+                        className="w-10 h-10 rounded-lg bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label="Aumentar zoom"
+                        title="Aumentar zoom (Ctrl + Scroll)"
+                      >
+                        <ZoomIn className="w-5 h-5 text-gray-800" />
+                      </button>
+                      <button
+                        onClick={handleZoomOut}
+                        disabled={zoomLevel <= 1}
+                        className="w-10 h-10 rounded-lg bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label="Diminuir zoom"
+                        title="Diminuir zoom (Ctrl + Scroll)"
+                      >
+                        <ZoomOut className="w-5 h-5 text-gray-800" />
+                      </button>
+                      {zoomLevel > 1 && (
+                        <button
+                          onClick={handleResetZoom}
+                          className="w-10 h-10 rounded-lg bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg hover:bg-white transition-colors"
+                          aria-label="Resetar zoom"
+                          title="Resetar zoom"
+                        >
+                          <RotateCcw className="w-5 h-5 text-gray-800" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Zoom Level Indicator */}
+                    {zoomLevel > 1 && (
+                      <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm z-20">
+                        {Math.round(zoomLevel * 100)}%
                       </div>
                     )}
 
@@ -185,7 +306,7 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
 
                     {/* Image Counter */}
                     {images.length > 1 && (
-                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded-full text-sm">
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded-full text-sm z-20">
                         {currentImageIndex + 1} / {images.length}
                       </div>
                     )}
