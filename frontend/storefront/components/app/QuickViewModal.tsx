@@ -5,6 +5,8 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Product } from '@shared/types';
 import { formatPrice } from '../../../utils/format';
+import { useCartStore } from '../../../store/cartStore';
+import { useToast } from '../../../admin/hooks/useToast';
 
 type QuickViewModalProps = {
   open: boolean;
@@ -15,7 +17,10 @@ type QuickViewModalProps = {
 export default function QuickViewModal({ open, onOpenChange, product }: QuickViewModalProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [quantity, setQuantity] = useState(1);
   const modalRef = useRef<HTMLDivElement>(null);
+  const { addItem } = useCartStore();
+  const { toast } = useToast();
 
   const images = product?.images && product.images.length > 0 
     ? product.images 
@@ -67,6 +72,46 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
   const comparePrice = product?.compare_at_price_cents 
     ? formatPrice(product.compare_at_price_cents)
     : null;
+
+  const handleAddToCart = () => {
+    if (!product) return;
+
+    if (product.stock_quantity <= 0) {
+      toast({
+        title: 'Produto esgotado',
+        description: 'Este produto não está disponível no momento.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      addItem({
+        product_id: product.id,
+        variant_id: null,
+        title: product.title,
+        price_cents: product.price_cents,
+        quantity,
+        image_url: product.images?.[0]?.image_url || null,
+        sku: product.sku || null,
+      });
+
+      toast({
+        title: 'Adicionado ao carrinho',
+        description: `${product.title} foi adicionado ao carrinho.`,
+      });
+
+      // Fechar modal após adicionar
+      onOpenChange(false);
+    } catch (e) {
+      console.error('Falha ao adicionar ao carrinho', e);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível adicionar o produto ao carrinho.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -224,12 +269,40 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
                     </div>
                   )}
 
+                  {/* Quantity Selector */}
+                  {product.stock_quantity > 0 && (
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium mb-2">Quantidade</label>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                          className="w-10 h-10 rounded-lg border border-gray-300 hover:bg-gray-100 flex items-center justify-center transition-colors"
+                          disabled={quantity <= 1}
+                        >
+                          <span className="text-lg">−</span>
+                        </button>
+                        <span className="w-16 text-center font-semibold text-lg">{quantity}</span>
+                        <button
+                          onClick={() => setQuantity(Math.min(product.stock_quantity, quantity + 1))}
+                          className="w-10 h-10 rounded-lg border border-gray-300 hover:bg-gray-100 flex items-center justify-center transition-colors"
+                          disabled={quantity >= product.stock_quantity}
+                        >
+                          <span className="text-lg">+</span>
+                        </button>
+                        <span className="text-sm text-muted-foreground ml-auto">
+                          {product.stock_quantity} disponíveis
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Actions */}
                   <div className="mt-auto space-y-3">
                     <div className="flex gap-3">
                       <Link
                         to={`/product/${product.slug}`}
                         className="flex-1 btn btn-primary flex items-center justify-center gap-2"
+                        onClick={() => onOpenChange(false)}
                       >
                         Ver Detalhes Completos
                       </Link>
@@ -245,9 +318,13 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
                         <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
                       </button>
                     </div>
-                    <button className="w-full btn btn-primary flex items-center justify-center gap-2">
+                    <button 
+                      onClick={handleAddToCart}
+                      disabled={product.stock_quantity <= 0}
+                      className="w-full btn btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
                       <ShoppingCart className="w-5 h-5" />
-                      Adicionar ao Carrinho
+                      {product.stock_quantity > 0 ? 'Adicionar ao Carrinho' : 'Fora de Estoque'}
                     </button>
                   </div>
                 </div>

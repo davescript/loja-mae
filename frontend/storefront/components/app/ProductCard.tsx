@@ -255,11 +255,11 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
           {/* Price */}
           <div className="mb-4 flex items-baseline gap-2">
             <span className="text-xl md:text-2xl font-bold text-foreground">
-              R$ {price}
+              {price}
             </span>
             {comparePrice && (
               <span className="text-sm text-muted-foreground line-through">
-                R$ {comparePrice}
+                {comparePrice}
               </span>
             )}
           </div>

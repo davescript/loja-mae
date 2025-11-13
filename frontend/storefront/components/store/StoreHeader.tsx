@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, ShoppingCart, User, Menu, X, Heart } from 'lucide-react';
 import { useAuth } from '../../../hooks/useAuth';
+import { useCartStore } from '../../../store/cartStore';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function StoreHeader() {
@@ -9,7 +10,10 @@ export default function StoreHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { isAuthenticated, user } = useAuth();
+  const { getItemCount } = useCartStore();
   const navigate = useNavigate();
+  
+  const cartItemCount = getItemCount();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,9 +139,15 @@ export default function StoreHeader() {
                 aria-label="Carrinho"
               >
                 <ShoppingCart className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center font-semibold shadow-md">
-                  0
-                </span>
+                {cartItemCount > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-1 -right-1 min-w-[1.25rem] h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center font-semibold shadow-md px-1"
+                  >
+                    {cartItemCount > 99 ? '99+' : cartItemCount}
+                  </motion.span>
+                )}
               </Link>
 
               {/* Account */}

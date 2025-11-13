@@ -7,6 +7,7 @@ import StoreFooter from '../components/store/StoreFooter';
 import WhatsAppButton from '../components/store/WhatsAppButton';
 import AIChat from '../components/store/AIChat';
 import { useCartStore } from '../../store/cartStore';
+import { Toaster } from '../../admin/components/common/Toaster';
 
 export default function StorefrontLayout() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -33,6 +34,7 @@ export default function StorefrontLayout() {
       <StoreFooter />
       <WhatsAppButton />
       <AIChat />
+      <Toaster />
     </div>
   );
 }

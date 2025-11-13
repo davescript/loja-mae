@@ -78,9 +78,8 @@ export default function ProductsPage() {
   };
 
   const handleAddToCart = (product: Product) => {
-    // TODO: Implementar adicionar ao carrinho
-    console.log('Adicionar ao carrinho:', product);
-    // Aqui você pode adicionar a lógica de carrinho
+    // Esta função é chamada pelo ProductCard quando o item é adicionado
+    // O ProductCard já implementa a lógica de adicionar ao carrinho via useCartStore
   };
 
   const totalPages = productsData?.total ? Math.ceil(productsData.total / 20) : 1;
