@@ -338,6 +338,11 @@ export default function AdminProductsPageAdvanced() {
     uploadingImages.forEach((file: File) => {
       formData.append("images", file)
     })
+    
+    // Add images to delete (for editing)
+    if (editingProduct && imagesToDelete.length > 0) {
+      formData.append("images_to_delete", JSON.stringify(imagesToDelete))
+    }
 
     saveMutation.mutate(formData)
   }
@@ -590,24 +595,27 @@ export default function AdminProductsPageAdvanced() {
                   )}
 
                   {uploadingImages.length > 0 && (
-                    <div className="grid grid-cols-4 gap-4">
-                      {uploadingImages.map((file: File, index: number) => (
-                        <div key={index} className="relative group">
-                          <img
-                            src={URL.createObjectURL(file)}
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-32 object-cover rounded-lg border"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                          <p className="mt-1 text-xs text-muted-foreground truncate">{file.name}</p>
-                        </div>
-                      ))}
+                    <div>
+                      <Label>Novas Imagens (Preview)</Label>
+                      <div className="grid grid-cols-4 gap-4 mt-2">
+                        {uploadingImages.map((file: File, index: number) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt={`Preview ${index + 1}`}
+                              className="w-full h-32 object-cover rounded-lg border"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                            <p className="mt-1 text-xs text-muted-foreground truncate">{file.name}</p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
