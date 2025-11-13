@@ -252,6 +252,8 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
       capture_method: 'automatic',
       // Adicionar informações de confirmação
       confirmation_method: 'automatic',
+      // IMPORTANTE: Não definir shipping aqui - deixar o PaymentElement coletar
+      // O PaymentElement vai coletar o endereço automaticamente quando configurado
     });
 
     if (!paymentIntent.client_secret) {

@@ -118,7 +118,20 @@ function CheckoutForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <PaymentElement />
+      <PaymentElement 
+        options={{
+          fields: {
+            billingDetails: {
+              name: 'never',
+              email: 'never',
+              phone: 'auto',
+              address: {
+                country: 'never',
+              },
+            },
+          },
+        }}
+      />
       
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -342,6 +355,19 @@ export default function CheckoutPage() {
           colorPrimary: '#8B4513',
         },
       },
+      // IMPORTANTE: Configurar PaymentElement para coletar endereço de entrega
+      fields: {
+        billingDetails: {
+          name: 'never', // Não coletar nome separadamente (já está no endereço)
+          email: 'never', // Não coletar email (já temos)
+          phone: 'auto', // Coletar telefone se necessário
+          address: {
+            country: 'never', // País já definido como PT
+          },
+        },
+      },
+      // Solicitar endereço de entrega
+      paymentMethodTypes: ['card'],
     }
   }, [clientSecret])
 
