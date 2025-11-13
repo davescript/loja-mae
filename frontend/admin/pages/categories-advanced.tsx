@@ -78,8 +78,12 @@ export default function AdminCategoriesPageAdvanced() {
       })
     },
     onSuccess: () => {
+      // Invalidate admin queries
       queryClient.invalidateQueries({ queryKey: ["admin", "categories"] })
+      // Invalidate storefront queries (all variations)
       queryClient.invalidateQueries({ queryKey: ["categories"] })
+      queryClient.invalidateQueries({ queryKey: ["categories", "active"] })
+      queryClient.invalidateQueries({ queryKey: ["categories", "collections"] })
       toast({
         title: "Sucesso",
         description: `Categoria ${editingCategory ? "atualizada" : "criada"} com sucesso!`,
@@ -101,7 +105,12 @@ export default function AdminCategoriesPageAdvanced() {
       return apiRequest(`/api/categories/${id}`, { method: "DELETE" })
     },
     onSuccess: () => {
+      // Invalidate admin queries
       queryClient.invalidateQueries({ queryKey: ["admin", "categories"] })
+      // Invalidate storefront queries (all variations)
+      queryClient.invalidateQueries({ queryKey: ["categories"] })
+      queryClient.invalidateQueries({ queryKey: ["categories", "active"] })
+      queryClient.invalidateQueries({ queryKey: ["categories", "collections"] })
       toast({
         title: "Sucesso",
         description: "Categoria deletada com sucesso!",

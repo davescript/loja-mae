@@ -13,5 +13,6 @@ export const updateCategorySchema = createCategorySchema.partial();
 export const listCategoriesSchema = z.object({
   parent_id: z.coerce.number().int().positive().optional().nullable(),
   is_active: z.coerce.number().int().min(0).max(1).optional(),
+  status: z.enum(['active', 'inactive']).optional(), // Support status=active for compatibility
 });
 

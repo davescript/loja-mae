@@ -23,9 +23,25 @@ export async function handleCategoriesRoutes(request: Request, env: Env): Promis
     if (method === 'GET' && path === '/api/categories') {
       const params = Object.fromEntries(url.searchParams.entries());
       const validated = listCategoriesSchema.parse(params);
+      
+      // Convert status=active to is_active=1 for compatibility
+      const filters: { parent_id?: number | null; is_active?: number } = {};
+      if (validated.parent_id !== undefined) {
+        filters.parent_id = validated.parent_id;
+      }
+      if (validated.status === 'active') {
+        filters.is_active = 1;
+      } else if (validated.status === 'inactive') {
+        filters.is_active = 0;
+      } else if (validated.is_active !== undefined) {
+        filters.is_active = validated.is_active;
+      }
+      
       const db = getDb(env);
-      const categories = await listCategories(db, validated);
-      return successResponse(categories);
+      const categories = await listCategories(db, filters);
+      
+      // Return in format expected by frontend (with items array)
+      return successResponse({ items: categories });
     }
 
     // Get category: GET /api/categories/:id

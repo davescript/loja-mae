@@ -12,7 +12,7 @@ export default function CategoriesPage() {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
 
   const { data: categories, isLoading } = useQuery({
-    queryKey: ['categories'],
+    queryKey: ['categories', 'active'],
     queryFn: async () => {
       try {
         const response = await apiRequest<{ items: Category[] }>('/api/categories?status=active');
@@ -23,6 +23,8 @@ export default function CategoriesPage() {
       }
     },
     retry: 1,
+    staleTime: 30000, // Cache for 30 seconds
+    refetchOnWindowFocus: true, // Refetch when window gains focus
   });
 
   const filteredCategories = categories?.filter((cat) =>
