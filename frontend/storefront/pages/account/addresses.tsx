@@ -68,8 +68,17 @@ export default function CustomerAddressesPage() {
       resetForm();
     },
     onError: (error: any) => {
+      console.error('Erro ao salvar endereço:', error);
+      
       // Se for erro de autenticação, redirecionar para login
-      if (error?.message?.includes('Authentication') || error?.message?.includes('autenticado') || error?.message?.includes('401')) {
+      const errorMessage = error?.message || error?.error || '';
+      if (
+        errorMessage.includes('Authentication') || 
+        errorMessage.includes('autenticado') || 
+        errorMessage.includes('401') ||
+        errorMessage.includes('Invalid or expired token') ||
+        errorMessage.includes('Token inválido')
+      ) {
         toast({
           title: 'Sessão expirada',
           description: 'Sua sessão expirou. Por favor, faça login novamente.',
@@ -86,7 +95,7 @@ export default function CustomerAddressesPage() {
 
       toast({
         title: 'Erro',
-        description: error.message || 'Erro ao salvar endereço.',
+        description: errorMessage || 'Erro ao salvar endereço.',
         variant: 'destructive',
       });
     },

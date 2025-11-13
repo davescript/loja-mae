@@ -101,28 +101,50 @@ export async function requireAuth(
 
   // Verify token and get user
   if (type === 'customer') {
-    const customer = await getCustomerFromToken(db, token, jwtSecret);
-    if (!customer) {
-      throw new UnauthorizedError('Invalid or expired token');
+    try {
+      const customer = await getCustomerFromToken(db, token, jwtSecret);
+      if (!customer) {
+        throw new UnauthorizedError('Invalid or expired token');
+      }
+      return { ...customer, type: 'customer' };
+    } catch (error: any) {
+      // Se for erro de JWT, dar mensagem mais clara
+      if (error.message && error.message.includes('Invalid or expired token')) {
+        throw new UnauthorizedError('Token inválido ou expirado. Por favor, faça login novamente.');
+      }
+      throw error;
     }
-    return { ...customer, type: 'customer' };
   } else if (type === 'admin') {
-    const admin = await getAdminFromToken(db, token, jwtSecret);
-    if (!admin) {
-      throw new UnauthorizedError('Invalid or expired token');
+    try {
+      const admin = await getAdminFromToken(db, token, jwtSecret);
+      if (!admin) {
+        throw new UnauthorizedError('Invalid or expired token');
+      }
+      return { ...admin, type: 'admin' };
+    } catch (error: any) {
+      if (error.message && error.message.includes('Invalid or expired token')) {
+        throw new UnauthorizedError('Token inválido ou expirado. Por favor, faça login novamente.');
+      }
+      throw error;
     }
-    return { ...admin, type: 'admin' };
   } else {
     // Try admin first, then customer
-    const admin = await getAdminFromToken(db, token, jwtSecret);
-    if (admin) {
-      return { ...admin, type: 'admin' };
+    try {
+      const admin = await getAdminFromToken(db, token, jwtSecret);
+      if (admin) {
+        return { ...admin, type: 'admin' };
+      }
+      const customer = await getCustomerFromToken(db, token, jwtSecret);
+      if (customer) {
+        return { ...customer, type: 'customer' };
+      }
+      throw new UnauthorizedError('Invalid or expired token');
+    } catch (error: any) {
+      if (error.message && error.message.includes('Invalid or expired token')) {
+        throw new UnauthorizedError('Token inválido ou expirado. Por favor, faça login novamente.');
+      }
+      throw error;
     }
-    const customer = await getCustomerFromToken(db, token, jwtSecret);
-    if (customer) {
-      return { ...customer, type: 'customer' };
-    }
-    throw new UnauthorizedError('Invalid or expired token');
   }
 }
 

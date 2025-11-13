@@ -25,12 +25,18 @@ export function useAuth() {
         localStorage.removeItem('customer_token');
         setUser(null);
         return null;
-      } catch (error) {
-        // Clear tokens on error
-        localStorage.removeItem('token');
-        localStorage.removeItem('customer_token');
-        setUser(null);
-        console.log('User not authenticated');
+      } catch (error: any) {
+        // Só limpar tokens se for realmente um erro de autenticação
+        const errorMessage = error?.message || '';
+        if (errorMessage.includes('Authentication') || errorMessage.includes('401') || errorMessage.includes('Invalid or expired token')) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('customer_token');
+          setUser(null);
+          console.log('User not authenticated - token invalid');
+        } else {
+          // Não limpar tokens em caso de erro de rede ou outros erros temporários
+          console.log('Auth check failed but keeping token:', errorMessage);
+        }
         return null;
       }
     },
