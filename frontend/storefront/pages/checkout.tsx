@@ -118,20 +118,41 @@ function CheckoutForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <PaymentElement 
-        options={{
-          fields: {
-            billingDetails: {
-              name: 'never',
-              email: 'never',
-              phone: 'auto',
-              address: {
-                country: 'never',
+      {/* Endereço de Entrega */}
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold">Endereço de Entrega</h3>
+        <AddressElement 
+          options={{
+            mode: 'shipping',
+            allowedCountries: ['PT'],
+            fields: {
+              phone: 'always',
+            },
+            validation: {
+              phone: {
+                required: 'always',
               },
             },
-          },
-        }}
-      />
+          }}
+        />
+      </div>
+      
+      {/* Informações de Pagamento */}
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold">Informações de Pagamento</h3>
+        <PaymentElement 
+          options={{
+            fields: {
+              billingDetails: {
+                name: 'never',
+                email: 'never',
+                phone: 'never',
+                address: 'never',
+              },
+            },
+          }}
+        />
+      </div>
       
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
