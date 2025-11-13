@@ -28,8 +28,9 @@ export default function FavoritesPage() {
         );
         
         const results = await Promise.all(productPromises);
-        return results.filter((result): result is { data: Product } => result !== null && result.data !== null)
-          .map((result) => result.data);
+        return results
+          .filter((result) => result !== null && result !== undefined && result.data !== null && result.data !== undefined)
+          .map((result) => result!.data);
       } catch (error) {
         console.error('Error loading favorites:', error);
         return [];
