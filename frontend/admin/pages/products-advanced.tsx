@@ -16,22 +16,18 @@ import { formatPrice } from "../../utils/format"
 import { Plus, Edit, Trash2, MoreVertical, Eye } from "lucide-react"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
 
-const productSchema = z.object({
-  title: z.string().min(1, "Título é obrigatório"),
-  description: z.string().optional(),
-  short_description: z.string().max(500).optional(),
-  price_cents: z.number().min(0, "Preço deve ser positivo"),
-  compare_at_price_cents: z.number().optional().nullable(),
-  sku: z.string().optional().nullable(),
-  stock_quantity: z.number().min(0).default(0),
-  status: z.enum(["draft", "active", "archived"]).default("draft"),
-  category_id: z.number().optional().nullable(),
-})
-
-type ProductFormData = z.infer<typeof productSchema>
+type ProductFormData = {
+  title: string
+  description?: string
+  short_description?: string
+  price_cents: number
+  compare_at_price_cents?: number | null
+  sku?: string | null
+  stock_quantity: number
+  status: "draft" | "active" | "archived"
+  category_id?: number | null
+}
 
 export default function AdminProductsPageAdvanced() {
   const [page, setPage] = useState(1)
@@ -293,7 +289,7 @@ export default function AdminProductsPageAdvanced() {
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form onSubmit={onSubmit}>
             <Tabs defaultValue="geral" className="w-full">
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="geral">Geral</TabsTrigger>
@@ -378,11 +374,9 @@ export default function AdminProductsPageAdvanced() {
                       id="price_cents"
                       type="number"
                       step="0.01"
-                      {...form.register("price_cents", { valueAsNumber: true })}
+                      value={form.watch("price_cents") || 0}
+                      onChange={(e) => form.setValue("price_cents", parseFloat(e.target.value) || 0)}
                     />
-                    {form.formState.errors.price_cents && (
-                      <p className="text-sm text-red-600">{form.formState.errors.price_cents.message}</p>
-                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -391,7 +385,10 @@ export default function AdminProductsPageAdvanced() {
                       id="compare_at_price_cents"
                       type="number"
                       step="0.01"
-                      {...form.register("compare_at_price_cents", { valueAsNumber: true })}
+                      value={form.watch("compare_at_price_cents") || ""}
+                      onChange={(e) =>
+                        form.setValue("compare_at_price_cents", e.target.value ? parseFloat(e.target.value) : null)
+                      }
                     />
                   </div>
                 </div>
@@ -401,7 +398,8 @@ export default function AdminProductsPageAdvanced() {
                   <Input
                     id="stock_quantity"
                     type="number"
-                    {...form.register("stock_quantity", { valueAsNumber: true })}
+                    value={form.watch("stock_quantity") || 0}
+                    onChange={(e) => form.setValue("stock_quantity", parseInt(e.target.value) || 0)}
                   />
                 </div>
               </TabsContent>
