@@ -11,11 +11,14 @@ NC='\033[0m'
 
 echo -e "${GREEN}🚀 Iniciando deploy do backend...${NC}"
 
+# Limpar token antigo se existir (pode estar causando conflito)
+unset CLOUDFLARE_API_TOKEN
+export -n CLOUDFLARE_API_TOKEN 2>/dev/null || true
+
 # Verificar se está autenticado
 if ! npx wrangler whoami &> /dev/null; then
-    echo -e "${RED}❌ Erro: Você não está autenticado no Cloudflare${NC}"
-    echo "Execute: npx wrangler login"
-    exit 1
+    echo -e "${YELLOW}⚠️  Não autenticado. Fazendo login...${NC}"
+    npx wrangler login
 fi
 
 # Type check
