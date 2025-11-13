@@ -42,6 +42,7 @@ export default function AdminProductsPageAdvanced() {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
   const [uploadingImages, setUploadingImages] = useState<File[]>([])
   const [imageErrors, setImageErrors] = useState<string[]>([])
+  const [imagesToDelete, setImagesToDelete] = useState<number[]>([])
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
@@ -79,7 +80,10 @@ export default function AdminProductsPageAdvanced() {
       sku: "",
       stock_quantity: 0,
       status: "draft",
+      featured: false,
       category_id: null,
+      meta_title: "",
+      meta_description: "",
     },
   })
 
@@ -102,6 +106,7 @@ export default function AdminProductsPageAdvanced() {
       setEditingProduct(null)
       setUploadingImages([])
       setImageErrors([])
+      setImagesToDelete([])
       form.reset()
     },
     onError: (error: Error) => {
@@ -211,7 +216,21 @@ export default function AdminProductsPageAdvanced() {
 
   const handleNew = () => {
     setEditingProduct(null)
-    form.reset()
+    setImagesToDelete([])
+    form.reset({
+      title: "",
+      description: "",
+      short_description: "",
+      price_cents: 0,
+      compare_at_price_cents: null,
+      sku: "",
+      stock_quantity: 0,
+      status: "draft",
+      featured: false,
+      category_id: null,
+      meta_title: "",
+      meta_description: "",
+    })
     setUploadingImages([])
     setImageErrors([])
     setIsModalOpen(true)
@@ -288,18 +307,18 @@ export default function AdminProductsPageAdvanced() {
 
     // Create FormData
     const formData = new FormData()
-    formData.append("title", data.title)
+    formData.append("title", data.title || "")
     if (data.description) formData.append("description", data.description)
     if (data.short_description) formData.append("short_description", data.short_description)
-    formData.append("price_cents", Math.round(data.price_cents * 100).toString())
+    formData.append("price_cents", Math.round((data.price_cents || 0) * 100).toString())
     if (data.compare_at_price_cents) {
       formData.append("compare_at_price_cents", Math.round(data.compare_at_price_cents * 100).toString())
     }
     if (data.sku) formData.append("sku", data.sku)
-    formData.append("stock_quantity", data.stock_quantity.toString())
-    formData.append("status", data.status)
-    formData.append("featured", data.featured ? "1" : "0")
+    formData.append("stock_quantity", (data.stock_quantity || 0).toString())
+    formData.append("status", data.status || "draft")
     if (data.category_id) formData.append("category_id", data.category_id.toString())
+    if (data.featured !== undefined) formData.append("featured", data.featured ? "1" : "0")
     if (data.meta_title) formData.append("meta_title", data.meta_title)
     if (data.meta_description) formData.append("meta_description", data.meta_description)
 
@@ -455,21 +474,39 @@ export default function AdminProductsPageAdvanced() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select
-                    value={form.watch("status")}
-                    onValueChange={(value) => form.setValue("status", value as "draft" | "active" | "archived")}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Rascunho</SelectItem>
-                      <SelectItem value="active">Ativo</SelectItem>
-                      <SelectItem value="archived">Arquivado</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="status">Status</Label>
+                    <Select
+                      value={form.watch("status")}
+                      onValueChange={(value) => form.setValue("status", value as "draft" | "active" | "archived")}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Rascunho</SelectItem>
+                        <SelectItem value="active">Ativo</SelectItem>
+                        <SelectItem value="archived">Arquivado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="featured">Destaque</Label>
+                    <Select
+                      value={form.watch("featured") ? "1" : "0"}
+                      onValueChange={(value) => form.setValue("featured", value === "1")}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">Não</SelectItem>
+                        <SelectItem value="1">Sim</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </TabsContent>
 
