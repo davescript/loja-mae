@@ -53,7 +53,18 @@ export async function handleCustomersRoutes(request: Request, env: Env): Promise
       if (!customer) {
         return notFoundResponse('Customer not found');
       }
-      return successResponse(customer);
+
+      // Get customer addresses
+      const addresses = await executeQuery(
+        db,
+        'SELECT * FROM addresses WHERE customer_id = ? ORDER BY is_default DESC, created_at DESC',
+        [id]
+      );
+
+      return successResponse({
+        ...customer,
+        addresses: addresses || [],
+      });
     }
 
     // Portal routes - Customer self-service
