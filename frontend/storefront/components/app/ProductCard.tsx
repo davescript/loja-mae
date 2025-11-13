@@ -118,9 +118,9 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
     >
       <div className="card overflow-hidden h-full flex flex-col bg-white">
         {/* Image Container */}
-        <Link 
-          to={`/product/${product.slug}`} 
-          className="relative aspect-square overflow-hidden bg-muted flex items-center justify-center"
+        <div 
+          className="relative aspect-square overflow-hidden bg-muted flex items-center justify-center cursor-pointer"
+          onClick={() => onQuickView?.(product)}
         >
           {imageUrl ? (
             <AnimatePresence mode="wait">
@@ -224,7 +224,7 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
               <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
             </motion.button>
           </motion.div>
-        </Link>
+        </div>
 
         {/* Preview de Imagens - 4 miniaturas */}
         {previewImages.length > 0 && (
@@ -263,11 +263,12 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
             </span>
           )}
 
-          <Link to={`/product/${product.slug}`}>
-            <h3 className="font-bold text-base md:text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-              {product.title}
-            </h3>
-          </Link>
+          <h3 
+            className="font-bold text-base md:text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors cursor-pointer"
+            onClick={() => onQuickView?.(product)}
+          >
+            {product.title}
+          </h3>
 
           {/* Price */}
           <div className="mb-4 flex items-baseline gap-2">

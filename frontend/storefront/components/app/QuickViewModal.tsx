@@ -7,6 +7,7 @@ import type { Product } from '@shared/types';
 import { formatPrice } from '../../../utils/format';
 import { useCartStore } from '../../../store/cartStore';
 import { useToast } from '../../../admin/hooks/useToast';
+import { sanitizeHtml } from '../../../utils/sanitize';
 
 type QuickViewModalProps = {
   open: boolean;
@@ -190,16 +191,16 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
                     )}
                   </div>
 
-                  {/* Thumbnail Gallery */}
+                  {/* Thumbnail Gallery - Mostrar todas as imagens (mínimo 4 se houver) */}
                   {images.length > 1 && (
                     <div className="grid grid-cols-4 gap-2">
-                      {images.map((img, index) => (
+                      {images.slice(0, Math.max(4, images.length)).map((img, index) => (
                         <button
                           key={img.id}
                           onClick={() => setCurrentImageIndex(index)}
                           className={`aspect-square overflow-hidden rounded-lg border-2 transition-all ${
                             currentImageIndex === index
-                              ? 'border-primary scale-105 shadow-md'
+                              ? 'border-primary scale-105 shadow-md ring-2 ring-primary/20'
                               : 'border-gray-200 hover:border-primary/50'
                           }`}
                         >
@@ -210,6 +211,11 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
                           />
                         </button>
                       ))}
+                      {images.length > 4 && (
+                        <div className="aspect-square rounded-lg border-2 border-gray-200 bg-gray-100 flex items-center justify-center text-xs text-muted-foreground">
+                          +{images.length - 4}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -245,11 +251,24 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
                     )}
                   </div>
 
-                  {/* Description */}
+                  {/* Short Description */}
                   {product.short_description && (
-                    <p className="text-muted-foreground mb-6 leading-relaxed">
+                    <p className="text-muted-foreground mb-4 leading-relaxed">
                       {product.short_description}
                     </p>
+                  )}
+
+                  {/* Full Description */}
+                  {product.description && (
+                    <div className="mb-6">
+                      <h3 className="text-sm font-semibold mb-2">Descrição</h3>
+                      <div 
+                        className="text-muted-foreground leading-relaxed prose prose-sm max-w-none"
+                        dangerouslySetInnerHTML={{ 
+                          __html: sanitizeHtml(product.description.replace(/\n/g, '<br />'))
+                        }}
+                      />
+                    </div>
                   )}
 
                   {/* Stock Status */}
@@ -296,15 +315,37 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
                     </div>
                   )}
 
+                  {/* Additional Info */}
+                  <div className="mb-6 space-y-2 text-sm">
+                    {product.sku && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <span className="font-medium">SKU:</span>
+                        <span>{product.sku}</span>
+                      </div>
+                    )}
+                    {product.category && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <span className="font-medium">Categoria:</span>
+                        <Link 
+                          to={`/products?category_id=${product.category.id}`}
+                          className="text-primary hover:underline"
+                          onClick={() => onOpenChange(false)}
+                        >
+                          {product.category.name}
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Actions */}
                   <div className="mt-auto space-y-3">
                     <div className="flex gap-3">
                       <Link
                         to={`/product/${product.slug}`}
-                        className="flex-1 btn btn-primary flex items-center justify-center gap-2"
+                        className="flex-1 btn btn-outline flex items-center justify-center gap-2"
                         onClick={() => onOpenChange(false)}
                       >
-                        Ver Detalhes Completos
+                        Ver Página Completa
                       </Link>
                       <button
                         onClick={() => setIsFavorite(!isFavorite)}
