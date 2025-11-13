@@ -46,19 +46,29 @@ export default function AdminProductsPageAdvanced() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
-  const { data: productsData, isLoading } = useQuery({
+  const { data: productsData, isLoading, error: productsError } = useQuery({
     queryKey: ["admin", "products", page, search],
     queryFn: async () => {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        pageSize: "20",
-        include: "images",
-        ...(search && { search }),
-      })
-      const response = await apiRequest<{ items: Product[]; total: number; totalPages: number }>(
-        `/api/products?${params.toString()}`
-      )
-      return response.data || { items: [], total: 0, totalPages: 0 }
+      try {
+        const params = new URLSearchParams({
+          page: page.toString(),
+          pageSize: "20",
+          include: "images",
+          ...(search && { search }),
+        })
+        const response = await apiRequest<{ items: Product[]; total: number; totalPages: number }>(
+          `/api/products?${params.toString()}`
+        )
+        return response.data || { items: [], total: 0, totalPages: 0 }
+      } catch (error) {
+        console.error('Erro ao carregar produtos:', error)
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os produtos",
+          variant: "destructive",
+        })
+        return { items: [], total: 0, totalPages: 0 }
+      }
     },
   })
 
@@ -137,9 +147,12 @@ export default function AdminProductsPageAdvanced() {
       header: "Imagem",
       accessor: (product) => (
         <img
-          src={product.images?.[0]?.image_url || "/placeholder.png"}
-          alt={product.title}
+          src={product.images && product.images.length > 0 ? product.images[0].image_url : "/placeholder.png"}
+          alt={product.title || "Produto"}
           className="w-12 h-12 object-cover rounded"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "/placeholder.png"
+          }}
         />
       ),
     },
@@ -570,32 +583,38 @@ export default function AdminProductsPageAdvanced() {
               <TabsContent value="imagens" className="space-y-4 mt-4">
                 <div className="space-y-4">
                   {/* Existing Images (when editing) */}
-                  {editingProduct && editingProduct.images && editingProduct.images.length > 0 && (
+                  {editingProduct && editingProduct.images && Array.isArray(editingProduct.images) && editingProduct.images.length > 0 && (
                     <div>
                       <Label>Imagens Existentes</Label>
                       <div className="grid grid-cols-4 gap-4 mt-2">
-                        {editingProduct.images.map((img) => (
-                          <div key={img.id} className="relative">
-                            <img
-                              src={img.image_url}
-                              alt={img.alt_text || `Imagem ${img.id}`}
-                              className="w-full h-32 object-cover rounded-lg border"
-                            />
-                            {imagesToDelete.includes(img.id) ? (
-                              <div className="absolute inset-0 bg-red-500/50 rounded-lg flex items-center justify-center">
-                                <span className="text-white font-semibold">Remover</span>
-                              </div>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => setImagesToDelete([...imagesToDelete, img.id])}
-                                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-opacity"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        ))}
+                        {editingProduct.images.map((img) => {
+                          if (!img || !img.id) return null
+                          return (
+                            <div key={img.id} className="relative">
+                              <img
+                                src={img.image_url || "/placeholder.png"}
+                                alt={img.alt_text || `Imagem ${img.id}`}
+                                className="w-full h-32 object-cover rounded-lg border"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = "/placeholder.png"
+                                }}
+                              />
+                              {imagesToDelete.includes(img.id) ? (
+                                <div className="absolute inset-0 bg-red-500/50 rounded-lg flex items-center justify-center">
+                                  <span className="text-white font-semibold">Remover</span>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setImagesToDelete([...imagesToDelete, img.id])}
+                                  className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-opacity"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   )}
