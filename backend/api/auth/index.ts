@@ -42,7 +42,7 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
           type: 'customer',
         },
         jwtSecret,
-        '30d'
+        '90d' // Aumentar duração do token para 90 dias
       );
 
       // Build name from first_name and last_name
@@ -64,7 +64,7 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
       );
 
       // Set HTTP-only cookie for customer (optional)
-      response.headers.set('Set-Cookie', `customer_token=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${30 * 24 * 60 * 60}`);
+      response.headers.set('Set-Cookie', `customer_token=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${90 * 24 * 60 * 60}`);
 
       return response;
     }
@@ -91,7 +91,7 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
           type: 'customer',
         },
         jwtSecret,
-        '30d'
+        '90d' // Aumentar duração do token para 90 dias
       );
 
       // Build name from first_name and last_name
@@ -112,7 +112,7 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
         'Login successful'
       );
 
-      response.headers.set('Set-Cookie', `customer_token=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${30 * 24 * 60 * 60}`);
+      response.headers.set('Set-Cookie', `customer_token=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${90 * 24 * 60 * 60}`);
 
       return response;
     }
