@@ -50,13 +50,23 @@ export default function CustomerAddressesPage() {
         throw new Error('Você precisa estar autenticado para salvar endereços. Por favor, faça login novamente.');
       }
 
+      console.log('Salvando endereço com token:', token.substring(0, 20) + '...');
+
       const url = editingAddress 
         ? `/api/customers/addresses/${editingAddress.id}`
         : '/api/customers/addresses';
-      return apiRequest(url, {
-        method: editingAddress ? 'PUT' : 'POST',
-        body: JSON.stringify(data),
-      });
+      
+      try {
+        const response = await apiRequest(url, {
+          method: editingAddress ? 'PUT' : 'POST',
+          body: JSON.stringify(data),
+        });
+        console.log('Endereço salvo com sucesso:', response);
+        return response;
+      } catch (error: any) {
+        console.error('Erro na requisição de salvar endereço:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
