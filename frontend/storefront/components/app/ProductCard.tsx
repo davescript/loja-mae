@@ -40,7 +40,11 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
     e.preventDefault();
     e.stopPropagation();
     
-    if (product.stock_quantity <= 0) {
+    console.log('🛒 Adicionar ao carrinho clicado', { product, stock: product.stock_quantity });
+    
+    // Verificar se o produto tem estoque (se stock_quantity estiver definido)
+    if (product.stock_quantity !== undefined && product.stock_quantity <= 0) {
+      console.log('❌ Produto sem estoque');
       toast({
         title: 'Produto esgotado',
         description: 'Este produto não está disponível no momento.',
@@ -49,22 +53,35 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
       return;
     }
 
-    addItem({
-      product_id: product.id,
-      variant_id: null,
-      title: product.title,
-      price_cents: product.price_cents,
-      quantity: 1,
-      image_url: product.images?.[0]?.image_url || null,
-      sku: product.sku || null,
-    });
+    try {
+      console.log('✅ Adicionando produto ao carrinho...');
+      
+      addItem({
+        product_id: product.id,
+        variant_id: null,
+        title: product.title,
+        price_cents: product.price_cents,
+        quantity: 1,
+        image_url: product.images?.[0]?.image_url || null,
+        sku: product.sku || null,
+      });
 
-    toast({
-      title: 'Adicionado ao carrinho',
-      description: `${product.title} foi adicionado ao carrinho.`,
-    });
+      console.log('✅ Produto adicionado ao carrinho');
 
-    onAddToCart?.(product);
+      toast({
+        title: 'Adicionado ao carrinho',
+        description: `${product.title} foi adicionado ao carrinho.`,
+      });
+
+      onAddToCart?.(product);
+    } catch (error) {
+      console.error('❌ Erro ao adicionar ao carrinho:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível adicionar o produto ao carrinho.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleImageChange = (index: number, e: React.MouseEvent) => {
@@ -277,13 +294,19 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
           {/* Actions */}
           <div className="mt-auto flex gap-2">
             <motion.button
+              type="button"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleAddToCart}
               className="flex-1 btn btn-primary flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+              disabled={product.stock_quantity !== undefined && product.stock_quantity <= 0}
             >
               <ShoppingCart className="w-4 h-4" />
-              <span className="text-sm font-semibold">Adicionar ao carrinho</span>
+              <span className="text-sm font-semibold">
+                {product.stock_quantity !== undefined && product.stock_quantity <= 0 
+                  ? 'Fora de estoque' 
+                  : 'Adicionar ao carrinho'}
+              </span>
             </motion.button>
             
             <Link
