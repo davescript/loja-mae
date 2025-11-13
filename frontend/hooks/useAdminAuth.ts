@@ -38,18 +38,25 @@ export function useAdminAuth() {
         }
         throw new Error('Not an admin');
       } catch (error: any) {
-        // Se for erro de autenticação real (token inválido/expirado), limpar token
-        // Mas não limpar em caso de erro de rede ou outros erros temporários
-        if (error instanceof Error && error.message.includes('Authentication') && error.message.includes('required')) {
-          // Token inválido ou expirado - limpar apenas se realmente necessário
-          // Não limpar em hard refresh - o token pode estar válido
-          const errorResponse = error as any;
-          if (errorResponse?.status === 401 || errorResponse?.response?.status === 401) {
-            // Só limpar se for realmente um erro 401 de autenticação
-            localStorage.removeItem('admin_token');
+        // Não limpar token automaticamente em caso de erro
+        // O token pode estar válido, mas houve um erro de rede ou temporário
+        // Só limpar token quando realmente necessário (token inválido/expirado)
+        // Isso evita que hard refresh termine a sessão
+        const errorMessage = error?.message || '';
+        const isAuthError = errorMessage.includes('Authentication') || errorMessage.includes('401');
+        
+        // Só limpar se for realmente um erro de autenticação E o token não existir mais no servidor
+        // Não limpar em caso de erro de rede ou outros erros temporários
+        if (isAuthError && error?.response?.status === 401) {
+          // Verificar se o token ainda existe no localStorage antes de limpar
+          const token = localStorage.getItem('admin_token');
+          if (token) {
+            // Token existe mas foi rejeitado - pode ser expirado ou inválido
+            // Mas não limpar imediatamente - deixar o usuário tentar novamente
+            // Só limpar se for realmente necessário (ex: token malformado)
           }
         }
-        // Silently fail if not authenticated
+        // Silently fail if not authenticated - não limpar token
         return null;
       }
     },
