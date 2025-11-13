@@ -183,44 +183,54 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
           }
           
           // Salvar endereço no perfil do cliente se disponível
-          if (customerId && shippingAddress && shippingAddress.address_line1) {
-            try {
-              // Buscar pedido atualizado para garantir que temos o customer_id correto
-              const orderWithCustomer = await getOrder(db, finalOrderId);
-              if (orderWithCustomer?.customer_id) {
-                // Verificar se já existe um endereço similar para evitar duplicatas
-                const existingAddresses = await getAddresses(db, orderWithCustomer.customer_id);
-                const addressExists = existingAddresses?.some(addr => 
-                  addr.address_line1 === shippingAddress.address_line1 &&
-                  addr.postal_code === shippingAddress.postal_code &&
-                  addr.city === shippingAddress.city
-                );
+          // Buscar pedido atualizado para garantir que temos o customer_id correto (pode ter sido associado acima)
+          try {
+            const orderWithCustomer = await getOrder(db, finalOrderId);
+            const finalCustomerId = orderWithCustomer?.customer_id;
+            
+            if (finalCustomerId && shippingAddress && shippingAddress.address_line1) {
+              console.log(`[WEBHOOK] Attempting to save address for customer ${finalCustomerId}, order ${finalOrderId}`);
+              
+              // Verificar se já existe um endereço similar para evitar duplicatas
+              const existingAddresses = await getAddresses(db, finalCustomerId);
+              const addressExists = existingAddresses?.some(addr => 
+                addr.address_line1 === shippingAddress.address_line1 &&
+                addr.postal_code === shippingAddress.postal_code &&
+                addr.city === shippingAddress.city
+              );
 
-                if (!addressExists) {
-                  // Criar novo endereço com os dados do checkout
-                  await createAddress(db, orderWithCustomer.customer_id, {
-                    type: 'shipping',
-                    first_name: shippingAddress.first_name || '',
-                    last_name: shippingAddress.last_name || '',
-                    company: shippingAddress.company || null,
-                    address_line1: shippingAddress.address_line1 || '',
-                    address_line2: shippingAddress.address_line2 || null,
-                    city: shippingAddress.city || '',
-                    state: shippingAddress.state || '',
-                    postal_code: shippingAddress.postal_code || '',
-                    country: shippingAddress.country || 'PT',
-                    phone: shippingAddress.phone || null,
-                    is_default: existingAddresses?.length === 0 ? 1 : 0, // Marcar como padrão se for o primeiro endereço
-                  });
-                  console.log(`[WEBHOOK] Saved shipping address from checkout for customer ${orderWithCustomer.customer_id}`);
-                } else {
-                  console.log(`[WEBHOOK] Address already exists for customer ${orderWithCustomer.customer_id}, skipping`);
-                }
+              if (!addressExists) {
+                // Criar novo endereço com os dados do checkout
+                const savedAddress = await createAddress(db, finalCustomerId, {
+                  type: 'shipping',
+                  first_name: shippingAddress.first_name || '',
+                  last_name: shippingAddress.last_name || '',
+                  company: shippingAddress.company || null,
+                  address_line1: shippingAddress.address_line1 || '',
+                  address_line2: shippingAddress.address_line2 || null,
+                  city: shippingAddress.city || '',
+                  state: shippingAddress.state || '',
+                  postal_code: shippingAddress.postal_code || '',
+                  country: shippingAddress.country || 'PT',
+                  phone: shippingAddress.phone || null,
+                  is_default: existingAddresses?.length === 0 ? 1 : 0, // Marcar como padrão se for o primeiro endereço
+                });
+                console.log(`[WEBHOOK] ✅ Successfully saved shipping address (ID: ${savedAddress.id}) for customer ${finalCustomerId} from order ${finalOrderId}`);
+              } else {
+                console.log(`[WEBHOOK] ⚠️ Address already exists for customer ${finalCustomerId}, skipping duplicate`);
               }
-            } catch (err) {
-              console.error('Error saving address from checkout:', err);
-              // Não falhar se o endereço não puder ser salvo
+            } else {
+              if (!finalCustomerId) {
+                console.log(`[WEBHOOK] ⚠️ No customer_id found for order ${finalOrderId}, cannot save address`);
+              } else if (!shippingAddress) {
+                console.log(`[WEBHOOK] ⚠️ No shipping address found for order ${finalOrderId}`);
+              } else if (!shippingAddress.address_line1) {
+                console.log(`[WEBHOOK] ⚠️ Shipping address missing address_line1 for order ${finalOrderId}`);
+              }
             }
+          } catch (err) {
+            console.error(`[WEBHOOK] ❌ Error saving address from checkout for order ${finalOrderId}:`, err);
+            // Não falhar se o endereço não puder ser salvo - o pedido já foi processado
           }
 
           // Criar notificação para o cliente
