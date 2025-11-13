@@ -7,8 +7,10 @@ const getApiBaseUrl = (): string => {
   if (typeof window === 'undefined') {
     return 'http://localhost:8787';
   }
-  // Force local API in development to avoid workers.dev fallback
-  if ((import.meta as any).env?.DEV) {
+  // Force local API in development ONLY if explicitly set
+  // Otherwise use production API even in dev mode
+  const forceLocal = (import.meta as any).env?.VITE_FORCE_LOCAL_API === 'true';
+  if (forceLocal && (import.meta as any).env?.DEV) {
     return 'http://localhost:8787';
   }
   
