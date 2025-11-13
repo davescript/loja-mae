@@ -48,8 +48,12 @@ export default function AdminProductsPage() {
   const { data: categories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      const response = await apiRequest<Category[]>('/api/categories');
-      return response.data || [];
+      const response = await apiRequest<{ items: Category[] } | Category[]>('/api/categories');
+      // API pode retornar { items: [] } ou [] diretamente
+      if (Array.isArray(response.data)) {
+        return response.data;
+      }
+      return response.data?.items || [];
     },
   });
 
@@ -160,7 +164,7 @@ export default function AdminProductsPage() {
             <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary mb-4" />
             <p className="text-gray-600">Carregando produtos...</p>
           </div>
-        ) : productsData?.items.length === 0 ? (
+        ) : !Array.isArray(productsData?.items) || productsData.items.length === 0 ? (
           <div className="p-12 text-center">
             <Package className="w-12 h-12 mx-auto text-gray-400 mb-4" />
             <p className="text-gray-600">Nenhum produto encontrado</p>
@@ -192,7 +196,7 @@ export default function AdminProductsPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {productsData?.items.map((product) => (
+                  {Array.isArray(productsData?.items) && productsData.items.map((product) => (
                     <tr key={product.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         {product.images && product.images.length > 0 ? (
@@ -362,7 +366,7 @@ function ProductModal({
 
   // Load existing images when product is loaded
   useEffect(() => {
-    if (product?.images) {
+    if (product?.images && Array.isArray(product.images)) {
       setImagePreviews(product.images.map((img) => img.image_url));
       setImageFiles([]);
       setDeletedImages([]);
