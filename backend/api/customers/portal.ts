@@ -5,6 +5,7 @@ import { handleError } from '../../utils/errors';
 import { requireAuth } from '../../utils/auth';
 import { executeQuery, executeOne, executeRun } from '../../utils/db';
 import { hashPassword, comparePassword } from '../../utils/auth';
+import type { Address } from '@shared/types';
 
 // GET /api/customers/me - Get current customer profile
 export async function handleGetMe(request: Request, env: Env): Promise<Response> {
