@@ -3,6 +3,7 @@ import { getDb, executeQuery, executeRun, executeOne } from '../../utils/db';
 import { successResponse, errorResponse } from '../../utils/response';
 import { handleError } from '../../utils/errors';
 import { getOrderByNumber, updateOrderPayment, getOrder } from '../../modules/orders';
+import { createAddress, getAddresses } from '../../modules/customers';
 import { sendEmail, generateOrderConfirmationEmail } from '../../utils/email';
 import Stripe from 'stripe';
 
@@ -115,6 +116,7 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
           }
 
           // Associar pedido ao cliente se ainda não estiver associado (para guest checkout)
+          let customerId: number | null = null;
           try {
             if (!updatedOrder.customer_id && updatedOrder.email) {
               // Tentar encontrar cliente pelo email
@@ -130,11 +132,59 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
                   'UPDATE orders SET customer_id = ? WHERE id = ?',
                   [customer.id, finalOrderId]
                 );
+                customerId = customer.id;
                 console.log(`[WEBHOOK] Associated order ${finalOrderId} with customer ${customer.id}`);
               }
+            } else if (updatedOrder.customer_id) {
+              customerId = updatedOrder.customer_id;
             }
           } catch (err) {
             console.error('Error associating order with customer:', err);
+          }
+
+          // Salvar endereço do checkout no perfil do cliente
+          if (customerId && updatedOrder.shipping_address_json) {
+            try {
+              // Buscar pedido atualizado para garantir que temos o customer_id correto
+              const orderWithCustomer = await getOrder(db, finalOrderId);
+              if (orderWithCustomer?.customer_id) {
+                const shippingAddress = typeof updatedOrder.shipping_address_json === 'string'
+                  ? JSON.parse(updatedOrder.shipping_address_json)
+                  : updatedOrder.shipping_address_json;
+
+                // Verificar se já existe um endereço similar para evitar duplicatas
+                const existingAddresses = await getAddresses(db, orderWithCustomer.customer_id);
+                const addressExists = existingAddresses?.some(addr => 
+                  addr.address_line1 === shippingAddress.address_line1 &&
+                  addr.postal_code === shippingAddress.postal_code &&
+                  addr.city === shippingAddress.city
+                );
+
+                if (!addressExists && shippingAddress.address_line1) {
+                  // Criar novo endereço com os dados do checkout
+                  await createAddress(db, orderWithCustomer.customer_id, {
+                    type: 'shipping',
+                    first_name: shippingAddress.first_name || '',
+                    last_name: shippingAddress.last_name || '',
+                    company: shippingAddress.company || null,
+                    address_line1: shippingAddress.address_line1 || '',
+                    address_line2: shippingAddress.address_line2 || null,
+                    city: shippingAddress.city || '',
+                    state: shippingAddress.state || '',
+                    postal_code: shippingAddress.postal_code || '',
+                    country: shippingAddress.country || 'PT',
+                    phone: shippingAddress.phone || null,
+                    is_default: existingAddresses?.length === 0 ? 1 : 0, // Marcar como padrão se for o primeiro endereço
+                  });
+                  console.log(`[WEBHOOK] Saved shipping address from checkout for customer ${orderWithCustomer.customer_id}`);
+                } else if (addressExists) {
+                  console.log(`[WEBHOOK] Address already exists for customer ${orderWithCustomer.customer_id}, skipping`);
+                }
+              }
+            } catch (err) {
+              console.error('Error saving address from checkout:', err);
+              // Não falhar se o endereço não puder ser salvo
+            }
           }
 
           // Criar notificação para o cliente
