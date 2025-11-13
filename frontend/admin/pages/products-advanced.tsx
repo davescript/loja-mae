@@ -569,8 +569,39 @@ export default function AdminProductsPageAdvanced() {
 
               <TabsContent value="imagens" className="space-y-4 mt-4">
                 <div className="space-y-4">
+                  {/* Existing Images (when editing) */}
+                  {editingProduct && editingProduct.images && editingProduct.images.length > 0 && (
+                    <div>
+                      <Label>Imagens Existentes</Label>
+                      <div className="grid grid-cols-4 gap-4 mt-2">
+                        {editingProduct.images.map((img) => (
+                          <div key={img.id} className="relative">
+                            <img
+                              src={img.image_url}
+                              alt={img.alt_text || `Imagem ${img.id}`}
+                              className="w-full h-32 object-cover rounded-lg border"
+                            />
+                            {imagesToDelete.includes(img.id) ? (
+                              <div className="absolute inset-0 bg-red-500/50 rounded-lg flex items-center justify-center">
+                                <span className="text-white font-semibold">Remover</span>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setImagesToDelete([...imagesToDelete, img.id])}
+                                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-opacity"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
-                    <Label htmlFor="images">Imagens do Produto</Label>
+                    <Label htmlFor="images">Adicionar Novas Imagens</Label>
                     <Input
                       id="images"
                       type="file"
