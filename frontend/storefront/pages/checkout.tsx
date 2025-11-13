@@ -38,10 +38,44 @@ function CheckoutForm({
     setError(null)
 
     try {
+      // Obter dados do AddressElement (endereço de entrega)
+      const addressElement = elements.getElement('address');
+      let shippingAddress = null;
+      
+      if (addressElement) {
+        try {
+          const addressValue = await addressElement.getValue();
+          if (addressValue?.complete) {
+            shippingAddress = addressValue.value;
+          }
+        } catch (err) {
+          console.warn('Could not get address from AddressElement:', err);
+        }
+      }
+
+      // Preparar billing_details a partir do endereço de entrega
+      const billingDetails: any = {};
+      if (shippingAddress) {
+        billingDetails.name = shippingAddress.name || '';
+        billingDetails.email = shippingAddress.email || '';
+        billingDetails.phone = shippingAddress.phone || '';
+        billingDetails.address = {
+          line1: shippingAddress.address?.line1 || '',
+          line2: shippingAddress.address?.line2 || null,
+          city: shippingAddress.address?.city || '',
+          state: shippingAddress.address?.state || '',
+          postal_code: shippingAddress.address?.postal_code || '',
+          country: shippingAddress.address?.country || 'PT',
+        };
+      }
+
       const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/checkout/success`,
+          payment_method_data: {
+            billing_details: billingDetails.name || billingDetails.email ? billingDetails : undefined,
+          },
         },
         redirect: 'if_required',
       })
@@ -144,10 +178,10 @@ function CheckoutForm({
           options={{
             fields: {
               billingDetails: {
-                name: 'never',
-                email: 'never',
-                phone: 'never',
-                address: 'never',
+                name: 'auto',
+                email: 'auto',
+                phone: 'auto',
+                address: 'auto',
               },
             },
           }}
