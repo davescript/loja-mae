@@ -4,7 +4,7 @@ import { successResponse, errorResponse } from '../../utils/response';
 import { handleError } from '../../utils/errors';
 import { requireAuth } from '../../utils/auth';
 import { getOrder } from '../../modules/orders';
-import { executeQuery } from '../../utils/db';
+import { executeQuery, executeOne } from '../../utils/db';
 import { generateInvoiceHTML } from '../../utils/pdf';
 
 /**
@@ -29,9 +29,11 @@ export async function handleGetInvoice(request: Request, env: Env): Promise<Resp
       return errorResponse('Order not found', 404);
     }
 
-    // Check permissions: customer can only see their own orders, admin can see all
-    if (user.type === 'customer' && order.customer_id !== user.id) {
-      return errorResponse('Unauthorized', 403);
+    // Check permissions: customer can only see their own orders (by customer_id OR email), admin can see all
+    if (user.type === 'customer') {
+      if (order.customer_id !== user.id && order.email !== user.email) {
+        return errorResponse('Unauthorized', 403);
+      }
     }
 
     // Get order items
