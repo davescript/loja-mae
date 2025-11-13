@@ -67,7 +67,6 @@ export default function AdminProductsPageAdvanced() {
   })
 
   const form = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema),
     defaultValues: {
       title: "",
       description: "",
@@ -345,7 +344,11 @@ export default function AdminProductsPageAdvanced() {
 
                   <div className="space-y-2">
                     <Label htmlFor="sku">SKU</Label>
-                    <Input id="sku" {...form.register("sku")} />
+                    <Input
+                      id="sku"
+                      value={form.watch("sku") || ""}
+                      onChange={(e) => form.setValue("sku", e.target.value)}
+                    />
                   </div>
                 </div>
 
