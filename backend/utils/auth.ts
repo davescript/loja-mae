@@ -22,8 +22,12 @@ export async function getCustomerFromToken(
   jwtSecret: string
 ): Promise<{ id: number; email: string } | null> {
   try {
+    console.log(`[AUTH] Verificando token JWT: ${token.substring(0, 20)}...`);
     const payload = verifyToken(token, jwtSecret);
+    console.log(`[AUTH] Payload decodificado:`, { id: payload.id, email: payload.email, type: payload.type });
+    
     if (payload.type !== 'customer') {
+      console.error(`[AUTH] Token não é de cliente, tipo: ${payload.type}`);
       return null;
     }
 
@@ -33,12 +37,20 @@ export async function getCustomerFromToken(
       [payload.id]
     );
 
-    if (!customer || customer.is_active === 0) {
+    if (!customer) {
+      console.error(`[AUTH] Cliente não encontrado no banco: ID ${payload.id}`);
       return null;
     }
 
+    if (customer.is_active === 0) {
+      console.error(`[AUTH] Cliente inativo: ID ${payload.id}`);
+      return null;
+    }
+
+    console.log(`[AUTH] Cliente encontrado: ${customer.email} (ID: ${customer.id})`);
     return { id: customer.id, email: customer.email };
-  } catch (error) {
+  } catch (error: any) {
+    console.error(`[AUTH] Erro ao verificar token:`, error.message);
     return null;
   }
 }
