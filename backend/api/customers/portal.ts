@@ -116,25 +116,25 @@ export async function handleGetStats(request: Request, env: Env): Promise<Respon
     const user = await requireAuth(request, env, 'customer');
     const db = getDb(env);
 
-    // Total orders
+    // Total orders (by customer_id OR email for guest orders)
     const totalOrders = await executeOne<{ count: number }>(
       db,
-      'SELECT COUNT(*) as count FROM orders WHERE customer_id = ?',
-      [user.id]
+      'SELECT COUNT(*) as count FROM orders WHERE customer_id = ? OR email = ?',
+      [user.id, user.email]
     );
 
     // Total spent
     const totalSpent = await executeOne<{ total: number }>(
       db,
-      'SELECT COALESCE(SUM(total_cents), 0) as total FROM orders WHERE customer_id = ? AND payment_status = "paid"',
-      [user.id]
+      'SELECT COALESCE(SUM(total_cents), 0) as total FROM orders WHERE (customer_id = ? OR email = ?) AND payment_status = "paid"',
+      [user.id, user.email]
     );
 
     // Pending orders
     const pendingOrders = await executeOne<{ count: number }>(
       db,
-      'SELECT COUNT(*) as count FROM orders WHERE customer_id = ? AND status IN ("pending", "paid", "processing")',
-      [user.id]
+      'SELECT COUNT(*) as count FROM orders WHERE (customer_id = ? OR email = ?) AND status IN ("pending", "paid", "processing")',
+      [user.id, user.email]
     );
 
     // Recent order
@@ -145,8 +145,8 @@ export async function handleGetStats(request: Request, env: Env): Promise<Respon
       created_at: string;
     }>(
       db,
-      'SELECT id, order_number, total_cents, created_at FROM orders WHERE customer_id = ? ORDER BY created_at DESC LIMIT 1',
-      [user.id]
+      'SELECT id, order_number, total_cents, created_at FROM orders WHERE customer_id = ? OR email = ? ORDER BY created_at DESC LIMIT 1',
+      [user.id, user.email]
     );
 
     return successResponse({
@@ -173,18 +173,19 @@ export async function handleGetOrders(request: Request, env: Env): Promise<Respo
     const search = url.searchParams.get('search') || '';
     const status = url.searchParams.get('status') || '';
 
-    let whereClause = 'WHERE customer_id = ?';
-    const params: any[] = [user.id];
+            // Allow customers to see orders by customer_id OR by email (for guest orders)
+            let whereClause = 'WHERE (customer_id = ? OR email = ?)';
+            const params: any[] = [user.id, user.email];
 
-    if (search) {
-      whereClause += ' AND order_number LIKE ?';
-      params.push(`%${search}%`);
-    }
+            if (search) {
+              whereClause += ' AND order_number LIKE ?';
+              params.push(`%${search}%`);
+            }
 
-    if (status && status !== 'all') {
-      whereClause += ' AND status = ?';
-      params.push(status);
-    }
+            if (status && status !== 'all') {
+              whereClause += ' AND status = ?';
+              params.push(status);
+            }
 
     // Handle limit parameter for dashboard (quick access)
     const finalLimit = limit ? parseInt(limit) : pageSize;
@@ -241,10 +242,11 @@ export async function handleGetOrder(request: Request, env: Env, orderNumber: st
     const user = await requireAuth(request, env, 'customer');
     const db = getDb(env);
 
+    // Allow customers to see orders by customer_id OR by email (for guest orders)
     const order = await executeOne(
       db,
-      'SELECT * FROM orders WHERE order_number = ? AND customer_id = ?',
-      [orderNumber, user.id]
+      'SELECT * FROM orders WHERE order_number = ? AND (customer_id = ? OR email = ?)',
+      [orderNumber, user.id, user.email]
     );
 
     if (!order) {
