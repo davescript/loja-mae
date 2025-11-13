@@ -148,10 +148,12 @@ export default function AdminCustomersPage() {
             <DataTable
               data={customersData?.items || []}
               columns={columns}
-              page={page}
-              totalPages={customersData?.totalPages || 0}
-              onPageChange={setPage}
-              total={customersData?.total || 0}
+              pagination={{
+                page,
+                pageSize: 20,
+                total: customersData?.total || 0,
+                onPageChange: setPage,
+              }}
             />
           )}
         </CardContent>
