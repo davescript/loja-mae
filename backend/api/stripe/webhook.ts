@@ -114,16 +114,41 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
             console.error('Error updating webhook log:', err);
           }
 
+          // Associar pedido ao cliente se ainda não estiver associado (para guest checkout)
+          try {
+            if (!updatedOrder.customer_id && updatedOrder.email) {
+              // Tentar encontrar cliente pelo email
+              const customer = await executeOne<{ id: number }>(
+                db,
+                'SELECT id FROM customers WHERE email = ?',
+                [updatedOrder.email]
+              );
+              if (customer) {
+                // Associar pedido ao cliente encontrado
+                await executeRun(
+                  db,
+                  'UPDATE orders SET customer_id = ? WHERE id = ?',
+                  [customer.id, finalOrderId]
+                );
+                console.log(`[WEBHOOK] Associated order ${finalOrderId} with customer ${customer.id}`);
+              }
+            }
+          } catch (err) {
+            console.error('Error associating order with customer:', err);
+          }
+
           // Criar notificação para o cliente
           try {
-            if (updatedOrder.customer_id) {
+            // Buscar customer_id atualizado
+            const orderWithCustomer = await getOrder(db, finalOrderId);
+            if (orderWithCustomer?.customer_id) {
               await executeRun(
                 db,
                 `INSERT INTO customer_notifications (
                   customer_id, type, title, message, order_id, is_read, created_at
                 ) VALUES (?, ?, ?, ?, ?, 0, datetime('now'))`,
                 [
-                  updatedOrder.customer_id,
+                  orderWithCustomer.customer_id,
                   'payment_confirmed',
                   'Pagamento Confirmado',
                   `Seu pedido #${updatedOrder.order_number} foi pago com sucesso!`,

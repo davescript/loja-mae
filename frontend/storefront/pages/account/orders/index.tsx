@@ -47,7 +47,9 @@ export default function CustomerOrdersPage() {
       );
       return response.data || { items: [], total: 0, page: 1, pageSize: 10, totalPages: 0 };
     },
-    staleTime: 30000,
+    staleTime: 0, // Sempre buscar dados frescos
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000, // Atualizar a cada 30 segundos
   });
 
   const orders = data?.items || [];

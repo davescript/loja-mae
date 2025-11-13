@@ -31,7 +31,9 @@ export default function CustomerDashboardPage() {
       const response = await apiRequest<{ items: Order[]; total: number }>('/api/customers/orders?limit=5');
       return response.data || { items: [], total: 0 };
     },
-    staleTime: 30000,
+    staleTime: 0, // Sempre buscar dados frescos
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000, // Atualizar a cada 30 segundos
   });
 
   // Fetch customer stats
@@ -51,7 +53,9 @@ export default function CustomerDashboardPage() {
         recent_order: null,
       };
     },
-    staleTime: 60000,
+    staleTime: 0, // Sempre buscar dados frescos
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000, // Atualizar a cada 30 segundos
   });
 
   const orders = ordersData?.items || [];

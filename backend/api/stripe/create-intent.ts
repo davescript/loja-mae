@@ -150,7 +150,10 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
         }
       }
     } catch {
-      // Guest checkout - email padrão
+      // Guest checkout - tentar pegar email do body se fornecido
+      if (body.shipping_address?.email) {
+        email = body.shipping_address.email;
+      }
     }
     
     // Criar endereço padrão se não fornecido (shipping_address_json é NOT NULL)
