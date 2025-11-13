@@ -62,8 +62,14 @@ export default function AdminProductsPage() {
         method: editingProduct ? 'PUT' : 'POST',
       });
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Invalidate all product-related queries
       queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      if (data?.data?.id) {
+        queryClient.invalidateQueries({ queryKey: ['product', data.data.id] });
+        queryClient.invalidateQueries({ queryKey: ['product', data.data.slug] });
+      }
       setIsModalOpen(false);
       setEditingProduct(null);
       setToast({ type: 'success', message: 'Produto salvo com sucesso!' });

@@ -9,7 +9,7 @@ export default function LatestProductsSection() {
     queryKey: ['products', 'featured-premium'],
     queryFn: async () => {
       const response = await apiRequest<{ items: Product[] }>(
-        '/api/products?featured=1&status=active&pageSize=8'
+        '/api/products?featured=1&status=active&pageSize=8&include=images'
       );
       return response.data?.items || [];
     },

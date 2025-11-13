@@ -162,6 +162,7 @@ export async function listProducts(
     featured?: number;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    include?: string;
   } = {}
 ): Promise<{ items: Product[]; total: number }> {
   const {
@@ -231,6 +232,28 @@ export async function listProducts(
       countParams
     ),
   ]);
+
+  // If include parameter is set, load images for each product
+  const include = (filters as any).include;
+  if (include && (include === 'images' || include === 'all')) {
+    const productsWithImages = await Promise.all(
+      (items || []).map(async (product) => {
+        const images = await executeQuery<ProductImage>(
+          db,
+          'SELECT * FROM product_images WHERE product_id = ? ORDER BY position ASC, id ASC',
+          [product.id]
+        );
+        return {
+          ...product,
+          images: images || [],
+        };
+      })
+    );
+    return {
+      items: productsWithImages,
+      total: totalResult?.count || 0,
+    };
+  }
 
   return {
     items: items || [],

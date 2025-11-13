@@ -37,7 +37,7 @@ export default function ProductsPage() {
         if (categorySlug) params.append('category', categorySlug);
 
         const response = await apiRequest<{ items: Product[]; total: number }>(
-          `/api/products?${params.toString()}`
+          `/api/products?${params.toString()}&include=images`
         );
         return response.data || { items: [], total: 0 };
       } catch (error) {

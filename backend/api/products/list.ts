@@ -13,7 +13,9 @@ export async function handleListProducts(request: Request, env: Env): Promise<Re
     const validated = listProductsSchema.parse(params);
     const db = getDb(env);
     
-    const result = await listProducts(db, validated);
+    // Pass include parameter if present
+    const include = url.searchParams.get('include');
+    const result = await listProducts(db, { ...validated, include: include || undefined });
     
     return successResponse({
       items: result.items,
