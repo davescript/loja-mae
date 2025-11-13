@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import type { Product } from '@shared/types';
 import { formatPrice } from '../../../utils/format';
 import { useCartStore } from '../../../store/cartStore';
+import { useFavoritesStore } from '../../../store/favoritesStore';
 import { useToast } from '../../../admin/hooks/useToast';
 import { sanitizeHtml } from '../../../utils/sanitize';
 
@@ -17,11 +18,13 @@ type QuickViewModalProps = {
 
 export default function QuickViewModal({ open, onOpenChange, product }: QuickViewModalProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const modalRef = useRef<HTMLDivElement>(null);
   const { addItem } = useCartStore();
+  const { toggleFavorite, isFavorite } = useFavoritesStore();
   const { toast } = useToast();
+  
+  const isProductFavorite = product ? isFavorite(product.id) : false;
 
   const images = product?.images && product.images.length > 0 
     ? product.images 
@@ -328,16 +331,26 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
                   <div className="mt-auto space-y-3">
                     <div className="flex gap-3">
                       <button
-                        onClick={() => setIsFavorite(!isFavorite)}
+                        onClick={() => {
+                          if (product) {
+                            toggleFavorite(product.id);
+                            toast({
+                              title: isProductFavorite ? 'Removido dos favoritos' : 'Adicionado aos favoritos',
+                              description: isProductFavorite 
+                                ? 'Produto removido da sua lista de favoritos'
+                                : 'Produto adicionado à sua lista de favoritos',
+                            });
+                          }
+                        }}
                         className={`flex-1 h-12 rounded-lg flex items-center justify-center gap-2 transition-colors ${
-                          isFavorite
+                          isProductFavorite
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-muted hover:bg-muted/80'
                         }`}
                         aria-label="Adicionar aos favoritos"
                       >
-                        <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
-                        {isFavorite ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos'}
+                        <Heart className={`w-5 h-5 ${isProductFavorite ? 'fill-current' : ''}`} />
+                        {isProductFavorite ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos'}
                       </button>
                     </div>
                     <button 

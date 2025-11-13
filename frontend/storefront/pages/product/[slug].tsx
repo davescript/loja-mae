@@ -8,6 +8,7 @@ import { Star, ShoppingCart, Heart, Share2, Package, Truck, Shield, ChevronLeft,
 import { formatPrice } from '../../../utils/format';
 import { sanitizeHtml } from '../../../utils/sanitize';
 import { useCartStore } from '../../../store/cartStore';
+import { useFavoritesStore } from '../../../store/favoritesStore';
 import { useToast } from '../../../admin/hooks/useToast';
 
 export default function ProductPage() {
@@ -16,7 +17,6 @@ export default function ProductPage() {
   const [selectedVariant, setSelectedVariant] = useState<number | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [zoomImage, setZoomImage] = useState(false);
 
   const { data: product, isLoading, error } = useQuery({
@@ -39,6 +39,7 @@ export default function ProductPage() {
   });
 
   const { addItem } = useCartStore();
+  const { toggleFavorite, isFavorite } = useFavoritesStore();
   const { toast } = useToast();
 
   if (isLoading) {
@@ -369,15 +370,25 @@ export default function ProductPage() {
 
             <div className="flex gap-3">
               <button
-                onClick={() => setIsFavorite(!isFavorite)}
+                onClick={() => {
+                  if (product) {
+                    toggleFavorite(product.id);
+                    toast({
+                      title: isFavorite(product.id) ? 'Removido dos favoritos' : 'Adicionado aos favoritos',
+                      description: isFavorite(product.id) 
+                        ? 'Produto removido da sua lista de favoritos'
+                        : 'Produto adicionado à sua lista de favoritos',
+                    });
+                  }
+                }}
                 className={`flex-1 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
-                  isFavorite
+                  product && isFavorite(product.id)
                     ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400'
                     : 'bg-muted hover:bg-muted/80'
                 }`}
               >
-                <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
-                {isFavorite ? 'Favoritado' : 'Favoritar'}
+                <Heart className={`w-5 h-5 ${product && isFavorite(product.id) ? 'fill-current' : ''}`} />
+                {product && isFavorite(product.id) ? 'Favoritado' : 'Favoritar'}
               </button>
               <button
                 onClick={handleShare}

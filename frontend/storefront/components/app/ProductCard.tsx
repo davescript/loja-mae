@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import { formatPrice } from '../../../utils/format';
 import { useCartStore } from '../../../store/cartStore';
+import { useFavoritesStore } from '../../../store/favoritesStore';
 import { useToast } from '../../../admin/hooks/useToast';
 
 type Props = {
@@ -15,8 +16,10 @@ type Props = {
 
 export default function ProductCard({ product, onQuickView, onAddToCart }: Props) {
   const [isHovered, setIsHovered] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  const { toggleFavorite, isFavorite } = useFavoritesStore();
+  const isProductFavorite = isFavorite(product.id);
   
   const images = product.images && product.images.length > 0 
     ? product.images 
@@ -203,16 +206,23 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
               whileTap={{ scale: 0.9 }}
               onClick={(e) => {
                 e.preventDefault();
-                setIsFavorite(!isFavorite);
+                e.stopPropagation();
+                toggleFavorite(product.id);
+                toast({
+                  title: isProductFavorite ? 'Removido dos favoritos' : 'Adicionado aos favoritos',
+                  description: isProductFavorite 
+                    ? 'Produto removido da sua lista de favoritos'
+                    : 'Produto adicionado à sua lista de favoritos',
+                });
               }}
               className={`w-10 h-10 rounded-full backdrop-blur-sm flex items-center justify-center shadow-lg transition-colors ${
-                isFavorite 
+                isProductFavorite 
                   ? 'bg-primary text-primary-foreground' 
                   : 'bg-white/90 hover:bg-white'
               }`}
               aria-label="Adicionar aos favoritos"
             >
-              <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+              <Heart className={`w-5 h-5 ${isProductFavorite ? 'fill-current' : ''}`} />
             </motion.button>
           </motion.div>
         </div>
