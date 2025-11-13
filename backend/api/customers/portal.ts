@@ -357,7 +357,24 @@ export async function handleCreateAddress(request: Request, env: Env): Promise<R
       ]
     );
 
-    return successResponse({ id: result.meta.last_row_id, message: 'Address created' });
+    // Log para debug
+    console.log(`[API] Endereço criado para cliente ${user.id}, ID: ${result.meta.last_row_id}`);
+
+    // Verificar se foi salvo corretamente
+    const savedAddress = await executeOne<Address>(
+      db,
+      'SELECT * FROM addresses WHERE id = ?',
+      [result.meta.last_row_id]
+    );
+
+    if (!savedAddress) {
+      console.error(`[API] ERRO: Endereço não foi encontrado após criação! ID: ${result.meta.last_row_id}`);
+      return errorResponse('Erro ao criar endereço', 500);
+    }
+
+    console.log(`[API] Endereço confirmado no banco:`, savedAddress);
+
+    return successResponse({ id: result.meta.last_row_id, message: 'Address created', address: savedAddress });
   } catch (error) {
     const { message, status } = handleError(error);
     return errorResponse(message, status);

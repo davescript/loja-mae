@@ -34,24 +34,36 @@ export default function AdminCustomersPage() {
 
   const handleViewCustomer = async (customer: Customer, forceRefresh = false) => {
     try {
-      // Invalidar cache para garantir dados frescos
-      if (forceRefresh) {
-        queryClient.invalidateQueries({ queryKey: ['admin', 'customer', customer.id] });
-      }
+      // SEMPRE invalidar cache para garantir dados frescos
+      queryClient.invalidateQueries({ queryKey: ['admin', 'customer', customer.id] });
       
       // Buscar dados atualizados do cliente (sempre buscar do servidor)
       const response = await apiRequest<Customer & { addresses?: Address[] }>(
         `/api/customers/${customer.id}?t=${Date.now()}` // Adicionar timestamp para evitar cache
       );
       
+      console.log('Resposta da API para cliente:', response);
+      console.log('Endereços recebidos:', response.data?.addresses);
+      
       if (response.data) {
         // Garantir que addresses seja um array
+        const addresses = Array.isArray(response.data.addresses) 
+          ? response.data.addresses 
+          : (response.data as any).addresses 
+            ? [response.data as any].addresses 
+            : [];
+        
         const customerData = {
           ...response.data,
-          addresses: Array.isArray(response.data.addresses) ? response.data.addresses : [],
+          addresses: addresses,
         };
+        
+        console.log('Dados do cliente preparados:', customerData);
+        console.log('Número de endereços:', customerData.addresses.length);
+        
         setSelectedCustomer(customerData);
       } else {
+        console.warn('Nenhum dado retornado da API');
         setSelectedCustomer(null);
       }
     } catch (error) {

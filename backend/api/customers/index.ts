@@ -55,11 +55,14 @@ export async function handleCustomersRoutes(request: Request, env: Env): Promise
       }
 
       // Get customer addresses
-      const addresses = await executeQuery(
+      const addresses = await executeQuery<Address>(
         db,
         'SELECT * FROM addresses WHERE customer_id = ? ORDER BY is_default DESC, created_at DESC',
         [id]
       );
+
+      // Log para debug
+      console.log(`[API] Cliente ${id} - Endereços encontrados:`, addresses?.length || 0);
 
       return successResponse({
         ...customer,
