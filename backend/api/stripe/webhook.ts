@@ -59,17 +59,24 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
           );
           if (order) {
             finalOrderId = order.id;
+            console.log(`[WEBHOOK] Found order ${finalOrderId} by payment intent ID`);
+          } else {
+            console.error(`[WEBHOOK] Order not found for payment intent ${paymentIntent.id}. Metadata:`, paymentIntent.metadata);
           }
         }
 
         if (finalOrderId) {
+          console.log(`[WEBHOOK] Updating order ${finalOrderId} with payment intent ${paymentIntent.id}`);
+          
           // Atualizar status do pedido
-          await updateOrderPayment(
+          const updatedOrder = await updateOrderPayment(
             db,
             finalOrderId,
             paymentIntent.id,
             paymentIntent.latest_charge as string
           );
+          
+          console.log(`[WEBHOOK] Order ${finalOrderId} updated successfully. Status: ${updatedOrder.status}, Payment Status: ${updatedOrder.payment_status}`);
 
           // Adicionar tracking history
           try {

@@ -46,6 +46,11 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
     }
 
     if (path.startsWith('/api/orders')) {
+      // Sync payment status endpoint
+      if (path === '/api/orders/sync-payment' && method === 'POST') {
+        const { handleSyncPaymentStatus } = await import('./orders/sync-payment');
+        return handleCORS(await handleSyncPaymentStatus(request, env), env, request);
+      }
       return handleCORS(await handleOrdersRoutes(request, env), env, request);
     }
 

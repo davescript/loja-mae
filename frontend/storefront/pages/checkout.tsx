@@ -345,9 +345,27 @@ export default function CheckoutPage() {
     }
   }, [clientSecret])
 
-  const handlePaymentSuccess = (intentId: string) => {
+  const handlePaymentSuccess = async (intentId: string) => {
     setPaymentSuccess(true)
     setPaymentIntentId(intentId)
+    
+    // Sincronizar status do pagamento imediatamente após sucesso
+    // Isso garante que o status seja atualizado mesmo se o webhook falhar
+    try {
+      if (orderNumber) {
+        await fetch(`${API_BASE_URL}/api/orders/sync-payment?order_number=${orderNumber}&payment_intent_id=${intentId}`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Error syncing payment status:', error);
+      // Não bloquear o fluxo se a sincronização falhar
+    }
+    
     clearCart()
     
     setTimeout(() => {

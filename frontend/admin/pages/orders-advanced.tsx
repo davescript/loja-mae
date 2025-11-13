@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiRequest } from "../../utils/api"
 import { DataTable, type Column } from "../components/common/DataTable"
 import { Button } from "../components/ui/button"
@@ -7,9 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../components/ui/dialog"
 import { Badge } from "../components/ui/badge"
 import { formatPrice } from "../../utils/format"
-import { Eye, Package, Truck, CheckCircle, XCircle, Clock } from "lucide-react"
+import { Eye, Package, Truck, CheckCircle, XCircle, Clock, RefreshCw } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { useToast } from "../hooks/useToast"
 
 type Order = {
   id: number
@@ -18,6 +19,7 @@ type Order = {
   payment_status: string
   total_cents: number
   created_at: string
+  stripe_payment_intent_id?: string | null
   customer?: {
     name: string
     email: string
@@ -39,6 +41,8 @@ export default function AdminOrdersPageAdvanced() {
   const [search, setSearch] = useState("")
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
 
   const { data: ordersData, isLoading } = useQuery({
     queryKey: ["admin", "orders", page, search, statusFilter],
@@ -53,6 +57,43 @@ export default function AdminOrdersPageAdvanced() {
         `/api/orders?${params.toString()}`
       )
       return response.data || { items: [], total: 0, totalPages: 0 }
+    },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000, // Atualizar a cada 30 segundos
+  })
+
+  const syncPaymentMutation = useMutation({
+    mutationFn: async ({ orderId, orderNumber, paymentIntentId }: { orderId?: number; orderNumber?: string; paymentIntentId?: string }) => {
+      const params = new URLSearchParams()
+      if (orderId) params.append('order_id', orderId.toString())
+      if (orderNumber) params.append('order_number', orderNumber)
+      if (paymentIntentId) params.append('payment_intent_id', paymentIntentId)
+      
+      const response = await apiRequest<{ message: string; payment_status: string; status: string }>(
+        `/api/orders/sync-payment?${params.toString()}`,
+        { method: 'POST' }
+      )
+      return response.data
+    },
+    onSuccess: (data) => {
+      if (data) {
+        toast({
+          title: 'Status sincronizado',
+          description: data.message || 'Status do pagamento atualizado com sucesso',
+        })
+      }
+      queryClient.invalidateQueries({ queryKey: ["admin", "orders"] })
+      if (selectedOrder) {
+        queryClient.invalidateQueries({ queryKey: ["admin", "order", selectedOrder.id] })
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro ao sincronizar',
+        description: error.message || 'Não foi possível sincronizar o status do pagamento',
+        variant: 'destructive',
+      })
     },
   })
 
@@ -128,6 +169,42 @@ export default function AdminOrdersPageAdvanced() {
         </span>
       ),
     },
+    {
+      key: "actions",
+      header: "Ações",
+      accessor: (order) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation()
+              setSelectedOrder(order)
+            }}
+          >
+            <Eye className="w-4 h-4" />
+          </Button>
+          {order.payment_status === 'pending' && order.stripe_payment_intent_id && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation()
+                syncPaymentMutation.mutate({ 
+                  orderId: order.id,
+                  orderNumber: order.order_number,
+                  paymentIntentId: order.stripe_payment_intent_id || undefined
+                })
+              }}
+              disabled={syncPaymentMutation.isPending}
+              title="Sincronizar status do pagamento"
+            >
+              <RefreshCw className={`w-4 h-4 ${syncPaymentMutation.isPending ? 'animate-spin' : ''}`} />
+            </Button>
+          )}
+        </div>
+      ),
+    },
   ]
 
   return (
@@ -137,6 +214,16 @@ export default function AdminOrdersPageAdvanced() {
           <h1 className="text-3xl font-bold tracking-tight">Pedidos</h1>
           <p className="text-muted-foreground mt-2">Gerencie pedidos e entregas</p>
         </div>
+        <Button
+          onClick={() => queryClient.invalidateQueries({ queryKey: ["admin", "orders"] })}
+          disabled={isLoading}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+          Atualizar
+        </Button>
       </div>
 
       {/* Filters */}
@@ -180,11 +267,6 @@ export default function AdminOrdersPageAdvanced() {
             : undefined
         }
         onRowClick={(order) => setSelectedOrder(order)}
-        actions={(order) => (
-          <Button variant="ghost" size="icon" onClick={() => setSelectedOrder(order)}>
-            <Eye className="w-4 h-4" />
-          </Button>
-        )}
       />
 
       {/* Order Details Modal */}
@@ -200,7 +282,25 @@ export default function AdminOrdersPageAdvanced() {
               {/* Timeline */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Status do Pedido</CardTitle>
+                  <CardTitle className="flex items-center justify-between">
+                    Status do Pedido
+                    {orderDetails.payment_status === 'pending' && orderDetails.stripe_payment_intent_id && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => syncPaymentMutation.mutate({ 
+                          orderId: orderDetails.id,
+                          orderNumber: orderDetails.order_number,
+                          paymentIntentId: orderDetails.stripe_payment_intent_id || undefined
+                        })}
+                        disabled={syncPaymentMutation.isPending}
+                        className="flex items-center gap-2"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${syncPaymentMutation.isPending ? 'animate-spin' : ''}`} />
+                        Sincronizar Pagamento
+                      </Button>
+                    )}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -213,6 +313,17 @@ export default function AdminOrdersPageAdvanced() {
                         </div>
                       </div>
                     </div>
+                    {orderDetails.payment_status === 'paid' && (
+                      <div className="flex items-center gap-4">
+                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                        <div>
+                          <div className="font-medium">Pagamento confirmado</div>
+                          <div className="text-sm text-muted-foreground">
+                            Status: {orderDetails.payment_status}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
