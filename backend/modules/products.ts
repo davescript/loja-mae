@@ -233,26 +233,52 @@ export async function listProducts(
     ),
   ]);
 
-  // If include parameter is set, load images for each product
+  // If include parameter is set, load images for each product using JOIN to avoid N+1
   const include = (filters as any).include;
   if (include && (include === 'images' || include === 'all')) {
-    const productsWithImages = await Promise.all(
-      (items || []).map(async (product) => {
-        const images = await executeQuery<ProductImage>(
-          db,
-          'SELECT * FROM product_images WHERE product_id = ? ORDER BY position ASC, id ASC',
-          [product.id]
-        );
-        return {
-          ...product,
-          images: images || [],
-        };
-      })
-    );
-    return {
-      items: productsWithImages,
-      total: totalResult?.count || 0,
-    };
+    // Use a single query with LEFT JOIN to get all images at once
+    const productIds = (items || []).map(p => p.id);
+    
+    if (productIds.length > 0) {
+      const placeholders = productIds.map(() => '?').join(',');
+      const allImages = await executeQuery<ProductImage & { product_id: number }>(
+        db,
+        `SELECT pi.*, pi.product_id 
+         FROM product_images pi 
+         WHERE pi.product_id IN (${placeholders}) 
+         ORDER BY pi.product_id, pi.position ASC, pi.id ASC`,
+        productIds
+      );
+      
+      // Group images by product_id
+      const imagesByProduct = new Map<number, ProductImage[]>();
+      (allImages || []).forEach(img => {
+        if (!imagesByProduct.has(img.product_id)) {
+          imagesByProduct.set(img.product_id, []);
+        }
+        imagesByProduct.get(img.product_id)!.push({
+          id: img.id,
+          product_id: img.product_id,
+          image_url: img.image_url,
+          image_key: img.image_key,
+          alt_text: img.alt_text,
+          position: img.position,
+          is_primary: img.is_primary,
+          created_at: img.created_at,
+        });
+      });
+      
+      // Attach images to products
+      const productsWithImages = (items || []).map(product => ({
+        ...product,
+        images: imagesByProduct.get(product.id) || [],
+      }));
+      
+      return {
+        items: productsWithImages,
+        total: totalResult?.count || 0,
+      };
+    }
   }
 
   return {

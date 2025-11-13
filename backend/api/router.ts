@@ -2,6 +2,7 @@ import type { Env } from '../types';
 import { handleCORS } from '../utils/cors';
 import { handleError } from '../utils/errors';
 import { errorResponse, successResponse } from '../utils/response';
+import { verifyCSRF, shouldVerifyCSRF } from '../utils/csrf';
 
 // Import route handlers
 import { handleProductsRoutes } from './products';
@@ -18,6 +19,15 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
   // Handle CORS
   if (request.method === 'OPTIONS') {
     return handleCORS(new Response(null, { status: 204 }), env, request);
+  }
+
+  // Verify CSRF for state-changing requests
+  if (shouldVerifyCSRF(request) && !verifyCSRF(request, env)) {
+    return handleCORS(
+      errorResponse('Invalid origin. CSRF verification failed.', 403),
+      env,
+      request
+    );
   }
 
   const url = new URL(request.url);

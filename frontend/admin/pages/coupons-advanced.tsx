@@ -1,5 +1,8 @@
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
 import { apiRequest } from "../../utils/api"
 import { DataTable, type Column } from "../components/common/DataTable"
 import { Button } from "../components/ui/button"
@@ -16,6 +19,32 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { motion } from "framer-motion"
+import { validateDateRange } from "../../utils/validateDates"
+
+// Coupon schema for validation
+const couponSchema = z.object({
+  code: z.string().min(1, "Código é obrigatório").max(50, "Código muito longo"),
+  discount_type: z.enum(["percentage", "fixed"]),
+  discount_value: z.number().min(0.01, "Valor do desconto deve ser maior que zero"),
+  minimum_amount: z.number().min(0).optional().nullable(),
+  maximum_amount: z.number().min(0).optional().nullable(),
+  expires_at: z.string().optional().nullable(),
+  starts_at: z.string().optional().nullable(),
+  usage_limit: z.number().min(1).optional().nullable(),
+  usage_limit_per_user: z.number().min(1).optional().nullable(),
+  description: z.string().optional().nullable(),
+  is_active: z.boolean().default(true),
+}).refine((data) => {
+  if (data.expires_at && data.starts_at) {
+    return new Date(data.starts_at) < new Date(data.expires_at);
+  }
+  return true;
+}, {
+  message: "Data de início deve ser anterior à data de término",
+  path: ["expires_at"],
+});
+
+type CouponFormData = z.infer<typeof couponSchema>
 
 type Coupon = {
   id: number

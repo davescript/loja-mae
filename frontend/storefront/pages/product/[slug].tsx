@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import Carousel from '../../components/app/Carousel';
 import { Star } from 'lucide-react';
 import { formatPrice } from '../../../utils/format';
+import { sanitizeHtml } from '../../../utils/sanitize';
 
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -129,7 +130,12 @@ export default function ProductPage() {
               {formatPrice(product.compare_at_price_cents)}
             </p>
           )}
-          <p className="mt-6 text-muted-foreground leading-relaxed">{product.description}</p>
+          {product.description && (
+            <div 
+              className="mt-6 text-muted-foreground leading-relaxed prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.description) }}
+            />
+          )}
 
           {product.variants && product.variants.length > 0 && (
             <div className="mt-6">

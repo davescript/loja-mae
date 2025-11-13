@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../utils/api';
 import { useNavigate } from 'react-router-dom';
+import { handleError } from '../utils/errorHandler';
+import { useToast } from './useToast';
 
 type AdminUser = {
   id: number;
@@ -17,6 +19,7 @@ type LoginCredentials = {
 export function useAdminAuth() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Check if admin is authenticated
   const { data: admin, isLoading, error } = useQuery({
@@ -67,7 +70,12 @@ export function useAdminAuth() {
       navigate('/admin/dashboard');
     },
     onError: (error: Error) => {
-      console.error('Login error:', error);
+      const { message } = handleError(error);
+      toast({
+        title: "Erro no login",
+        description: message,
+        variant: "destructive",
+      });
     },
   });
 

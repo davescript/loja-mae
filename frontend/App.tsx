@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
+import { AdminAuthGuard } from './components/AuthGuard';
 
 // Storefront routes
 import StorefrontLayout from './storefront/layout/Layout';
@@ -58,7 +59,7 @@ function App() {
 
       {/* Admin Routes */}
       <Route path="/admin/login" element={<AdminLoginPage />} />
-      <Route path="/admin" element={<AdminLayout />}>
+      <Route path="/admin" element={<AdminAuthGuard><AdminLayout /></AdminAuthGuard>}>
         <Route path="dashboard" element={<AdminDashboardPage />} />
         <Route path="products" element={<AdminProductsPage />} />
         <Route path="categories" element={<AdminCategoriesPage />} />

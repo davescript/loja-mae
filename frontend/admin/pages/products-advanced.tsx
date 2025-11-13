@@ -12,6 +12,7 @@ import { Label } from "../components/ui/label"
 import { Textarea } from "../components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
 import { useToast } from "../hooks/useToast"
+import { handleError } from "../../utils/errorHandler"
 import { formatPrice } from "../../utils/format"
 import { Plus, Edit, Trash2, MoreVertical, Eye } from "lucide-react"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
@@ -207,14 +208,92 @@ export default function AdminProductsPageAdvanced() {
     }
   }
 
-  const onSubmit = (e: React.FormEvent) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    const errors: string[] = []
+    const validFiles: File[] = []
+
+    for (const file of files) {
+      const result = await validateImage(file)
+      if (result.valid) {
+        validFiles.push(file)
+      } else {
+        errors.push(`${file.name}: ${result.error}`)
+      }
+    }
+
+    if (errors.length > 0) {
+      setImageErrors(errors)
+      toast({
+        title: "Erro de validação",
+        description: errors.join(", "),
+        variant: "destructive",
+      })
+    } else {
+      setImageErrors([])
+    }
+
+    setUploadingImages([...uploadingImages, ...validFiles])
+  }
+
+  const removeImage = (index: number) => {
+    setUploadingImages(uploadingImages.filter((_, i) => i !== index))
+  }
+
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validate form
+    const isValid = await form.trigger()
+    if (!isValid) {
+      toast({
+        title: "Erro de validação",
+        description: "Por favor, corrija os erros no formulário",
+        variant: "destructive",
+      })
+      return
+    }
+
     const data = form.getValues()
-    saveMutation.mutate({
-      ...data,
-      price_cents: Math.round(data.price_cents * 100),
-      compare_at_price_cents: data.compare_at_price_cents ? Math.round(data.compare_at_price_cents * 100) : null,
+    
+    // Validate images
+    if (uploadingImages.length > 0) {
+      for (const file of uploadingImages) {
+        const result = await validateImage(file)
+        if (!result.valid) {
+          toast({
+            title: "Erro de validação",
+            description: `${file.name}: ${result.error}`,
+            variant: "destructive",
+          })
+          return
+        }
+      }
+    }
+
+    // Create FormData
+    const formData = new FormData()
+    formData.append("title", data.title)
+    if (data.description) formData.append("description", data.description)
+    if (data.short_description) formData.append("short_description", data.short_description)
+    formData.append("price_cents", Math.round(data.price_cents * 100).toString())
+    if (data.compare_at_price_cents) {
+      formData.append("compare_at_price_cents", Math.round(data.compare_at_price_cents * 100).toString())
+    }
+    if (data.sku) formData.append("sku", data.sku)
+    formData.append("stock_quantity", data.stock_quantity.toString())
+    formData.append("status", data.status)
+    formData.append("featured", data.featured ? "1" : "0")
+    if (data.category_id) formData.append("category_id", data.category_id.toString())
+    if (data.meta_title) formData.append("meta_title", data.meta_title)
+    if (data.meta_description) formData.append("meta_description", data.meta_description)
+
+    // Add images
+    uploadingImages.forEach((file, index) => {
+      formData.append("images", file)
     })
+
+    saveMutation.mutate(formData)
   }
 
   return (
@@ -224,7 +303,7 @@ export default function AdminProductsPageAdvanced() {
           <h1 className="text-3xl font-bold tracking-tight">Produtos</h1>
           <p className="text-muted-foreground mt-2">Gerencie seus produtos e inventário</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)}>
+        <Button onClick={handleNew}>
           <Plus className="w-4 h-4 mr-2" />
           Novo Produto
         </Button>
@@ -411,9 +490,11 @@ export default function AdminProductsPageAdvanced() {
                   <Input
                     id="stock_quantity"
                     type="number"
-                    value={form.watch("stock_quantity") || 0}
-                    onChange={(e) => form.setValue("stock_quantity", parseInt(e.target.value) || 0)}
+                    {...form.register("stock_quantity", { valueAsNumber: true })}
                   />
+                  {form.formState.errors.stock_quantity && (
+                    <p className="text-sm text-red-600">{form.formState.errors.stock_quantity.message}</p>
+                  )}
                 </div>
               </TabsContent>
 

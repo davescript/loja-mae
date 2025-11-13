@@ -9,6 +9,7 @@ import { Label } from "../components/ui/label"
 import { Textarea } from "../components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
 import { useToast } from "../hooks/useToast"
+import { validateImage } from "../../utils/validateImage"
 import { Plus, Edit, Trash2, MoreVertical, Image as ImageIcon, Upload, Eye, EyeOff, ArrowUp, ArrowDown } from "lucide-react"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import { motion } from "framer-motion"
@@ -157,9 +158,22 @@ export default function AdminBannersPage() {
     },
   ]
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      // Validate image
+      const { validateImage } = await import("../../utils/validateImage")
+      const result = await validateImage(file)
+      
+      if (!result.valid) {
+        toast({
+          title: "Erro de validação",
+          description: result.error,
+          variant: "destructive",
+        })
+        return
+      }
+
       const reader = new FileReader()
       reader.onloadend = () => {
         setImagePreview(reader.result as string)

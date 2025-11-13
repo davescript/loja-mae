@@ -1,4 +1,5 @@
 import type { ApiResponse } from '@shared/types';
+import { ApiError, NetworkError, AuthenticationError, handleError as handleApiError } from './errorHandler';
 
 // Get API base URL from environment or use default
 // In production, this should be set in Cloudflare Pages environment variables
@@ -71,16 +72,48 @@ export async function apiRequest<T = any>(
       credentials: 'include',
     });
 
-    const data = await response.json() as ApiResponse<T>;
-    
     if (!response.ok) {
-      const errorMessage = data.error || `HTTP error! status: ${response.status}`;
-      console.error('API Error:', errorMessage, response.status);
-      throw new Error(errorMessage);
+      const data = await response.json().catch(() => ({})) as ApiResponse<T>;
+      
+      // Handle specific status codes
+      if (response.status === 401) {
+        // Clear tokens on 401
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('admin_token');
+          localStorage.removeItem('customer_token');
+          localStorage.removeItem('token');
+        }
+        throw new AuthenticationError(data.error || 'Não autenticado');
+      }
+      
+      if (response.status === 403) {
+        throw new ApiError(data.error || 'Sem permissão', 403, 'FORBIDDEN');
+      }
+      
+      if (response.status === 422) {
+        throw new ApiError(data.error || 'Dados inválidos', 422, 'VALIDATION_ERROR', data);
+      }
+      
+      throw new ApiError(
+        data.error || `Erro HTTP ${response.status}`,
+        response.status,
+        (data as any).code
+      );
     }
 
+    const data = await response.json() as ApiResponse<T>;
     return data;
   } catch (error) {
+    // Re-throw known errors
+    if (error instanceof ApiError || error instanceof AuthenticationError || error instanceof NetworkError) {
+      throw error;
+    }
+    
+    // Handle network errors
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new NetworkError('Erro de conexão com o servidor');
+    }
+    
     console.error('API Request failed:', error);
     throw error;
   }
@@ -111,10 +144,31 @@ export async function apiFormData<T = any>(
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Network error' }));
-    const errorMessage = (errorData as { error?: string }).error || `HTTP error! status: ${response.status}`;
-    throw new Error(errorMessage);
+    const errorData = await response.json().catch(() => ({})) as ApiResponse<T>;
+    
+    if (response.status === 401) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('customer_token');
+        localStorage.removeItem('token');
+      }
+      throw new AuthenticationError(errorData.error || 'Não autenticado');
+    }
+    
+    if (response.status === 403) {
+      throw new ApiError(errorData.error || 'Sem permissão', 403, 'FORBIDDEN');
+    }
+    
+    if (response.status === 422) {
+      throw new ApiError(errorData.error || 'Dados inválidos', 422, 'VALIDATION_ERROR', errorData);
+    }
+    
+    throw new ApiError(
+      errorData.error || `Erro HTTP ${response.status}`,
+      response.status,
+      (errorData as any).code
+    );
   }
 
-  return response.json();
+  return response.json() as Promise<ApiResponse<T>>;
 }
