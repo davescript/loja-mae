@@ -127,19 +127,53 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
 
     // Criar pedido no banco (status: pending)
     const orderNumber = generateOrderNumber();
+    
+    // Calcular subtotais (simplificado - pode ser melhorado)
+    const subtotalCents = totalCents;
+    const taxCents = 0;
+    const shippingCents = 0;
+    const discountCents = 0;
+    
+    // Obter email do usuário ou usar guest
+    let email = 'guest@example.com';
+    try {
+      const user = await requireAuth(request, env, 'both');
+      if (user.type === 'customer') {
+        // Buscar email do cliente
+        const customer = await executeOne<{ email: string }>(
+          db,
+          'SELECT email FROM customers WHERE id = ?',
+          [customerId]
+        );
+        if (customer) {
+          email = customer.email;
+        }
+      }
+    } catch {
+      // Guest checkout - email padrão
+    }
+    
     const orderResult = await executeRun(
       db,
       `INSERT INTO orders (
-        order_number, customer_id, total_cents, status, payment_status, 
-        shipping_address, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
+        order_number, customer_id, email, status, payment_status, fulfillment_status,
+        subtotal_cents, tax_cents, shipping_cents, discount_cents, total_cents,
+        shipping_address_json, billing_address_json, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
       [
         orderNumber,
         customerId,
+        email,
+        'pending',
+        'pending',
+        'unfulfilled',
+        subtotalCents,
+        taxCents,
+        shippingCents,
+        discountCents,
         totalCents,
-        'pending',
-        'pending',
         body.shipping_address ? JSON.stringify(body.shipping_address) : null,
+        body.shipping_address ? JSON.stringify(body.shipping_address) : null, // billing same as shipping for now
       ]
     );
 
@@ -154,14 +188,18 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
       await executeRun(
         db,
         `INSERT INTO order_items (
-          order_id, product_id, variant_id, quantity, price_cents, created_at
-        ) VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+          order_id, product_id, variant_id, title, sku, quantity, price_cents, total_cents, image_url, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
         [
           orderId,
           orderItem.product_id,
           orderItem.variant_id,
+          orderItem.product_title,
+          null, // sku - pode ser melhorado
           orderItem.quantity,
           orderItem.price_cents,
+          orderItem.price_cents * orderItem.quantity,
+          null, // image_url - pode ser melhorado
         ]
       );
     }
