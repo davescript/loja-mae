@@ -55,7 +55,7 @@ function CheckoutForm({ clientSecret, orderNumber, onSuccess }: { clientSecret: 
 
 export default function CheckoutPage() {
   const [email, setEmail] = useState('');
-  const [shipping, setShipping] = useState<Address>({ first_name: '', last_name: '', address_line1: '', city: '', state: '', postal_code: '', country: 'BR' });
+  const [shipping, setShipping] = useState<Address>({ first_name: '', last_name: '', address_line1: '', city: '', state: '', postal_code: '', country: 'PT' });
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [publishableKey, setPublishableKey] = useState<string | null>(null);
@@ -118,8 +118,8 @@ export default function CheckoutPage() {
                 <input className="px-3 py-3 rounded-xl border bg-white" placeholder="Sobrenome" value={shipping.last_name} onChange={(e) => setShipping({ ...shipping, last_name: e.target.value })} />
                 <input className="px-3 py-3 rounded-xl border bg-white md:col-span-2" placeholder="Rua e número" value={shipping.address_line1} onChange={(e) => setShipping({ ...shipping, address_line1: e.target.value })} />
                 <input className="px-3 py-3 rounded-xl border bg-white" placeholder="Cidade" value={shipping.city} onChange={(e) => setShipping({ ...shipping, city: e.target.value })} />
-                <input className="px-3 py-3 rounded-xl border bg-white" placeholder="Estado" value={shipping.state} onChange={(e) => setShipping({ ...shipping, state: e.target.value })} />
-                <input className="px-3 py-3 rounded-xl border bg-white" placeholder="CEP" value={shipping.postal_code} onChange={(e) => setShipping({ ...shipping, postal_code: e.target.value })} />
+                <input className="px-3 py-3 rounded-xl border bg-white" placeholder="Distrito" value={shipping.state} onChange={(e) => setShipping({ ...shipping, state: e.target.value })} />
+                <input className="px-3 py-3 rounded-xl border bg-white" placeholder="Código Postal" value={shipping.postal_code} onChange={(e) => setShipping({ ...shipping, postal_code: e.target.value })} />
                 <input className="px-3 py-3 rounded-xl border bg-white md:col-span-2" placeholder="Telefone" value={shipping.phone || ''} onChange={(e) => setShipping({ ...shipping, phone: e.target.value })} />
               </div>
               <button disabled={!publishableKey || creating} onClick={handleCreateOrder} className="mt-6 px-6 py-3 rounded-full bg-primary text-primary-foreground">
