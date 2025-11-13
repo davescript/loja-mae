@@ -70,7 +70,7 @@ function App() {
         <Route path="favorites" element={<FavoritesPage />} />
         <Route path="orders" element={<OrdersPage />} />
         
-        {/* Customer Portal Routes - New Portal */}
+        {/* Customer Portal Routes - New Portal (replaces old /account) */}
         <Route path="account" element={<CustomerPortalLayout />}>
           <Route index element={<CustomerDashboardPage />} />
           <Route path="orders" element={<CustomerOrdersPage />} />

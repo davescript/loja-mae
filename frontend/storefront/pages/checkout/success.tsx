@@ -138,7 +138,7 @@ export default function CheckoutSuccessPage() {
           transition={{ delay: 0.4 }}
           className="flex flex-col sm:flex-row gap-4 justify-center mt-8"
         >
-          <Button onClick={() => navigate('/orders')} variant="outline">
+          <Button onClick={() => navigate('/account/orders')} variant="outline">
             <Package className="w-4 h-4 mr-2" />
             Ver Meus Pedidos
           </Button>

@@ -45,13 +45,18 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
         '30d'
       );
 
+      // Build name from first_name and last_name
+      const name = customer.first_name && customer.last_name
+        ? `${customer.first_name} ${customer.last_name}`
+        : customer.first_name || customer.last_name || customer.email.split('@')[0];
+
       const response = successResponse(
         {
           customer: {
             id: customer.id,
             email: customer.email,
-            first_name: customer.first_name,
-            last_name: customer.last_name,
+            name,
+            type: 'customer' as const,
           },
           token,
         },
@@ -89,13 +94,18 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
         '30d'
       );
 
+      // Build name from first_name and last_name
+      const name = customer.first_name && customer.last_name
+        ? `${customer.first_name} ${customer.last_name}`
+        : customer.first_name || customer.last_name || customer.email.split('@')[0];
+
       const response = successResponse(
         {
           customer: {
             id: customer.id,
             email: customer.email,
-            first_name: customer.first_name,
-            last_name: customer.last_name,
+            name,
+            type: 'customer' as const,
           },
           token,
         },
@@ -219,7 +229,20 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
             return errorResponse('Invalid token', 401);
           }
 
-          return successResponse({ user: customer, type: 'customer' });
+          // Build name from first_name and last_name
+          const name = customer.first_name && customer.last_name
+            ? `${customer.first_name} ${customer.last_name}`
+            : customer.first_name || customer.last_name || customer.email.split('@')[0];
+
+          return successResponse({ 
+            user: {
+              id: customer.id,
+              email: customer.email,
+              name,
+              type: 'customer' as const,
+            }, 
+            type: 'customer' 
+          });
         } else if (payload.type === 'admin') {
           const admin = await executeOne<{
             id: number;

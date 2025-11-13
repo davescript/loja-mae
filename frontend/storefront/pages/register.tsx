@@ -20,7 +20,7 @@ export default function RegisterPage() {
         { email, password, first_name: firstName, last_name: lastName },
         {
           onSuccess: () => {
-            navigate('/');
+            navigate('/account');
           },
           onError: (err: Error) => {
             setError(err.message || 'Erro ao registrar');

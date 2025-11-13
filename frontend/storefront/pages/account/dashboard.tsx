@@ -81,7 +81,7 @@ export default function CustomerDashboardPage() {
       {/* Welcome Section */}
       <div>
         <h1 className="text-3xl font-bold mb-2">
-          Olá, {user?.name || user?.email?.split('@')[0] || 'Cliente'}! 👋
+          Olá, {user?.name || (user?.email ? user.email.split('@')[0] : 'Cliente')}! 👋
         </h1>
         <p className="text-muted-foreground">
           Bem-vindo ao seu portal. Acompanhe seus pedidos e gerencie sua conta.

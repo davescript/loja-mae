@@ -7,6 +7,10 @@ export function useAuth() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<AuthUser | null>(null);
 
+  // Check if token exists on mount to enable query
+  const hasToken = typeof window !== 'undefined' && 
+    (localStorage.getItem('token') || localStorage.getItem('customer_token'));
+
   const { data, isLoading } = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: async () => {
@@ -16,15 +20,24 @@ export function useAuth() {
           setUser(response.data.user);
           return response.data;
         }
+        // If auth fails, clear tokens
+        localStorage.removeItem('token');
+        localStorage.removeItem('customer_token');
+        setUser(null);
         return null;
       } catch (error) {
-        // Silently fail - user is not authenticated
+        // Clear tokens on error
+        localStorage.removeItem('token');
+        localStorage.removeItem('customer_token');
+        setUser(null);
         console.log('User not authenticated');
         return null;
       }
     },
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true, // Refetch when window gains focus
+    enabled: typeof window !== 'undefined' && !!hasToken, // Only run if token exists
   });
 
   const loginMutation = useMutation({
@@ -34,7 +47,9 @@ export function useAuth() {
         body: JSON.stringify(credentials),
       });
       if (response.success && response.data) {
-        localStorage.setItem('token', response.data.token);
+        // Save token for customer
+        localStorage.setItem('customer_token', response.data.token);
+        localStorage.setItem('token', response.data.token); // Also save as token for compatibility
         setUser(response.data.customer);
         return response.data;
       }
@@ -52,7 +67,9 @@ export function useAuth() {
         body: JSON.stringify(data),
       });
       if (response.success && response.data) {
-        localStorage.setItem('token', response.data.token);
+        // Save token for customer
+        localStorage.setItem('customer_token', response.data.token);
+        localStorage.setItem('token', response.data.token); // Also save as token for compatibility
         setUser(response.data.customer);
         return response.data;
       }
@@ -69,6 +86,7 @@ export function useAuth() {
     },
     onSuccess: () => {
       localStorage.removeItem('token');
+      localStorage.removeItem('customer_token');
       setUser(null);
       queryClient.clear();
     },
@@ -78,10 +96,13 @@ export function useAuth() {
     logoutMutation.mutate();
   };
 
+  // Use data from query if available, otherwise use state
+  const currentUser = data?.user || user;
+  
   return {
-    user: data?.user || user,
+    user: currentUser,
     isLoading,
-    isAuthenticated: !!user,
+    isAuthenticated: !!currentUser,
     login: (credentials: { email: string; password: string }, options?: { onSuccess?: () => void; onError?: (err: Error) => void }) => {
       loginMutation.mutate(credentials, {
         onSuccess: () => {

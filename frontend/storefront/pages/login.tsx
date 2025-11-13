@@ -18,7 +18,7 @@ export default function LoginPage() {
         { email, password },
         {
           onSuccess: () => {
-            navigate('/');
+            navigate('/account');
           },
           onError: (err: Error) => {
             setError(err.message);
