@@ -33,7 +33,7 @@ export const useCartStore = create<CartStore>()(
       items: [],
       isLoading: false,
 
-        addItem: (item) => {
+      addItem: (item) => {
           try {
             console.log('🛒 addItem chamado com:', item);
             const { items } = get()
