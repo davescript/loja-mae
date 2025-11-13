@@ -429,6 +429,87 @@ export default function AdminOrdersPageAdvanced() {
                 </CardContent>
               </Card>
 
+              {/* Shipping Address */}
+              {orderDetails.shipping_address_json && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Truck className="w-5 h-5" />
+                      Endereço de Entrega
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {(() => {
+                      try {
+                        const shippingAddress = typeof orderDetails.shipping_address_json === 'string'
+                          ? JSON.parse(orderDetails.shipping_address_json)
+                          : orderDetails.shipping_address_json;
+                        
+                        return (
+                          <div className="space-y-2 text-sm">
+                            {(shippingAddress.first_name || shippingAddress.last_name) && (
+                              <div>
+                                <span className="font-medium">Nome: </span>
+                                <span>{shippingAddress.first_name || ''} {shippingAddress.last_name || ''}</span>
+                              </div>
+                            )}
+                            {shippingAddress.company && (
+                              <div>
+                                <span className="font-medium">Empresa: </span>
+                                <span>{shippingAddress.company}</span>
+                              </div>
+                            )}
+                            {shippingAddress.address_line1 && (
+                              <div>
+                                <span className="font-medium">Endereço: </span>
+                                <span>{shippingAddress.address_line1}</span>
+                              </div>
+                            )}
+                            {shippingAddress.address_line2 && (
+                              <div className="pl-4">
+                                <span>{shippingAddress.address_line2}</span>
+                              </div>
+                            )}
+                            {(shippingAddress.city || shippingAddress.postal_code) && (
+                              <div>
+                                <span className="font-medium">Cidade/CEP: </span>
+                                <span>
+                                  {shippingAddress.postal_code || ''} {shippingAddress.city || ''}
+                                </span>
+                              </div>
+                            )}
+                            {shippingAddress.state && (
+                              <div>
+                                <span className="font-medium">Distrito: </span>
+                                <span>{shippingAddress.state}</span>
+                              </div>
+                            )}
+                            {shippingAddress.country && (
+                              <div>
+                                <span className="font-medium">País: </span>
+                                <span>{shippingAddress.country}</span>
+                              </div>
+                            )}
+                            {shippingAddress.phone && (
+                              <div>
+                                <span className="font-medium">Telefone: </span>
+                                <span>{shippingAddress.phone}</span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      } catch (err) {
+                        return (
+                          <p className="text-sm text-muted-foreground">
+                            Erro ao carregar endereço
+                          </p>
+                        );
+                      }
+                    })()}
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Total */}
               <Card>
                 <CardHeader>
