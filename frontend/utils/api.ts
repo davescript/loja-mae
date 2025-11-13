@@ -46,10 +46,25 @@ export async function apiRequest<T = any>(
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   try {
-    // Admin token takes priority, then customer token, then regular token
-    const token = typeof window !== 'undefined' 
-      ? localStorage.getItem('admin_token') || localStorage.getItem('customer_token') || localStorage.getItem('token')
-      : null;
+    // Determine which token to use based on the endpoint
+    // Customer endpoints should NEVER use admin_token
+    const isAdminEndpoint = endpoint.startsWith('/api/admin/');
+    const isCustomerEndpoint = endpoint.startsWith('/api/customers/');
+    
+    let token: string | null = null;
+    if (typeof window !== 'undefined') {
+      if (isAdminEndpoint) {
+        // Admin endpoints: use admin_token only
+        token = localStorage.getItem('admin_token');
+      } else if (isCustomerEndpoint) {
+        // Customer endpoints: use customer_token or token, NEVER admin_token
+        // This prevents using admin_token when user is logged in as customer
+        token = localStorage.getItem('customer_token') || localStorage.getItem('token');
+      } else {
+        // Other endpoints (auth, products, etc): try all tokens in order
+        token = localStorage.getItem('admin_token') || localStorage.getItem('customer_token') || localStorage.getItem('token');
+      }
+    }
     
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
