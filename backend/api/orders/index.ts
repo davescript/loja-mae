@@ -31,7 +31,14 @@ export async function handleOrdersRoutes(request: Request, env: Env): Promise<Re
         validated.customer_id = user.id;
       }
 
+      // Log para debug
+      console.log(`[API] List orders - user type: ${user.type}, filters:`, validated);
+
       const result = await listOrders(db, validated);
+      
+      // Log para debug
+      console.log(`[API] Found ${result.items?.length || 0} orders, total: ${result.total}`);
+
       return successResponse({
         items: result.items,
         total: result.total,
