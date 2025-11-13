@@ -498,14 +498,20 @@ export default function AdminProductsPageAdvanced() {
                   <div className="space-y-2">
                     <Label htmlFor="category_id">Categoria</Label>
                     <Select
-                      value={form.watch("category_id")?.toString() || ""}
-                      onValueChange={(value) => form.setValue("category_id", value ? parseInt(value) : null)}
+                      value={form.watch("category_id")?.toString() || undefined}
+                      onValueChange={(value) => {
+                        if (value === "none") {
+                          form.setValue("category_id", null)
+                        } else {
+                          form.setValue("category_id", value ? parseInt(value) : null)
+                        }
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecionar categoria" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Nenhuma</SelectItem>
+                        <SelectItem value="none">Nenhuma</SelectItem>
                         {categories?.map((cat) => (
                           <SelectItem key={cat.id} value={cat.id.toString()}>
                             {cat.name}
