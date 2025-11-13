@@ -110,7 +110,16 @@ export default function CustomerPortalLayout() {
                 <ShoppingBag className="w-4 h-4 mr-2" />
                 Loja
               </Button>
-              <Button variant="ghost" size="sm" onClick={logout}>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={async () => {
+                  // Aguardar um pouco para garantir que qualquer operação pendente seja concluída
+                  // Isso garante que endereços sejam salvos antes do logout
+                  await new Promise(resolve => setTimeout(resolve, 500));
+                  logout();
+                }}
+              >
                 <LogOut className="w-4 h-4 mr-2" />
                 Sair
               </Button>

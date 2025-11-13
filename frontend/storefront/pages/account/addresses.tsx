@@ -171,9 +171,17 @@ export default function CustomerAddressesPage() {
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    saveAddressMutation.mutate(formData);
+    // Garantir que o formulário seja salvo antes de qualquer outra ação
+    try {
+      await saveAddressMutation.mutateAsync(formData);
+      // Aguardar um pouco para garantir que o salvamento foi concluído
+      await new Promise(resolve => setTimeout(resolve, 300));
+    } catch (error) {
+      // Erro já é tratado no onError
+      console.error('Erro ao salvar endereço:', error);
+    }
   };
 
   return (

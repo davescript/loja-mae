@@ -77,21 +77,14 @@ export async function apiRequest<T = any>(
       
       // Handle specific status codes
       if (response.status === 401) {
-        // Only clear tokens if this was an authentication error
-        // Don't clear admin_token automatically - let useAdminAuth handle it
-        // This prevents clearing tokens on hard refresh or network errors
+        // NÃO limpar tokens automaticamente em erros 401
+        // Apenas limpar quando o usuário explicitamente clicar em "Sair"
+        // Isso preserva a sessão mesmo em caso de erro temporário ou hard refresh
+        // O token pode estar válido, mas houve um erro temporário
         if (typeof window !== 'undefined') {
-          const adminToken = localStorage.getItem('admin_token');
-          const tokenUsed = adminToken || localStorage.getItem('customer_token') || localStorage.getItem('token');
-          
-          // Only clear if we actually used a token AND it's not an admin token
-          // Admin tokens should only be cleared by useAdminAuth when truly invalid
-          if (tokenUsed && !adminToken) {
-            // Clear customer tokens only
-            localStorage.removeItem('customer_token');
-            localStorage.removeItem('token');
-          }
-          // Don't clear admin_token here - let useAdminAuth handle it
+          // Não limpar tokens - deixar o usuário decidir quando fazer logout
+          // Apenas logar o erro para debug
+          console.warn('Erro 401 recebido, mas preservando token:', data.error);
         }
         throw new AuthenticationError(data.error || 'Não autenticado');
       }

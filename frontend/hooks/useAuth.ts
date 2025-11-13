@@ -20,23 +20,23 @@ export function useAuth() {
           setUser(response.data.user);
           return response.data;
         }
-        // If auth fails, clear tokens
-        localStorage.removeItem('token');
-        localStorage.removeItem('customer_token');
+        // NÃO limpar tokens automaticamente - apenas quando o usuário clicar em "Sair"
+        // Preservar sessão mesmo se a resposta não for sucesso
         setUser(null);
         return null;
       } catch (error: any) {
-        // Só limpar tokens se for realmente um erro de autenticação
+        // NUNCA limpar tokens automaticamente - apenas quando o usuário clicar em "Sair"
+        // Isso preserva a sessão mesmo em caso de erro de rede ou hard refresh
         const errorMessage = error?.message || '';
         if (errorMessage.includes('Authentication') || errorMessage.includes('401') || errorMessage.includes('Invalid or expired token')) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('customer_token');
-          setUser(null);
-          console.log('User not authenticated - token invalid');
+          // Token pode estar inválido, mas não limpar automaticamente
+          // Deixar o usuário decidir quando fazer logout
+          console.log('Auth check failed - token may be invalid, but keeping it:', errorMessage);
         } else {
           // Não limpar tokens em caso de erro de rede ou outros erros temporários
           console.log('Auth check failed but keeping token:', errorMessage);
         }
+        // Não limpar tokens - preservar sessão
         return null;
       }
     },
