@@ -533,7 +533,7 @@ function ProductModal({
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                     >
                       <option value="">Sem categoria</option>
-                      {categories.map((cat) => (
+                      {Array.isArray(categories) && categories.map((cat) => (
                         <option key={cat.id} value={cat.id}>
                           {cat.name}
                         </option>
