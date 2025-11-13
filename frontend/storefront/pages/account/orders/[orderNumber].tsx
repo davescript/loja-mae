@@ -14,7 +14,8 @@ import {
   MapPin,
   CreditCard,
   HeadphonesIcon,
-  ExternalLink
+  ExternalLink,
+  XCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../admin/components/ui/card';
 import { Badge } from '../../../../admin/components/ui/badge';
@@ -97,49 +98,81 @@ export default function CustomerOrderDetailsPage() {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  // Timeline steps
-  const timelineSteps = [
-    {
-      key: 'received',
-      label: 'Pedido Recebido',
-      icon: Package,
-      active: true,
-      completed: true,
-      date: order.created_at,
-    },
-    {
-      key: 'payment',
-      label: 'Pagamento Confirmado',
-      icon: CheckCircle2,
-      active: order.payment_status === 'paid',
-      completed: order.payment_status === 'paid',
-      date: order.payment_status === 'paid' ? order.updated_at : null,
-    },
-    {
-      key: 'processing',
-      label: 'Preparando Pedido',
-      icon: Clock,
-      active: order.status === 'processing',
-      completed: ['processing', 'shipped', 'delivered'].includes(order.status),
-      date: order.status === 'processing' ? order.updated_at : null,
-    },
-    {
-      key: 'shipped',
-      label: 'Pedido Enviado',
-      icon: Truck,
-      active: order.status === 'shipped',
-      completed: ['shipped', 'delivered'].includes(order.status),
-      date: order.shipped_at || (order.status === 'shipped' ? order.updated_at : null),
-    },
-    {
-      key: 'delivered',
-      label: 'Pedido Entregue',
-      icon: CheckCircle2,
-      active: order.status === 'delivered',
-      completed: order.status === 'delivered',
-      date: order.delivered_at || (order.status === 'delivered' ? order.updated_at : null),
-    },
-  ];
+  // Timeline steps - usar order_status_history se disponível, senão usar lógica baseada no status atual
+  const timelineSteps = (() => {
+    // Se temos histórico, usar ele
+    if (order.status_history && order.status_history.length > 0) {
+      const statusMap: Record<string, { label: string; icon: any }> = {
+        pending: { label: 'Pedido Recebido', icon: Package },
+        paid: { label: 'Pagamento Confirmado', icon: CheckCircle2 },
+        processing: { label: 'Preparando Pedido', icon: Clock },
+        shipped: { label: 'Pedido Enviado', icon: Truck },
+        delivered: { label: 'Pedido Entregue', icon: CheckCircle2 },
+        cancelled: { label: 'Pedido Cancelado', icon: XCircle },
+        refunded: { label: 'Pedido Reembolsado', icon: XCircle },
+      };
+
+      return order.status_history.map((history, index) => {
+        const config = statusMap[history.status] || { label: history.status, icon: Package };
+        const Icon = config.icon;
+        const isLast = index === order.status_history!.length - 1;
+        
+        return {
+          key: `${history.status}-${index}`,
+          label: config.label,
+          icon: Icon,
+          active: isLast,
+          completed: true,
+          date: history.created_at,
+          notes: history.notes,
+        };
+      });
+    }
+
+    // Fallback: timeline baseada no status atual
+    return [
+      {
+        key: 'received',
+        label: 'Pedido Recebido',
+        icon: Package,
+        active: true,
+        completed: true,
+        date: order.created_at,
+      },
+      {
+        key: 'payment',
+        label: 'Pagamento Confirmado',
+        icon: CheckCircle2,
+        active: order.payment_status === 'paid',
+        completed: order.payment_status === 'paid',
+        date: order.payment_status === 'paid' ? order.updated_at : null,
+      },
+      {
+        key: 'processing',
+        label: 'Preparando Pedido',
+        icon: Clock,
+        active: order.status === 'processing',
+        completed: ['processing', 'shipped', 'delivered'].includes(order.status),
+        date: order.status === 'processing' ? order.updated_at : null,
+      },
+      {
+        key: 'shipped',
+        label: 'Pedido Enviado',
+        icon: Truck,
+        active: order.status === 'shipped',
+        completed: ['shipped', 'delivered'].includes(order.status),
+        date: order.shipped_at || (order.status === 'shipped' ? order.updated_at : null),
+      },
+      {
+        key: 'delivered',
+        label: 'Pedido Entregue',
+        icon: CheckCircle2,
+        active: order.status === 'delivered',
+        completed: order.status === 'delivered',
+        date: order.delivered_at || (order.status === 'delivered' ? order.updated_at : null),
+      },
+    ];
+  })();
 
   return (
     <div className="space-y-6">
@@ -187,6 +220,7 @@ export default function CustomerOrderDetailsPage() {
                   const isLast = index === timelineSteps.length - 1;
                   const isActive = step.active;
                   const isCompleted = step.completed;
+                  const hasNotes = 'notes' in step && step.notes;
 
                   return (
                     <div key={step.key} className="flex gap-4">
@@ -224,6 +258,11 @@ export default function CustomerOrderDetailsPage() {
                             <span className="text-xs text-muted-foreground">
                               {format(new Date(step.date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                             </span>
+                          )}
+                          {'notes' in step && step.notes && (
+                            <div className="text-xs text-muted-foreground mt-1 italic">
+                              {step.notes}
+                            </div>
                           )}
                         </div>
                         {isActive && !isCompleted && (

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiRequest } from "../../utils/api"
 import { DataTable, type Column } from "../components/common/DataTable"
@@ -19,6 +19,7 @@ type Order = {
   payment_status: string
   total_cents: number
   created_at: string
+  updated_at?: string
   stripe_payment_intent_id?: string | null
   customer?: {
     name: string
@@ -44,6 +45,8 @@ export default function AdminOrdersPageAdvanced() {
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string>(new Date().toISOString())
+
   const { data: ordersData, isLoading } = useQuery({
     queryKey: ["admin", "orders", page, search, statusFilter],
     queryFn: async () => {
@@ -56,12 +59,56 @@ export default function AdminOrdersPageAdvanced() {
       const response = await apiRequest<{ items: Order[]; total: number; totalPages: number }>(
         `/api/orders?${params.toString()}`
       )
-      return response.data || { items: [], total: 0, totalPages: 0 }
+      const data = response.data || { items: [], total: 0, totalPages: 0 }
+      
+      // Atualizar lastUpdatedAt quando receber novos dados
+      if (data.items && data.items.length > 0) {
+        const latestUpdate = data.items.reduce((latest, order) => {
+          const orderDate = new Date(order.updated_at || order.created_at)
+          return orderDate > latest ? orderDate : latest
+        }, new Date(0))
+        setLastUpdatedAt(latestUpdate.toISOString())
+      }
+      
+      return data
     },
     staleTime: 0,
     refetchOnWindowFocus: true,
     refetchInterval: 30000, // Atualizar a cada 30 segundos
   })
+
+  // Polling para atualizações em tempo real
+  const { data: orderUpdates } = useQuery({
+    queryKey: ["admin", "orders", "updates", lastUpdatedAt],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        lastUpdatedAt,
+        limit: "10",
+      })
+      const response = await apiRequest<{ orders: Order[]; count: number; lastUpdatedAt: string }>(
+        `/api/admin/orders/updates?${params.toString()}`
+      )
+      return response.data
+    },
+    enabled: !!lastUpdatedAt,
+    refetchInterval: 15000, // Polling a cada 15 segundos
+  })
+
+  // Efeito para mostrar toasts quando houver atualizações
+  useEffect(() => {
+    if (orderUpdates && orderUpdates.orders && orderUpdates.orders.length > 0) {
+      // Mostrar toast para novos pedidos pagos
+      const paidOrders = orderUpdates.orders.filter((o: Order) => o.payment_status === 'paid')
+      paidOrders.forEach((order: Order) => {
+        toast({
+          title: 'Novo pedido pago!',
+          description: `Pedido #${order.order_number} foi pago`,
+        })
+      })
+      // Invalidar cache para atualizar a lista
+      queryClient.invalidateQueries({ queryKey: ["admin", "orders"] })
+    }
+  }, [orderUpdates, toast, queryClient])
 
   const syncPaymentMutation = useMutation({
     mutationFn: async ({ orderId, orderNumber, paymentIntentId }: { orderId?: number; orderNumber?: string; paymentIntentId?: string }) => {

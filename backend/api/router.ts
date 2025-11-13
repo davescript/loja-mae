@@ -135,6 +135,12 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
           }
         }
 
+        // Admin orders updates endpoint for polling
+        if (path === '/api/admin/orders/updates' && method === 'GET') {
+          const { handleGetOrderUpdates } = await import('./admin/orders/updates');
+          return handleCORS(await handleGetOrderUpdates(request, env), env, request);
+        }
+
 
         // Favorites routes
         if (path.startsWith('/api/favorites')) {

@@ -34,6 +34,31 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
 
     const db = getDb(env);
 
+    // Check idempotency - prevent duplicate processing
+    const existingLog = await executeOne<{ id: number; processed: number }>(
+      db,
+      'SELECT id, processed FROM stripe_webhook_log WHERE event_id = ?',
+      [event.id]
+    );
+
+    if (existingLog && existingLog.processed) {
+      console.log(`[WEBHOOK] Event ${event.id} already processed, skipping`);
+      return successResponse({ received: true, message: 'Event already processed' });
+    }
+
+    // Log webhook event
+    try {
+      await executeRun(
+        db,
+        `INSERT OR IGNORE INTO stripe_webhook_log (event_id, event_type, payload, created_at)
+         VALUES (?, ?, ?, datetime('now'))`,
+        [event.id, event.type, JSON.stringify(event)]
+      );
+    } catch (err) {
+      console.error('Error logging webhook event:', err);
+      // Continue processing even if logging fails
+    }
+
     // Handle the event
     switch (event.type) {
       case 'payment_intent.succeeded': {
@@ -77,6 +102,39 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
           );
           
           console.log(`[WEBHOOK] Order ${finalOrderId} updated successfully. Status: ${updatedOrder.status}, Payment Status: ${updatedOrder.payment_status}`);
+
+          // Marcar webhook como processado
+          try {
+            await executeRun(
+              db,
+              'UPDATE stripe_webhook_log SET processed = 1, order_id = ? WHERE event_id = ?',
+              [finalOrderId, event.id]
+            );
+          } catch (err) {
+            console.error('Error updating webhook log:', err);
+          }
+
+          // Criar notificação para o cliente
+          try {
+            if (updatedOrder.customer_id) {
+              await executeRun(
+                db,
+                `INSERT INTO customer_notifications (
+                  customer_id, type, title, message, order_id, is_read, created_at
+                ) VALUES (?, ?, ?, ?, ?, 0, datetime('now'))`,
+                [
+                  updatedOrder.customer_id,
+                  'payment_confirmed',
+                  'Pagamento Confirmado',
+                  `Seu pedido #${updatedOrder.order_number} foi pago com sucesso!`,
+                  finalOrderId,
+                ]
+              );
+            }
+          } catch (err) {
+            console.error('Error creating customer notification:', err);
+            // Não falhar se a notificação não puder ser criada
+          }
 
           // Adicionar tracking history
           try {
