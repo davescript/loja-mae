@@ -161,18 +161,37 @@ export default function CheckoutPage() {
         }),
       })
 
-      const data = await response.json() as { client_secret?: string; order_number?: string; error?: string }
+      const data = await response.json() as { 
+        success?: boolean;
+        data?: { 
+          client_secret?: string; 
+          order_number?: string; 
+          order_id?: number;
+          total_cents?: number;
+        };
+        error?: string;
+        // Fallback para formato antigo
+        client_secret?: string;
+        order_number?: string;
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Falha ao criar pedido')
+        const errorMsg = data.error || data.data?.error || 'Falha ao criar pedido'
+        console.error('Erro na resposta:', { status: response.status, data })
+        throw new Error(errorMsg)
       }
 
-      if (!data.client_secret) {
-        throw new Error('Client secret não recebido')
+      // Suportar ambos os formatos de resposta (com e sem wrapper success/data)
+      const clientSecret = data.data?.client_secret || data.client_secret
+      const orderNum = data.data?.order_number || data.order_number
+
+      if (!clientSecret) {
+        console.error('Resposta sem client_secret:', data)
+        throw new Error('Client secret não recebido da API')
       }
 
-      setClientSecret(data.client_secret)
-      setOrderNumber(data.order_number || null)
+      setClientSecret(clientSecret)
+      setOrderNumber(orderNum || null)
     } catch (error: any) {
       const { message } = handleError(error)
       toast({

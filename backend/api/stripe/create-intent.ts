@@ -238,6 +238,11 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
       description: `Pedido ${orderNumber} - Loja Mãe`,
     });
 
+    if (!paymentIntent.client_secret) {
+      console.error('Payment Intent criado sem client_secret:', paymentIntent);
+      return errorResponse('Failed to create payment intent - no client secret', 500);
+    }
+
     // Atualizar pedido com payment intent ID
     await executeRun(
       db,
