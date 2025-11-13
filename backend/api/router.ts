@@ -73,6 +73,20 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
           return handleCORS(await handleChatRoutes(request, env), env, request);
         }
 
+        // Admin Dashboard routes
+        if (path.startsWith('/api/admin/dashboard')) {
+          const { handleGetDashboardStats, handleGetSalesChart, handleGetTopProducts } = await import('./admin/dashboard');
+          if (path === '/api/admin/dashboard/stats') {
+            return handleCORS(await handleGetDashboardStats(request, env), env, request);
+          }
+          if (path === '/api/admin/dashboard/sales-chart') {
+            return handleCORS(await handleGetSalesChart(request, env), env, request);
+          }
+          if (path === '/api/admin/dashboard/top-products') {
+            return handleCORS(await handleGetTopProducts(request, env), env, request);
+          }
+        }
+
         // Cart routes
         if (path.startsWith('/api/cart')) {
           const { handleCartRoutes } = await import('./cart');

@@ -36,62 +36,68 @@ export default function AdminDashboardPage() {
   const { data: stats, isLoading: loadingStats } = useQuery({
     queryKey: ["admin", "dashboard", "stats"],
     queryFn: async () => {
-      // Mock data - substituir por chamada real à API
-      return {
-        salesToday: 1250.50,
-        salesWeek: 8750.30,
-        salesMonth: 32500.75,
-        ordersToday: 12,
-        ordersWeek: 89,
-        ordersMonth: 342,
-        customersNew: 23,
-        customersTotal: 1245,
-        averageTicket: 95.20,
-        abandonedCarts: 8,
-      }
+      const response = await apiRequest<{
+        salesToday: number;
+        salesTodayChange: number;
+        salesMonth: number;
+        salesMonthChange: number;
+        ordersToday: number;
+        ordersTodayChange: number;
+        ordersMonth: number;
+        ordersMonthChange: number;
+        customersNew: number;
+        customersTotal: number;
+        averageTicket: number;
+        averageTicketChange: number;
+        abandonedCarts: number;
+      }>("/api/admin/dashboard/stats");
+      return response.data || {
+        salesToday: 0,
+        salesTodayChange: 0,
+        salesMonth: 0,
+        salesMonthChange: 0,
+        ordersToday: 0,
+        ordersTodayChange: 0,
+        ordersMonth: 0,
+        ordersMonthChange: 0,
+        customersNew: 0,
+        customersTotal: 0,
+        averageTicket: 0,
+        averageTicketChange: 0,
+        abandonedCarts: 0,
+      };
     },
   })
 
   const { data: salesData, isLoading: loadingSales } = useQuery({
     queryKey: ["admin", "dashboard", "sales"],
     queryFn: async () => {
-      // Mock data - substituir por chamada real
-      return [
-        { date: "Seg", sales: 1200 },
-        { date: "Ter", sales: 1900 },
-        { date: "Qua", sales: 1500 },
-        { date: "Qui", sales: 2100 },
-        { date: "Sex", sales: 1800 },
-        { date: "Sáb", sales: 2400 },
-        { date: "Dom", sales: 2200 },
-      ]
+      try {
+        const response = await apiRequest<Array<{ date: string; sales: number }>>("/api/admin/dashboard/sales-chart");
+        return response.data || [];
+      } catch {
+        return [];
+      }
     },
   })
 
   const { data: topProducts, isLoading: loadingProducts } = useQuery({
     queryKey: ["admin", "dashboard", "top-products"],
     queryFn: async () => {
-      // Mock data
-      return [
-        { name: "Produto A", sales: 45 },
-        { name: "Produto B", sales: 32 },
-        { name: "Produto C", sales: 28 },
-        { name: "Produto D", sales: 22 },
-        { name: "Produto E", sales: 18 },
-      ]
+      try {
+        const response = await apiRequest<Array<{ name: string; sales: number }>>("/api/admin/dashboard/top-products");
+        return response.data || [];
+      } catch {
+        return [];
+      }
     },
   })
 
   const { data: channelData, isLoading: loadingChannels } = useQuery({
     queryKey: ["admin", "dashboard", "channels"],
     queryFn: async () => {
-      // Mock data
-      return [
-        { name: "Orgânico", value: 45 },
-        { name: "Social", value: 25 },
-        { name: "Anúncios", value: 20 },
-        { name: "E-mail", value: 10 },
-      ]
+      // Por enquanto retornar dados vazios - pode ser implementado depois com tracking de origem
+      return []
     },
   })
 
@@ -167,39 +173,37 @@ export default function AdminDashboardPage() {
         <KpiCard
           title="Vendas Hoje"
           value={stats?.salesToday || 0}
-          change={12.5}
-          trend="up"
+          change={stats?.salesTodayChange ? Math.abs(stats.salesTodayChange) : undefined}
+          trend={stats?.salesTodayChange && stats.salesTodayChange >= 0 ? "up" : "down"}
           icon={Euro}
           format={(v) => formatPrice(Math.round(v * 100))}
         />
         <KpiCard
           title="Vendas do Mês"
           value={stats?.salesMonth || 0}
-          change={8.2}
-          trend="up"
+          change={stats?.salesMonthChange ? Math.abs(stats.salesMonthChange) : undefined}
+          trend={stats?.salesMonthChange && stats.salesMonthChange >= 0 ? "up" : "down"}
           icon={TrendingUp}
           format={(v) => formatPrice(Math.round(v * 100))}
         />
         <KpiCard
           title="Pedidos Hoje"
           value={stats?.ordersToday || 0}
-          change={-3.1}
-          trend="down"
+          change={stats?.ordersTodayChange ? Math.abs(stats.ordersTodayChange) : undefined}
+          trend={stats?.ordersTodayChange && stats.ordersTodayChange >= 0 ? "up" : "down"}
           icon={ShoppingCart}
         />
         <KpiCard
           title="Ticket Médio"
           value={stats?.averageTicket || 0}
-          change={5.4}
-          trend="up"
+          change={stats?.averageTicketChange ? Math.abs(stats.averageTicketChange) : undefined}
+          trend={stats?.averageTicketChange && stats.averageTicketChange >= 0 ? "up" : "down"}
           icon={Package}
           format={(v) => formatPrice(Math.round(v * 100))}
         />
         <KpiCard
           title="Clientes Novos"
           value={stats?.customersNew || 0}
-          change={15.3}
-          trend="up"
           icon={Users}
         />
         <KpiCard
@@ -210,15 +214,13 @@ export default function AdminDashboardPage() {
         <KpiCard
           title="Carrinhos Abandonados"
           value={stats?.abandonedCarts || 0}
-          change={-12.5}
-          trend="down"
           icon={ShoppingCart}
         />
         <KpiCard
           title="Pedidos do Mês"
           value={stats?.ordersMonth || 0}
-          change={18.7}
-          trend="up"
+          change={stats?.ordersMonthChange ? Math.abs(stats.ordersMonthChange) : undefined}
+          trend={stats?.ordersMonthChange && stats.ordersMonthChange >= 0 ? "up" : "down"}
           icon={Package}
         />
       </div>
@@ -297,7 +299,7 @@ export default function AdminDashboardPage() {
               <div className="h-[300px] flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
-            ) : (
+            ) : channelData && channelData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
@@ -322,6 +324,10 @@ export default function AdminDashboardPage() {
                   <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center">
+                <p className="text-muted-foreground">Dados de distribuição por canal não disponíveis</p>
+              </div>
             )}
           </CardContent>
         </Card>
