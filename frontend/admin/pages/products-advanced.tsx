@@ -75,8 +75,12 @@ export default function AdminProductsPageAdvanced() {
   const { data: categories } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
-      const response = await apiRequest<Category[]>("/api/categories")
-      return response.data || []
+      const response = await apiRequest<{ items: Category[] } | Category[]>("/api/categories")
+      // API pode retornar { items: [] } ou [] diretamente
+      if (Array.isArray(response.data)) {
+        return response.data
+      }
+      return response.data?.items || []
     },
   })
 
@@ -384,7 +388,7 @@ export default function AdminProductsPageAdvanced() {
       )}
 
       <DataTable
-        data={productsData?.items || []}
+        data={Array.isArray(productsData?.items) ? productsData.items : []}
         columns={columns}
         loading={isLoading}
         searchable
@@ -512,7 +516,7 @@ export default function AdminProductsPageAdvanced() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">Nenhuma</SelectItem>
-                        {categories?.map((cat) => (
+                        {Array.isArray(categories) && categories.map((cat) => (
                           <SelectItem key={cat.id} value={cat.id.toString()}>
                             {cat.name}
                           </SelectItem>
@@ -614,7 +618,7 @@ export default function AdminProductsPageAdvanced() {
                     <div>
                       <Label>Imagens Existentes</Label>
                       <div className="grid grid-cols-4 gap-4 mt-2">
-                        {editingProduct.images.map((img) => {
+                        {Array.isArray(editingProduct.images) && editingProduct.images.map((img) => {
                           if (!img || !img.id) return null
                           return (
                             <div key={img.id} className="relative">
@@ -664,7 +668,7 @@ export default function AdminProductsPageAdvanced() {
                     <div className="p-3 bg-red-50 border border-red-200 rounded-md">
                       <p className="text-sm font-medium text-red-800">Erros de validação:</p>
                       <ul className="mt-1 text-sm text-red-700 list-disc list-inside">
-                        {imageErrors.map((error: string, index: number) => (
+                        {Array.isArray(imageErrors) && imageErrors.map((error: string, index: number) => (
                           <li key={index}>{error}</li>
                         ))}
                       </ul>
@@ -675,7 +679,7 @@ export default function AdminProductsPageAdvanced() {
                     <div>
                       <Label>Novas Imagens (Preview)</Label>
                       <div className="grid grid-cols-4 gap-4 mt-2">
-                        {uploadingImages.map((file: File, index: number) => (
+                        {Array.isArray(uploadingImages) && uploadingImages.map((file: File, index: number) => (
                           <div key={index} className="relative group">
                             <img
                               src={URL.createObjectURL(file)}
