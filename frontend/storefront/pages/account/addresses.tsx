@@ -68,6 +68,22 @@ export default function CustomerAddressesPage() {
       resetForm();
     },
     onError: (error: any) => {
+      // Se for erro de autenticação, redirecionar para login
+      if (error?.message?.includes('Authentication') || error?.message?.includes('autenticado') || error?.message?.includes('401')) {
+        toast({
+          title: 'Sessão expirada',
+          description: 'Sua sessão expirou. Por favor, faça login novamente.',
+          variant: 'destructive',
+        });
+        // Limpar tokens e redirecionar após um breve delay
+        setTimeout(() => {
+          localStorage.removeItem('customer_token');
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+        }, 1500);
+        return;
+      }
+
       toast({
         title: 'Erro',
         description: error.message || 'Erro ao salvar endereço.',
