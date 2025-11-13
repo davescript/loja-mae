@@ -119,10 +119,12 @@ export default function AdminProductsPageAdvanced() {
       setImagesToDelete([])
       form.reset()
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      console.error('Erro ao salvar produto:', error)
+      const errorMessage = error?.message || error?.error || "Erro ao salvar produto"
       toast({
         title: "Erro",
-        description: error.message || "Erro ao salvar produto",
+        description: errorMessage,
         variant: "destructive",
       })
     },
@@ -221,7 +223,7 @@ export default function AdminProductsPageAdvanced() {
         sku: product.sku || "",
         stock_quantity: product.stock_quantity || 0,
         status: (product.status || "draft") as "draft" | "active" | "archived",
-        featured: (product.featured === 1 || product.featured === true),
+        featured: product.featured === 1,
         category_id: product.category_id || null,
         meta_title: (product as any).meta_title || "",
         meta_description: (product as any).meta_description || "",
