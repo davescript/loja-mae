@@ -47,10 +47,53 @@ function CheckoutForm({
       })
 
       if (stripeError) {
-        setError(stripeError.message || 'Falha ao processar pagamento')
+        // Log detalhado para debug
+        console.error('Erro do Stripe:', {
+          type: stripeError.type,
+          code: (stripeError as any).code,
+          message: stripeError.message,
+          decline_code: (stripeError as any).decline_code,
+        })
+
+        // Mensagens de erro mais específicas
+        let errorMessage = 'Falha ao processar pagamento'
+        let errorTitle = 'Erro no pagamento'
+
+        if (stripeError.type === 'card_error') {
+          errorTitle = 'Cartão recusado'
+          const errorCode = (stripeError as any).code || (stripeError as any).decline_code
+          
+          switch (errorCode) {
+            case 'card_declined':
+            case 'generic_decline':
+              errorMessage = 'Seu cartão foi recusado. Verifique os dados ou use outro cartão.'
+              break
+            case 'insufficient_funds':
+              errorMessage = 'Saldo insuficiente. Use outro cartão ou método de pagamento.'
+              break
+            case 'expired_card':
+              errorMessage = 'Cartão expirado. Use outro cartão.'
+              break
+            case 'incorrect_cvc':
+              errorMessage = 'Código de segurança incorreto. Verifique e tente novamente.'
+              break
+            case 'processing_error':
+              errorMessage = 'Erro ao processar o pagamento. Tente novamente.'
+              break
+            default:
+              errorMessage = stripeError.message || 'Seu método de pagamento foi recusado. Tente outro cartão.'
+          }
+        } else if (stripeError.type === 'validation_error') {
+          errorTitle = 'Dados inválidos'
+          errorMessage = stripeError.message || 'Verifique os dados do pagamento e tente novamente.'
+        } else {
+          errorMessage = stripeError.message || 'Erro ao processar pagamento. Tente novamente.'
+        }
+
+        setError(errorMessage)
         toast({
-          title: 'Erro no pagamento',
-          description: stripeError.message || 'Falha ao processar pagamento',
+          title: errorTitle,
+          description: errorMessage,
           variant: 'destructive',
         })
         setLoading(false)
