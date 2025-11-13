@@ -173,19 +173,19 @@ export async function handleGetOrders(request: Request, env: Env): Promise<Respo
     const search = url.searchParams.get('search') || '';
     const status = url.searchParams.get('status') || '';
 
-            // Allow customers to see orders by customer_id OR by email (for guest orders)
-            let whereClause = 'WHERE (customer_id = ? OR email = ?)';
-            const params: any[] = [user.id, user.email];
+    // Allow customers to see orders by customer_id OR by email (for guest orders)
+    let whereClause = 'WHERE (customer_id = ? OR email = ?)';
+    const params: any[] = [user.id, user.email];
 
-            if (search) {
-              whereClause += ' AND order_number LIKE ?';
-              params.push(`%${search}%`);
-            }
+    if (search) {
+      whereClause += ' AND order_number LIKE ?';
+      params.push(`%${search}%`);
+    }
 
-            if (status && status !== 'all') {
-              whereClause += ' AND status = ?';
-              params.push(status);
-            }
+    if (status && status !== 'all') {
+      whereClause += ' AND status = ?';
+      params.push(status);
+    }
 
     // Handle limit parameter for dashboard (quick access)
     const finalLimit = limit ? parseInt(limit) : pageSize;
