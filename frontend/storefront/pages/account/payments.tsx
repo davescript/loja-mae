@@ -97,14 +97,9 @@ export default function CustomerPaymentsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        const url = `${import.meta.env.VITE_API_BASE_URL || 'https://api.leiasabores.pt'}/api/orders/${payment.order_id}/invoice`;
-                        const printWindow = window.open(url, '_blank');
-                        if (printWindow) {
-                          printWindow.onload = () => {
-                            setTimeout(() => printWindow.print(), 500);
-                          };
-                        }
+                      onClick={async () => {
+                        const { downloadInvoicePDF } = await import('../../../../utils/invoice');
+                        await downloadInvoicePDF(payment.order_id);
                       }}
                     >
                       <Download className="w-4 h-4 mr-2" />

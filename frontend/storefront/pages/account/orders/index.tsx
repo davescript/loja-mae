@@ -180,15 +180,10 @@ export default function CustomerOrdersPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                  onClick={(e: React.MouseEvent) => {
+                  onClick={async (e: React.MouseEvent) => {
                     e.stopPropagation();
-                    const url = `${import.meta.env.VITE_API_BASE_URL || 'https://api.leiasabores.pt'}/api/orders/${order.id}/invoice`;
-                    const printWindow = window.open(url, '_blank');
-                    if (printWindow) {
-                      printWindow.onload = () => {
-                        setTimeout(() => printWindow.print(), 500);
-                      };
-                    }
+                    const { downloadInvoicePDF } = await import('../../../../utils/invoice');
+                    await downloadInvoicePDF(order.id);
                   }}
                         >
                           <Download className="w-4 h-4 mr-2" />
