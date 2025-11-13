@@ -26,9 +26,12 @@ export default function CustomerDashboardPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ['customer-orders'] });
-    queryClient.invalidateQueries({ queryKey: ['customer-stats'] });
+  const handleRefresh = async () => {
+    // Forçar refetch imediato das queries
+    await Promise.all([
+      refetchOrders(),
+      refetchStats(),
+    ]);
   };
 
   // Fetch customer orders
@@ -44,7 +47,7 @@ export default function CustomerDashboardPage() {
   });
 
   // Fetch customer stats
-  const { data: statsData } = useQuery({
+  const { data: statsData, isLoading: statsLoading, refetch: refetchStats } = useQuery({
     queryKey: ['customer-stats'],
     queryFn: async () => {
       const response = await apiRequest<{
@@ -104,9 +107,9 @@ export default function CustomerDashboardPage() {
           variant="outline"
           size="sm"
           className="flex items-center gap-2"
-          disabled={ordersLoading}
+          disabled={ordersLoading || statsLoading}
         >
-          <RefreshCw className={`w-4 h-4 ${ordersLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${(ordersLoading || statsLoading) ? 'animate-spin' : ''}`} />
           Atualizar
         </Button>
       </div>
