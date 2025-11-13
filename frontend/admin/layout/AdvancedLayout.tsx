@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import { Topbar } from "../components/common/Topbar"
 import { Breadcrumbs } from "../components/common/Breadcrumbs"
+import { Toaster } from "../components/common/Toaster"
 import { cn } from "../../utils/cn"
 
 export default function AdvancedLayout() {
@@ -240,6 +241,7 @@ export default function AdvancedLayout() {
           <Outlet />
         </main>
       </div>
+      <Toaster />
     </div>
   )
 }

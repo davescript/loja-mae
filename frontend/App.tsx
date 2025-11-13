@@ -22,12 +22,12 @@ import OrdersPage from './storefront/pages/orders';
 import AdminLayout from './admin/layout/AdvancedLayout';
 import AdminLoginPage from './admin/pages/login';
 import AdminDashboardPage from './admin/pages/dashboard';
-import AdminProductsPage from './admin/pages/products';
+import AdminProductsPage from './admin/pages/products-advanced';
 import AdminCategoriesPage from './admin/pages/categories';
-import AdminOrdersPage from './admin/pages/orders';
-import AdminCustomersPage from './admin/pages/customers';
-import AdminCouponsPage from './admin/pages/coupons';
-import AdminSettingsPage from './admin/pages/settings';
+import AdminOrdersPage from './admin/pages/orders-advanced';
+import AdminCustomersPage from './admin/pages/customers-advanced';
+import AdminCouponsPage from './admin/pages/coupons-advanced';
+import AdminSettingsPage from './admin/pages/settings-advanced';
 
 function App() {
   return (
@@ -59,6 +59,8 @@ function App() {
         <Route path="orders" element={<AdminOrdersPage />} />
         <Route path="customers" element={<AdminCustomersPage />} />
         <Route path="coupons" element={<AdminCouponsPage />} />
+        <Route path="blog" element={<AdminBlogPage />} />
+        <Route path="analytics" element={<AdminAnalyticsPage />} />
         <Route path="settings" element={<AdminSettingsPage />} />
         <Route index element={<Navigate to="/admin/dashboard" replace />} />
       </Route>
