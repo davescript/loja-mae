@@ -528,13 +528,13 @@ export async function handleGetPayments(request: Request, env: Env): Promise<Res
       id: order.payment_id,
       order_id: order.order_id,
       order_number: order.order_number,
-      status: order.status === 'paid' ? 'succeeded' : 'pending',
+      status: order.status === 'paid' ? 'succeeded' : (order.provider_id ? 'pending' : 'failed'), // Map order status to payment status
       provider: order.provider || 'stripe',
       provider_id: order.provider_id || order.stripe_charge_id,
       amount_cents: order.amount_cents,
       currency: order.currency || 'eur',
       created_at: order.created_at,
-      order: {
+      order: { // Include minimal order info for context
         order_number: order.order_number,
         total_cents: order.amount_cents,
       },
