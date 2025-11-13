@@ -1,15 +1,21 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, User, Menu, X, Heart } from 'lucide-react';
+import { Search, ShoppingCart, User, Menu, X, Heart, Loader2 } from 'lucide-react';
 import { useAuth } from '../../../hooks/useAuth';
 import { useCartStore } from '../../../store/cartStore';
 import { useFavoritesStore } from '../../../store/favoritesStore';
+import { useDebounce } from '../../../hooks/useDebounce';
+import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '../../../utils/api';
+import type { Product } from '@shared/types';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function StoreHeader() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
   const { isAuthenticated, user } = useAuth();
   const { getItemCount } = useCartStore();
   const { getCount: getFavoritesCount } = useFavoritesStore();
@@ -17,13 +23,67 @@ export default function StoreHeader() {
   
   const cartItemCount = getItemCount();
   const favoritesCount = getFavoritesCount();
+  
+  // Debounce search query para evitar muitas requisições
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  
+  // Buscar produtos enquanto digita
+  const { data: searchResults, isLoading: isSearching } = useQuery({
+    queryKey: ['products', 'search', debouncedSearchQuery],
+    queryFn: async () => {
+      if (!debouncedSearchQuery.trim() || debouncedSearchQuery.length < 2) {
+        return [];
+      }
+      try {
+        const params = new URLSearchParams({
+          search: debouncedSearchQuery,
+          pageSize: '5',
+          status: 'active',
+          include: 'images',
+        });
+        const response = await apiRequest<{ items: Product[] }>(
+          `/api/products?${params.toString()}`
+        );
+        return response.data?.items || [];
+      } catch (error) {
+        console.error('Error searching products:', error);
+        return [];
+      }
+    },
+    enabled: debouncedSearchQuery.length >= 2,
+    staleTime: 5000,
+  });
+
+  // Fechar sugestões ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
       setSearchOpen(false);
+      setShowSuggestions(false);
     }
+  };
+  
+  const handleProductClick = (product: Product) => {
+    if (product.slug) {
+      navigate(`/product/${product.slug}`);
+    }
+    setSearchQuery('');
+    setShowSuggestions(false);
+    setSearchOpen(false);
   };
 
   return (
