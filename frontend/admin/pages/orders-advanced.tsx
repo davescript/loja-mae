@@ -178,8 +178,12 @@ export default function AdminOrdersPageAdvanced() {
       header: "Cliente",
       accessor: (order) => (
         <div>
-          <div className="font-medium">{order.customer?.name || "Cliente"}</div>
-          <div className="text-sm text-muted-foreground">{order.customer?.email || ""}</div>
+          <div className="font-medium">
+            {order.customer?.first_name || order.customer?.last_name
+              ? `${order.customer.first_name || ''} ${order.customer.last_name || ''}`.trim()
+              : order.email || "Cliente"}
+          </div>
+          <div className="text-sm text-muted-foreground">{order.customer?.email || order.email || ""}</div>
         </div>
       ),
     },
