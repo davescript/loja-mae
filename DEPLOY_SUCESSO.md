@@ -1,112 +1,60 @@
-# ✅ Deploy para GitHub - CONCLUÍDO!
+# ✅ Deploy Concluído com Sucesso!
 
 ## 🎉 Status
 
-✅ **Repositório criado no GitHub**
-✅ **Código enviado com sucesso**
-✅ **Secrets removidos do histórico**
-✅ **GitHub Actions configurado**
-✅ **Documentação completa**
-
-## 🔗 Links
-
-**Repositório GitHub:**
-https://github.com/davescript/loja-mae
-
-**GitHub Actions:**
-https://github.com/davescript/loja-mae/actions
-
-**Settings (Secrets):**
-https://github.com/davescript/loja-mae/settings/secrets/actions
+- ✅ Backend deployado: `https://loja-mae-api.davecdl.workers.dev`
+- ✅ Rota customizada: `api.leiasabores.pt/*`
+- ✅ D1 Database conectado
+- ✅ R2 Bucket conectado
 
 ## 📋 Próximos Passos
 
-### 1. Configurar Secrets no GitHub Actions
-
-Para habilitar deploy automático, configure os secrets:
-
-1. Acesse: https://github.com/davescript/loja-mae/settings/secrets/actions
-2. Clique em "New repository secret"
-3. Adicione:
-
-   **CLOUDFLARE_API_TOKEN**
-   - Valor: Seu token API do Cloudflare
-   - Criar em: https://dash.cloudflare.com/profile/api-tokens
-   - Permissões: Account → Workers Scripts → Edit
-
-   **CLOUDFLARE_ACCOUNT_ID**
-   - Valor: Seu Account ID do Cloudflare
-   - Encontrar em: https://dash.cloudflare.com/
-   - Ou execute: `npx wrangler whoami`
-
-### 2. Verificar Deploy Automático
-
-Após configurar os secrets:
-- Cada push para `main` fará deploy automático
-- Veja o progresso em: Actions → Workflow runs
-- Logs de deploy estarão disponíveis no GitHub Actions
-
-### 3. Deploy Manual (Alternativa)
-
-Se preferir deploy manual:
+### 1. Configurar Stripe (se ainda não fez)
 
 ```bash
-npm run deploy:backend
+# Ver comandos prontos
+./scripts/configurar-stripe-comandos.sh
+
+# Ou executar manualmente
+source .dev.vars
+echo "$STRIPE_SECRET_KEY" | npx wrangler secret put STRIPE_SECRET_KEY --env production
+echo "$STRIPE_PUBLISHABLE_KEY" | npx wrangler secret put STRIPE_PUBLISHABLE_KEY --env production
+echo "$STRIPE_WEBHOOK_SECRET" | npx wrangler secret put STRIPE_WEBHOOK_SECRET --env production
 ```
 
-## 🔐 Segurança
+### 2. Verificar Secrets
 
-✅ **Secrets removidos do código**
-- Chaves secretas foram removidas do histórico Git
-- `.dev.vars` está no `.gitignore`
-- Apenas placeholders no `.dev.vars.example`
-
-✅ **Token GitHub não está mais na URL**
-- Remote configurado sem token na URL
-- Use autenticação local ou Personal Access Token
-
-## 📚 Documentação
-
-- `README.md` - Documentação principal
-- `GITHUB_SETUP.md` - Guia de setup GitHub
-- `DEPLOY_GITHUB.md` - Instruções de deploy
-- `CONFIGURACAO_COMPLETA.md` - Configuração completa
-- `SETUP.md` - Guia de setup
-
-## 🚀 Comandos Úteis
-
-### Ver status:
 ```bash
-git status
+npx wrangler secret list --env production
 ```
 
-### Fazer push de alterações:
+### 3. Testar API
+
 ```bash
-git add .
-git commit -m "Descrição das alterações"
-git push
+# Testar endpoint de configuração do Stripe
+curl https://api.leiasabores.pt/api/stripe/config
+
+# Deve retornar:
+# {"success":true,"data":{"publishableKey":"pk_live_..."}}
 ```
 
-### Ver logs:
-```bash
-git log --oneline
-```
+### 4. Testar Checkout
 
-### Ver workflows:
-```bash
-# Acesse: https://github.com/davescript/loja-mae/actions
-```
+1. Acesse: https://www.leiasabores.pt
+2. Adicione produtos ao carrinho
+3. Vá para checkout
+4. O checkout deve carregar corretamente!
 
-## ✨ Concluído!
+## 🔧 Scripts Disponíveis
 
-Seu código está agora no GitHub e pronto para:
-- ✅ Colaboração em equipe
-- ✅ Deploy automático (após configurar secrets)
-- ✅ Versionamento
-- ✅ CI/CD via GitHub Actions
+- `./scripts/deploy-limpo.sh` - Deploy com limpeza de autenticação
+- `./scripts/deploy.sh` - Deploy padrão
+- `./scripts/configurar-stripe-comandos.sh` - Ver comandos do Stripe
+- `./scripts/configurar-stripe.sh` - Configurar Stripe automaticamente
 
----
+## 📝 Notas
 
-**Data do deploy:** $(date)
-**Repositório:** https://github.com/davescript/loja-mae
-
+- O deploy foi feito com sucesso usando OAuth
+- O token antigo foi removido para evitar conflitos
+- TypeScript está sem erros
+- Todas as dependências estão funcionando
