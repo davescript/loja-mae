@@ -98,7 +98,7 @@ export default function CustomerPaymentsPage() {
                       variant="outline"
                       size="sm"
                       onClick={async () => {
-                        const { downloadInvoicePDF } = await import('../../../../utils/invoice');
+                        const { downloadInvoicePDF } = await import('../../../utils/invoice');
                         await downloadInvoicePDF(payment.order_id);
                       }}
                     >
