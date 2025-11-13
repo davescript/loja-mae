@@ -23,10 +23,13 @@ import AdminLayout from './admin/layout/AdvancedLayout';
 import AdminLoginPage from './admin/pages/login';
 import AdminDashboardPage from './admin/pages/dashboard';
 import AdminProductsPage from './admin/pages/products-advanced';
-import AdminCategoriesPage from './admin/pages/categories';
+import AdminCategoriesPage from './admin/pages/categories-advanced';
+import AdminCollectionsPage from './admin/pages/collections';
 import AdminOrdersPage from './admin/pages/orders-advanced';
 import AdminCustomersPage from './admin/pages/customers-advanced';
 import AdminCouponsPage from './admin/pages/coupons-advanced';
+import AdminCampaignsPage from './admin/pages/campaigns';
+import AdminBannersPage from './admin/pages/banners';
 import AdminBlogPage from './admin/pages/blog';
 import AdminAnalyticsPage from './admin/pages/analytics';
 import AdminSettingsPage from './admin/pages/settings-advanced';
@@ -58,9 +61,12 @@ function App() {
         <Route path="dashboard" element={<AdminDashboardPage />} />
         <Route path="products" element={<AdminProductsPage />} />
         <Route path="categories" element={<AdminCategoriesPage />} />
+        <Route path="collections" element={<AdminCollectionsPage />} />
         <Route path="orders" element={<AdminOrdersPage />} />
         <Route path="customers" element={<AdminCustomersPage />} />
         <Route path="coupons" element={<AdminCouponsPage />} />
+        <Route path="campaigns" element={<AdminCampaignsPage />} />
+        <Route path="banners" element={<AdminBannersPage />} />
         <Route path="blog" element={<AdminBlogPage />} />
         <Route path="analytics" element={<AdminAnalyticsPage />} />
         <Route path="settings" element={<AdminSettingsPage />} />

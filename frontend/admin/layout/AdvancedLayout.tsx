@@ -50,24 +50,12 @@ export default function AdvancedLayout() {
     { path: "/admin/products", icon: Package, label: "Produtos" },
     { path: "/admin/orders", icon: ShoppingCart, label: "Pedidos" },
     { path: "/admin/customers", icon: Users, label: "Clientes" },
-    {
-      path: "/admin/categories",
-      icon: FolderTree,
-      label: "Catálogo",
-      children: [
-        { path: "/admin/categories", label: "Categorias" },
-        { path: "/admin/collections", label: "Coleções" },
-      ],
-    },
+    { path: "/admin/categories", icon: FolderTree, label: "Catálogo" },
+    { path: "/admin/collections", icon: Package, label: "Coleções" },
     {
       path: "/admin/marketing",
       icon: Megaphone,
       label: "Marketing",
-      children: [
-        { path: "/admin/coupons", label: "Cupons" },
-        { path: "/admin/campaigns", label: "Campanhas" },
-        { path: "/admin/banners", label: "Banners" },
-      ],
     },
     { path: "/admin/blog", icon: FileText, label: "Blog" },
     { path: "/admin/analytics", icon: BarChart3, label: "Analytics" },
