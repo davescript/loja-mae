@@ -2,7 +2,7 @@ import type { Env } from '../../types';
 import { handleCheckout } from './checkout';
 import { handleWebhook } from './webhook';
 import { handleCreateIntent } from './create-intent';
-import { successResponse } from '../../utils/response';
+import { successResponse, errorResponse } from '../../utils/response';
 
 export async function handleStripeRoutes(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
@@ -26,7 +26,11 @@ export async function handleStripeRoutes(request: Request, env: Env): Promise<Re
 
   // Config: GET /api/stripe/config
   if (method === 'GET' && path === '/api/stripe/config') {
-    return successResponse({ publishableKey: env.STRIPE_PUBLISHABLE_KEY || '' });
+    const publishableKey = env.STRIPE_PUBLISHABLE_KEY;
+    if (!publishableKey) {
+      return errorResponse('Stripe publishable key not configured', 500);
+    }
+    return successResponse({ publishableKey });
   }
 
   return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), {
