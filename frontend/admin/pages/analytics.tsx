@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
+import { apiRequest } from "../../utils/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 import {
   LineChart,
@@ -21,34 +22,70 @@ import { formatPrice } from "../../utils/format"
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"]
 
 export default function AdminAnalyticsPage() {
-  const { data: analyticsData, isLoading } = useQuery({
-    queryKey: ["admin", "analytics"],
+  const { data: stats, isLoading: loadingStats } = useQuery({
+    queryKey: ["admin", "analytics", "stats"],
     queryFn: async () => {
-      // Mock data - substituir por chamada real
-      return {
-        revenue: [
-          { month: "Jan", value: 12000 },
-          { month: "Fev", value: 15000 },
-          { month: "Mar", value: 18000 },
-          { month: "Abr", value: 22000 },
-          { month: "Mai", value: 25000 },
-          { month: "Jun", value: 28000 },
-        ],
-        topProducts: [
-          { name: "Produto A", sales: 450 },
-          { name: "Produto B", sales: 320 },
-          { name: "Produto C", sales: 280 },
-          { name: "Produto D", sales: 220 },
-        ],
-        trafficSources: [
-          { name: "Orgânico", value: 45 },
-          { name: "Social", value: 25 },
-          { name: "Anúncios", value: 20 },
-          { name: "Direto", value: 10 },
-        ],
+      try {
+        const response = await apiRequest<{
+          totalRevenue: number;
+          totalRevenueChange: number;
+          totalOrders: number;
+          totalOrdersChange: number;
+          totalCustomers: number;
+          totalCustomersChange: number;
+          conversionRate: number;
+          conversionRateChange: number;
+        }>("/api/admin/analytics/stats");
+        return response.data || {
+          totalRevenue: 0,
+          totalRevenueChange: 0,
+          totalOrders: 0,
+          totalOrdersChange: 0,
+          totalCustomers: 0,
+          totalCustomersChange: 0,
+          conversionRate: 0,
+          conversionRateChange: 0,
+        };
+      } catch {
+        return {
+          totalRevenue: 0,
+          totalRevenueChange: 0,
+          totalOrders: 0,
+          totalOrdersChange: 0,
+          totalCustomers: 0,
+          totalCustomersChange: 0,
+          conversionRate: 0,
+          conversionRateChange: 0,
+        };
       }
     },
   })
+
+  const { data: revenueData, isLoading: loadingRevenue } = useQuery({
+    queryKey: ["admin", "analytics", "revenue"],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest<Array<{ month: string; value: number }>>("/api/admin/analytics/revenue-chart");
+        return response.data || [];
+      } catch {
+        return [];
+      }
+    },
+  })
+
+  const { data: topProducts, isLoading: loadingProducts } = useQuery({
+    queryKey: ["admin", "analytics", "top-products"],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest<Array<{ name: string; sales: number }>>("/api/admin/analytics/top-products");
+        return response.data || [];
+      } catch {
+        return [];
+      }
+    },
+  })
+
+  const isLoading = loadingStats || loadingRevenue || loadingProducts
 
   return (
     <div className="space-y-6">
@@ -65,8 +102,12 @@ export default function AdminAnalyticsPage() {
             <Euro className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatPrice(12500000)}</div>
-            <p className="text-xs text-muted-foreground">+12.5% desde o mês passado</p>
+            <div className="text-2xl font-bold">{formatPrice(Math.round((stats?.totalRevenue || 0) * 100))}</div>
+            <p className={`text-xs ${stats?.totalRevenueChange && stats.totalRevenueChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {stats?.totalRevenueChange !== undefined && stats.totalRevenueChange !== 0
+                ? `${stats.totalRevenueChange >= 0 ? '+' : ''}${stats.totalRevenueChange.toFixed(1)}% desde o mês passado`
+                : 'Sem dados do mês anterior'}
+            </p>
           </CardContent>
         </Card>
 
@@ -76,8 +117,12 @@ export default function AdminAnalyticsPage() {
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,234</div>
-            <p className="text-xs text-muted-foreground">+8.2% desde o mês passado</p>
+            <div className="text-2xl font-bold">{stats?.totalOrders?.toLocaleString('pt-PT') || 0}</div>
+            <p className={`text-xs ${stats?.totalOrdersChange && stats.totalOrdersChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {stats?.totalOrdersChange !== undefined && stats.totalOrdersChange !== 0
+                ? `${stats.totalOrdersChange >= 0 ? '+' : ''}${stats.totalOrdersChange.toFixed(1)}% desde o mês passado`
+                : 'Sem dados do mês anterior'}
+            </p>
           </CardContent>
         </Card>
 
@@ -87,8 +132,12 @@ export default function AdminAnalyticsPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5,678</div>
-            <p className="text-xs text-muted-foreground">+15.3% desde o mês passado</p>
+            <div className="text-2xl font-bold">{stats?.totalCustomers?.toLocaleString('pt-PT') || 0}</div>
+            <p className={`text-xs ${stats?.totalCustomersChange && stats.totalCustomersChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {stats?.totalCustomersChange !== undefined && stats.totalCustomersChange !== 0
+                ? `${stats.totalCustomersChange >= 0 ? '+' : ''}${stats.totalCustomersChange.toFixed(1)}% desde o mês passado`
+                : 'Sem dados do mês anterior'}
+            </p>
           </CardContent>
         </Card>
 
@@ -98,8 +147,10 @@ export default function AdminAnalyticsPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3.2%</div>
-            <p className="text-xs text-muted-foreground">+0.5% desde o mês passado</p>
+            <div className="text-2xl font-bold">{stats?.conversionRate?.toFixed(1) || 0}%</div>
+            <p className="text-xs text-muted-foreground">
+              {stats?.totalOrders || 0} pedidos / {stats?.totalCustomers || 0} clientes
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -116,9 +167,9 @@ export default function AdminAnalyticsPage() {
               <div className="h-[300px] flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
-            ) : (
+            ) : revenueData && revenueData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={analyticsData?.revenue}>
+                <LineChart data={revenueData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
@@ -127,6 +178,10 @@ export default function AdminAnalyticsPage() {
                   <Line type="monotone" dataKey="value" stroke="#0088FE" strokeWidth={2} name="Receita (€)" />
                 </LineChart>
               </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center">
+                <p className="text-muted-foreground">Sem dados de receita disponíveis</p>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -141,9 +196,9 @@ export default function AdminAnalyticsPage() {
               <div className="h-[300px] flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
-            ) : (
+            ) : topProducts && topProducts.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={analyticsData?.topProducts}>
+                <BarChart data={topProducts}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
@@ -152,6 +207,10 @@ export default function AdminAnalyticsPage() {
                   <Bar dataKey="sales" fill="#00C49F" name="Vendas" />
                 </BarChart>
               </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center">
+                <p className="text-muted-foreground">Sem dados de produtos disponíveis</p>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -168,25 +227,9 @@ export default function AdminAnalyticsPage() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={analyticsData?.trafficSources}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {analyticsData?.trafficSources.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="h-[300px] flex items-center justify-center">
+              <p className="text-muted-foreground">Dados de fontes de tráfego não disponíveis</p>
+            </div>
           )}
         </CardContent>
       </Card>

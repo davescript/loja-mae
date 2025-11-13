@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiRequest } from "../../utils/api"
 import { DataTable, type Column } from "../components/common/DataTable"
@@ -364,6 +364,23 @@ function CategoryForm({
   const [isActive, setIsActive] = useState<number>(
     category?.is_active ?? 1
   )
+
+  // Update form when category changes
+  useEffect(() => {
+    if (category) {
+      setName(category.name || "")
+      setSlug(category.slug || "")
+      setDescription(category.description || "")
+      setParentId(category.parent_id || null)
+      setIsActive(category.is_active ?? 1)
+    } else {
+      setName("")
+      setSlug("")
+      setDescription("")
+      setParentId(null)
+      setIsActive(1)
+    }
+  }, [category])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()

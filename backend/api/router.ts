@@ -87,6 +87,20 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
           }
         }
 
+        // Admin Analytics routes
+        if (path.startsWith('/api/admin/analytics')) {
+          const { handleGetAnalyticsStats, handleGetRevenueChart, handleGetAnalyticsTopProducts } = await import('./admin/analytics');
+          if (path === '/api/admin/analytics/stats') {
+            return handleCORS(await handleGetAnalyticsStats(request, env), env, request);
+          }
+          if (path === '/api/admin/analytics/revenue-chart') {
+            return handleCORS(await handleGetRevenueChart(request, env), env, request);
+          }
+          if (path === '/api/admin/analytics/top-products') {
+            return handleCORS(await handleGetAnalyticsTopProducts(request, env), env, request);
+          }
+        }
+
         // Cart routes
         if (path.startsWith('/api/cart')) {
           const { handleCartRoutes } = await import('./cart');
