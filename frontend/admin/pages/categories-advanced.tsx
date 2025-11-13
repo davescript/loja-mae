@@ -380,7 +380,7 @@ function CategoryForm({
       setParentId(null)
       setIsActive(1)
     }
-  }, [category])
+  }, [category?.id]) // Use category.id to trigger update when category changes
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -446,14 +446,14 @@ function CategoryForm({
             <div className="space-y-2">
               <Label htmlFor="parent_id">Categoria Pai</Label>
               <Select
-                value={parentId?.toString() || ""}
-                onValueChange={(value) => setParentId(value ? parseInt(value) : null)}
+                value={parentId?.toString() || "none"}
+                onValueChange={(value) => setParentId(value === "none" ? null : parseInt(value))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Nenhuma (categoria raiz)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma (categoria raiz)</SelectItem>
+                  <SelectItem value="none">Nenhuma (categoria raiz)</SelectItem>
                   {availableParents.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id.toString()}>
                       {cat.name}
