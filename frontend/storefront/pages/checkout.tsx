@@ -57,7 +57,6 @@ function CheckoutForm({
       const billingDetails: any = {};
       if (shippingAddress) {
         billingDetails.name = shippingAddress.name || '';
-        billingDetails.email = shippingAddress.email || '';
         billingDetails.phone = shippingAddress.phone || '';
         billingDetails.address = {
           line1: shippingAddress.address?.line1 || '',
@@ -73,9 +72,9 @@ function CheckoutForm({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/checkout/success`,
-          payment_method_data: {
-            billing_details: billingDetails.name || billingDetails.email ? billingDetails : undefined,
-          },
+          payment_method_data: billingDetails.name ? {
+            billing_details: billingDetails,
+          } : undefined,
         },
         redirect: 'if_required',
       })
