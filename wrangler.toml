@@ -58,9 +58,18 @@ bucket_name = "loja-mae-images"
 [env.development.vars]
 ENVIRONMENT = "development"
 
+# CRON Triggers - Executa a cada 30 minutos
+[triggers]
+crons = ["*/30 * * * *"]
+
+[env.production.triggers]
+crons = ["*/30 * * * *"]
+
 # Secrets (configurados via wrangler secret put)
 # ✅ JWT_SECRET - Configurado
 # ✅ STRIPE_SECRET_KEY - Configurado
 # ✅ STRIPE_WEBHOOK_SECRET - Configurado
 # ✅ ALLOWED_ORIGINS - Configurado
+# ✅ FROM_EMAIL - Configurado (para emails de recuperação)
+# ✅ FROM_NAME - Configurado (opcional)
 

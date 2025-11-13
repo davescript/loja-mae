@@ -14,6 +14,7 @@ import { handleAuthRoutes } from './auth';
 import { handleStripeRoutes } from './stripe';
 import { handleImageRequest } from './images';
 import { handleChatRoutes } from './chat';
+import { handleCartRoutes } from './cart';
 
 export async function handleRequest(request: Request, env: Env): Promise<Response> {
   // Handle CORS
@@ -32,6 +33,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
 
   const url = new URL(request.url);
   const path = url.pathname;
+  const method = request.method;
 
   try {
     // API routes
@@ -53,6 +55,33 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
 
     if (path.startsWith('/api/coupons')) {
       return handleCORS(await handleCouponsRoutes(request, env), env, request);
+    }
+
+    // Cart routes (including abandoned carts)
+    if (path.startsWith('/api/cart')) {
+      return handleCORS(await handleCartRoutes(request, env), env, request);
+    }
+
+    // Admin abandoned carts routes
+    if (path.startsWith('/api/admin/carts/abandoned')) {
+      const { handleListAbandonedCarts, handleGetAbandonedCart, handleSendRecoveryEmail } = await import('./cart/abandoned');
+      if (method === 'GET' && path === '/api/admin/carts/abandoned') {
+        return handleCORS(await handleListAbandonedCarts(request, env), env, request);
+      }
+      if (method === 'GET' && path.match(/^\/api\/admin\/carts\/abandoned\/[^/]+$/)) {
+        const cartId = path.split('/').pop() || '';
+        return handleCORS(await handleGetAbandonedCart(request, env, cartId), env, request);
+      }
+      if (method === 'POST' && path.match(/^\/api\/admin\/carts\/abandoned\/[^/]+\/send-email$/)) {
+        const cartId = path.split('/')[4] || '';
+        return handleCORS(await handleSendRecoveryEmail(request, env, cartId), env, request);
+      }
+    }
+
+    // Mark abandoned carts (CRON endpoint)
+    if (path === '/api/cart/mark-abandoned' && method === 'POST') {
+      const { handleMarkAbandoned } = await import('./cart/abandoned');
+      return handleCORS(await handleMarkAbandoned(request, env), env, request);
     }
 
     if (path.startsWith('/api/auth')) {
@@ -101,11 +130,6 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
           }
         }
 
-        // Cart routes
-        if (path.startsWith('/api/cart')) {
-          const { handleCartRoutes } = await import('./cart');
-          return handleCORS(await handleCartRoutes(request, env), env, request);
-        }
 
         // Favorites routes
         if (path.startsWith('/api/favorites')) {

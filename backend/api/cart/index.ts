@@ -4,6 +4,17 @@ import { successResponse, errorResponse } from '../../utils/response';
 import { handleError } from '../../utils/errors';
 import { requireAuth } from '../../utils/auth';
 import { executeQuery, executeOne, executeRun } from '../../utils/db';
+import {
+  createOrUpdateCart,
+  getCartByUser,
+  getCart,
+  addItemToCart,
+  getCartItems,
+  updateCartItemQuantity,
+  removeCartItem,
+  markCartAsRecovered,
+  markCartAsCompleted,
+} from '../../modules/carts';
 
 export async function handleCartRoutes(request: Request, env: Env): Promise<Response> {
   try {
@@ -13,38 +24,98 @@ export async function handleCartRoutes(request: Request, env: Env): Promise<Resp
     const path = url.pathname;
 
     // GET /api/cart - Get cart items
+    // Suporta cart_id na query string para recuperação de carrinho abandonado
     if (method === 'GET' && path === '/api/cart') {
       try {
-        const user = await requireAuth(request, env, 'both');
+        const url = new URL(request.url);
+        const cartId = url.searchParams.get('cart_id');
         
-        if (user.type === 'customer') {
-          const items = await executeQuery(
-            db,
-            `SELECT ci.*, p.title, p.slug, pi.image_url 
-             FROM cart_items ci
-             LEFT JOIN products p ON ci.product_id = p.id
-             LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_primary = 1
-             WHERE ci.customer_id = ?
-             ORDER BY ci.created_at DESC`,
-            [user.id]
-          );
-
-          // Transform to match CartItem type
-          const cartItems = (items || []).map((item: any) => ({
+        // Se tem cart_id, buscar carrinho específico (para recuperação)
+        if (cartId) {
+          const cart = await getCart(db, cartId);
+          if (!cart) {
+            return errorResponse('Cart not found', 404);
+          }
+          
+          const items = await getCartItems(db, cartId);
+          
+          // Transformar para formato esperado pelo frontend
+          const cartItems = items.map((item) => ({
             product_id: item.product_id,
             variant_id: item.variant_id,
-            title: item.title || 'Produto',
+            title: item.product_name,
             price_cents: item.price_cents,
             quantity: item.quantity,
             image_url: item.image_url || null,
-            sku: null,
+            sku: item.sku || null,
           }));
-
-          return successResponse({ items: cartItems });
+          
+          return successResponse({
+            cart_id: cart.id,
+            items: cartItems,
+            total_cents: cart.total_cents,
+          });
         }
-      } catch {
-        // Guest checkout - return empty cart
-        return successResponse({ items: [] });
+        
+        // Buscar carrinho do usuário logado
+        try {
+          const user = await requireAuth(request, env, 'both');
+          
+          if (user.type === 'customer') {
+            // Buscar ou criar carrinho
+            const cart = await getCartByUser(db, user.id, null);
+            
+            if (cart) {
+              const items = await getCartItems(db, cart.id);
+              const cartItems = items.map((item) => ({
+                product_id: item.product_id,
+                variant_id: item.variant_id,
+                title: item.product_name,
+                price_cents: item.price_cents,
+                quantity: item.quantity,
+                image_url: item.image_url || null,
+                sku: item.sku || null,
+              }));
+              
+              return successResponse({
+                cart_id: cart.id,
+                items: cartItems,
+                total_cents: cart.total_cents,
+              });
+            }
+          }
+        } catch {
+          // Guest - tentar buscar por session_id
+          const sessionId = request.headers.get('x-session-id') || 
+                           new URL(request.url).searchParams.get('session_id');
+          
+          if (sessionId) {
+            const cart = await getCartByUser(db, null, sessionId);
+            if (cart) {
+              const items = await getCartItems(db, cart.id);
+              const cartItems = items.map((item) => ({
+                product_id: item.product_id,
+                variant_id: item.variant_id,
+                title: item.product_name,
+                price_cents: item.price_cents,
+                quantity: item.quantity,
+                image_url: item.image_url || null,
+                sku: item.sku || null,
+              }));
+              
+              return successResponse({
+                cart_id: cart.id,
+                items: cartItems,
+                total_cents: cart.total_cents,
+              });
+            }
+          }
+        }
+        
+        return successResponse({ items: [], cart_id: null, total_cents: 0 });
+      } catch (error) {
+        const { message, status } = handleError(error);
+        return errorResponse(message, status);
       }
     }
 

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { loadStripe, StripeElementsOptions } from '@stripe/stripe-js'
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
 import { useCartStore } from '../../store/cartStore'
@@ -147,16 +147,71 @@ function CheckoutForm({
 
 export default function CheckoutPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { toast } = useToast()
-  const { items, getTotal, clearCart } = useCartStore()
+  const { items, getTotal, clearCart, loadFromServer } = useCartStore()
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [orderNumber, setOrderNumber] = useState<string | null>(null)
   const [publishableKey, setPublishableKey] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
   const [paymentSuccess, setPaymentSuccess] = useState(false)
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null)
+  const [loadingCart, setLoadingCart] = useState(false)
+  const cartId = searchParams.get('cart_id')
 
   const total = getTotal()
+
+  // Carregar carrinho abandonado se cart_id estiver na URL
+  useEffect(() => {
+    if (cartId) {
+      setLoadingCart(true)
+      fetch(`${API_BASE_URL}/api/cart?cart_id=${cartId}`, {
+        credentials: 'include',
+      })
+        .then((res) => res.json())
+        .then((data: any) => {
+          if (data.success && data.data?.items) {
+            // Adicionar itens ao carrinho
+            const cartItems = data.data.items.map((item: any) => ({
+              product_id: item.product_id,
+              variant_id: item.variant_id,
+              title: item.title,
+              price_cents: item.price_cents,
+              quantity: item.quantity,
+              image_url: item.image_url,
+              sku: item.sku,
+            }))
+            
+            // Limpar carrinho atual e adicionar itens do carrinho abandonado
+            clearCart()
+            cartItems.forEach((item: any) => {
+              for (let i = 0; i < item.quantity; i++) {
+                // useCartStore addItem será chamado via sync
+              }
+            })
+            
+            // Sincronizar com servidor
+            loadFromServer()
+            
+            toast({
+              title: 'Carrinho recuperado',
+              description: 'Seus itens foram restaurados com sucesso',
+            })
+          }
+        })
+        .catch((error) => {
+          console.error('Erro ao carregar carrinho:', error)
+          toast({
+            title: 'Erro',
+            description: 'Não foi possível carregar o carrinho',
+            variant: 'destructive',
+          })
+        })
+        .finally(() => {
+          setLoadingCart(false)
+        })
+    }
+  }, [cartId, clearCart, loadFromServer, toast])
 
   // Carregar chave pública do Stripe
   useEffect(() => {

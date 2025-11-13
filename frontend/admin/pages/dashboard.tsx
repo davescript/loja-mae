@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { apiRequest } from "../../utils/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 import { motion } from "framer-motion"
@@ -11,7 +11,9 @@ import {
   Package,
   ArrowUpRight,
   ArrowDownRight,
+  RefreshCw,
 } from "lucide-react"
+import { Button } from "../components/ui/button"
 import { formatPrice } from "../../utils/format"
 import {
   LineChart,
@@ -32,8 +34,10 @@ import {
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"]
 
 export default function AdminDashboardPage() {
+  const queryClient = useQueryClient()
+
   // Fetch dashboard data
-  const { data: stats, isLoading: loadingStats } = useQuery({
+  const { data: stats, isLoading: loadingStats, refetch: refetchStats } = useQuery({
     queryKey: ["admin", "dashboard", "stats"],
     queryFn: async () => {
       const response = await apiRequest<{
@@ -67,6 +71,9 @@ export default function AdminDashboardPage() {
         abandonedCarts: 0,
       };
     },
+    staleTime: 0, // Sempre buscar dados frescos
+    refetchOnWindowFocus: true, // Atualizar quando voltar para a aba
+    refetchInterval: 30000, // Atualizar a cada 30 segundos
   })
 
   const { data: salesData, isLoading: loadingSales } = useQuery({
@@ -79,6 +86,9 @@ export default function AdminDashboardPage() {
         return [];
       }
     },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000,
   })
 
   const { data: topProducts, isLoading: loadingProducts } = useQuery({
@@ -91,6 +101,9 @@ export default function AdminDashboardPage() {
         return [];
       }
     },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000,
   })
 
   const { data: channelData, isLoading: loadingChannels } = useQuery({
@@ -111,7 +124,15 @@ export default function AdminDashboardPage() {
         return []
       }
     },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000,
   })
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] })
+    refetchStats()
+  }
 
   const KpiCard = ({
     title,
@@ -161,11 +182,23 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
-          Visão geral das suas vendas e métricas
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground mt-2">
+            Visão geral das suas vendas e métricas
+          </p>
+        </div>
+        <Button
+          onClick={handleRefresh}
+          disabled={loadingStats}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`w-4 h-4 ${loadingStats ? 'animate-spin' : ''}`} />
+          Atualizar
+        </Button>
       </div>
 
       {/* KPI Cards */}
