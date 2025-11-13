@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest, apiFormData } from '../../utils/api';
 import type { Product, Category, ProductImage } from '@shared/types';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatPrice } from '../../utils/format';
 import {
   Plus,
   Edit,
@@ -214,11 +215,11 @@ export default function AdminProductsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          R$ {(product.price_cents / 100).toFixed(2).replace('.', ',')}
+                          {formatPrice(product.price_cents)}
                         </div>
                         {product.compare_at_price_cents && (
                           <div className="text-sm text-gray-500 line-through">
-                            R$ {(product.compare_at_price_cents / 100).toFixed(2).replace('.', ',')}
+                            {formatPrice(product.compare_at_price_cents)}
                           </div>
                         )}
                       </td>
@@ -597,7 +598,7 @@ function ProductModal({
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                     />
                     <p className="mt-1 text-sm text-gray-500">
-                      Exemplo: 299900 = R$ 2.999,00
+                      Exemplo: 299900 = € 2.999,00
                     </p>
                   </div>
 

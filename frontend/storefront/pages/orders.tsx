@@ -1,6 +1,7 @@
 import { useAuth } from '../../hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '../../utils/api';
+import { formatPrice } from '../../utils/format';
 
 type Order = {
   id: number;
@@ -49,7 +50,7 @@ export default function OrdersPage() {
               <div className="text-sm">
                 <span className="mr-3">Status: <strong>{order.status}</strong></span>
                 <span className="mr-3">Pagamento: <strong>{order.payment_status}</strong></span>
-                <span>Total: R$ {(order.total_cents / 100).toFixed(2).replace('.', ',')}</span>
+                <span>Total: {formatPrice(order.total_cents)}</span>
               </div>
             </div>
           ))

@@ -3,6 +3,7 @@ import type { Product } from '@shared/types';
 import { Heart, ShoppingCart, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
+import { formatPrice } from '../../../utils/format';
 
 type Props = {
   product: Product;
@@ -25,9 +26,9 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
   const currentImage = displayImages[currentImageIndex] || displayImages[0];
   const imageUrl = currentImage?.image_url || null;
 
-  const price = (product.price_cents / 100).toFixed(2).replace('.', ',');
+  const price = formatPrice(product.price_cents);
   const comparePrice = product.compare_at_price_cents 
-    ? (product.compare_at_price_cents / 100).toFixed(2).replace('.', ',')
+    ? formatPrice(product.compare_at_price_cents)
     : null;
 
   const handleAddToCart = (e: React.MouseEvent) => {

@@ -3,6 +3,7 @@ import { apiRequest } from '../../utils/api';
 import type { Product } from '@shared/types';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { formatPrice } from '../../utils/format';
 
 export default function LatestProductsSection() {
   const { data, isLoading } = useQuery({
@@ -53,7 +54,7 @@ export default function LatestProductsSection() {
                 <div className="p-5">
                   <h3 className="font-medium text-lg">{product.title}</h3>
                   <p className="mt-2 text-primary font-semibold text-xl">
-                    R$ {(product.price_cents / 100).toFixed(2).replace('.', ',')}
+                    {formatPrice(product.price_cents)}
                   </p>
                 </div>
               </Link>

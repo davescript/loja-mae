@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Carousel from '../../components/app/Carousel';
 import { Star } from 'lucide-react';
+import { formatPrice } from '../../../utils/format';
 
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -121,11 +122,11 @@ export default function ProductPage() {
             <span className="ml-2 text-xs text-muted-foreground">{(product as any).reviews_count || 24} avaliações</span>
           </div>
           <p className="mt-3 text-2xl font-semibold text-primary">
-            R$ {(price / 100).toFixed(2).replace('.', ',')}
+            {formatPrice(price)}
           </p>
           {product.compare_at_price_cents && (
             <p className="mt-1 text-sm text-muted-foreground line-through">
-              R$ {(product.compare_at_price_cents / 100).toFixed(2).replace('.', ',')}
+              {formatPrice(product.compare_at_price_cents)}
             </p>
           )}
           <p className="mt-6 text-muted-foreground leading-relaxed">{product.description}</p>

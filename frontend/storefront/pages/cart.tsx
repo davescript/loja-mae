@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getItems, updateQuantity, removeItem, getSubtotalCents } from '../../utils/cart';
 import { useNavigate } from 'react-router-dom';
+import { formatPrice } from '../../utils/format';
 
 export default function CartPage() {
   const [items, setItems] = useState(getItems());
@@ -36,7 +37,7 @@ export default function CartPage() {
                 <img src={it.image_url || ''} alt={it.title} className="w-16 h-16 rounded-md object-cover" />
                 <div className="flex-1">
                   <p className="text-sm font-medium line-clamp-1">{it.title}</p>
-                  <p className="text-xs text-muted-foreground">R$ {(it.price_cents / 100).toFixed(2).replace('.', ',')}</p>
+                  <p className="text-xs text-muted-foreground">{formatPrice(it.price_cents)}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button className="px-2 py-1 rounded-md bg-white border" onClick={() => handleQty(it.product_id, it.variant_id ?? null, it.quantity - 1)}>-</button>
@@ -56,7 +57,7 @@ export default function CartPage() {
         {/* Resumo sempre visível */}
         <div className="rounded-xl bg-card p-4 shadow-soft h-max">
           <p className="text-sm text-muted-foreground">Subtotal</p>
-          <p className="text-2xl font-semibold text-primary">R$ {subtotal.toFixed(2).replace('.', ',')}</p>
+          <p className="text-2xl font-semibold text-primary">{formatPrice(Math.round(subtotal * 100))}</p>
           <button className="mt-4 w-full px-4 py-3 rounded-full bg-primary text-primary-foreground" onClick={() => navigate('/checkout')}>Ir para Checkout</button>
           <p className="mt-2 text-xs text-muted-foreground">Impostos e envio calculados no checkout.</p>
         </div>

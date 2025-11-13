@@ -3,6 +3,7 @@ import { getItems, getSubtotalCents, clearCart } from '../../utils/cart';
 import { API_BASE_URL } from '../../utils/api';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
+import { formatPrice } from '../../utils/format';
 
 type Address = {
   first_name: string;
@@ -150,11 +151,11 @@ export default function CheckoutPage() {
         <div className="rounded-xl bg-card p-4 shadow-soft h-max">
           <p className="text-sm text-muted-foreground">Resumo</p>
           <div className="mt-2 space-y-1 text-sm">
-            <div className="flex justify-between"><span>Subtotal</span><span>R$ {subtotal.toFixed(2).replace('.', ',')}</span></div>
-            <div className="flex justify-between"><span>Envio</span><span>R$ 0,00</span></div>
-            <div className="flex justify-between"><span>Impostos</span><span>R$ 0,00</span></div>
+            <div className="flex justify-between"><span>Subtotal</span><span>{formatPrice(Math.round(subtotal * 100))}</span></div>
+            <div className="flex justify-between"><span>Envio</span><span>{formatPrice(0)}</span></div>
+            <div className="flex justify-between"><span>Impostos</span><span>{formatPrice(0)}</span></div>
           </div>
-          <div className="mt-2 flex justify-between font-semibold"><span>Total</span><span>R$ {subtotal.toFixed(2).replace('.', ',')}</span></div>
+          <div className="mt-2 flex justify-between font-semibold"><span>Total</span><span>{formatPrice(Math.round(subtotal * 100))}</span></div>
         </div>
       </div>
     </div>

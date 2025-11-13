@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Product } from '@shared/types';
+import { formatPrice } from '../../../utils/format';
 
 type QuickViewModalProps = {
   open: boolean;
@@ -62,9 +63,9 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
     }
   };
 
-  const price = product ? (product.price_cents / 100).toFixed(2).replace('.', ',') : '0,00';
+  const price = product ? formatPrice(product.price_cents) : formatPrice(0);
   const comparePrice = product?.compare_at_price_cents 
-    ? (product.compare_at_price_cents / 100).toFixed(2).replace('.', ',')
+    ? formatPrice(product.compare_at_price_cents)
     : null;
 
   return (
@@ -184,11 +185,11 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
                   <div className="mb-6">
                     <div className="flex items-baseline gap-3">
                       <span className="text-3xl font-bold text-primary">
-                        R$ {price}
+                        {price}
                       </span>
                       {comparePrice && (
                         <span className="text-lg text-muted-foreground line-through">
-                          R$ {comparePrice}
+                          {comparePrice}
                         </span>
                       )}
                     </div>
