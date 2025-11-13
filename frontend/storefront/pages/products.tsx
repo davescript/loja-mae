@@ -35,9 +35,12 @@ export default function ProductsPage() {
         if (search) params.append('search', search);
         if (categoryId) params.append('category_id', categoryId);
         if (categorySlug) params.append('category', categorySlug);
+        
+        // Always include images in product list
+        params.append('include', 'images');
 
         const response = await apiRequest<{ items: Product[]; total: number }>(
-          `/api/products?${params.toString()}&include=images`
+          `/api/products?${params.toString()}`
         );
         return response.data || { items: [], total: 0 };
       } catch (error) {
