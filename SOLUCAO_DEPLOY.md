@@ -1,70 +1,74 @@
-# 🚀 Solução para Deploy
+# 🔧 Solução para Erro de Deploy
 
-## Problema
-O token de autenticação do Cloudflare está inválido ou expirado.
+## ❌ Erro Encontrado
 
-## Soluções
+```
+Authentication error [code: 10000]
+```
 
-### ✅ Opção 1: Login via OAuth (Mais Fácil)
+## ✅ Solução
+
+### Opção 1: Usar Script Automático
 
 ```bash
-# 1. Remover tokens antigos
+./scripts/fix-deploy-auth.sh
+```
+
+O script irá:
+1. Remover `CLOUDFLARE_API_TOKEN` se existir
+2. Verificar autenticação
+3. Fazer login se necessário
+
+### Opção 2: Manual
+
+```bash
+# 1. Remover token antigo
 unset CLOUDFLARE_API_TOKEN
-unset CF_API_TOKEN
 
-# 2. Fazer login interativo
-npx wrangler login
-
-# 3. Verificar autenticação
+# 2. Verificar autenticação
 npx wrangler whoami
 
-# 4. Fazer deploy
+# 3. Se não estiver autenticado, fazer login
+npx wrangler login
+
+# 4. Tentar deploy novamente
 npm run deploy:backend
 ```
 
-### ✅ Opção 2: Deploy via GitHub Actions
-
-Se você tem o repositório configurado com GitHub Actions:
+## 🔍 Verificar Variáveis de Ambiente
 
 ```bash
-# 1. Adicionar mudanças
-git add .
+# Ver se há token configurado
+echo $CLOUDFLARE_API_TOKEN
 
-# 2. Commit
-git commit -m "Fix: Corrigir erros TypeScript e atualizar deploy"
+# Se houver, remover
+unset CLOUDFLARE_API_TOKEN
 
-# 3. Push
-git push origin main
-
-# O GitHub Actions fará o deploy automaticamente
+# Verificar arquivos de configuração do shell
+grep -r "CLOUDFLARE_API_TOKEN" ~/.zshrc ~/.bashrc ~/.bash_profile 2>/dev/null
 ```
 
-### ✅ Opção 3: Criar Novo API Token
+## 📝 Depois de Autenticar
 
-1. Acesse: https://dash.cloudflare.com/profile/api-tokens
-2. Clique em "Create Token"
-3. Use o template "Edit Cloudflare Workers"
-4. Adicione permissões:
-   - Workers:Edit
-   - Account:Read
-   - D1:Edit
-   - R2:Edit
-5. Copie o token
-6. Configure:
+Após autenticar com sucesso, você pode:
+
+1. **Fazer deploy:**
    ```bash
-   export CLOUDFLARE_API_TOKEN="seu-token-aqui"
    npm run deploy:backend
    ```
 
-## Verificar Deploy
+2. **Configurar secrets do Stripe:**
+   ```bash
+   ./scripts/configurar-stripe-comandos.sh
+   ```
 
-Após o deploy, verifique:
+3. **Verificar secrets:**
+   ```bash
+   npx wrangler secret list --env production
+   ```
 
-```bash
-# Ver logs
-npx wrangler tail --env production
+## ⚠️ Importante
 
-# Ver informações do Worker
-npx wrangler deployments list --env production
-```
-
+- O GitHub Actions usa `CLOUDFLARE_API_TOKEN` como secret (isso está correto)
+- Para deploy local, use `npx wrangler login` (OAuth)
+- Não misture os dois métodos
