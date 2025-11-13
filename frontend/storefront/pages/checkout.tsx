@@ -198,7 +198,7 @@ export default function CheckoutPage() {
       }
 
       if (!response.ok) {
-        const errorMsg = data.error || data.data?.error || 'Falha ao criar pedido'
+        const errorMsg = (data as any).error || (data as any).data?.error || 'Falha ao criar pedido'
         console.error('Erro na resposta:', { status: response.status, data })
         throw new Error(errorMsg)
       }
