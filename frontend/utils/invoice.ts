@@ -2,20 +2,30 @@
  * Utility functions for invoice PDF generation
  */
 
+import { API_BASE_URL } from './api';
+
 /**
  * Download invoice as PDF by fetching with credentials and opening in new window
  */
 export async function downloadInvoicePDF(orderId: number | string): Promise<void> {
-  const url = `${import.meta.env.VITE_API_BASE_URL || 'https://api.leiasabores.pt'}/api/orders/${orderId}/invoice`;
+  const url = `${API_BASE_URL}/api/orders/${orderId}/invoice`;
   
   try {
+    // Get auth token from localStorage if available
+    const token = localStorage.getItem('auth_token') || localStorage.getItem('customer_token') || localStorage.getItem('admin_token');
+    const headers: HeadersInit = {
+      'Accept': 'text/html',
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
     // Fetch with credentials to include cookies/auth headers
     const response = await fetch(url, {
       method: 'GET',
       credentials: 'include', // Include cookies
-      headers: {
-        'Accept': 'text/html',
-      },
+      headers,
     });
 
     if (!response.ok) {
