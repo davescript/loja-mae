@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../../utils/api';
 import type { Customer, Address } from '@shared/types';
 import { DataTable, type Column } from '../components/common/DataTable';
@@ -15,6 +15,7 @@ export default function AdminCustomersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer & { addresses?: Address[] } | null>(null);
+  const queryClient = useQueryClient();
 
   const { data: customersData, isLoading } = useQuery({
     queryKey: ['admin', 'customers', page, search],
@@ -33,12 +34,27 @@ export default function AdminCustomersPage() {
 
   const handleViewCustomer = async (customer: Customer) => {
     try {
+      // Invalidar cache para garantir dados frescos
+      queryClient.invalidateQueries({ queryKey: ['admin', 'customer', customer.id] });
+      
+      // Buscar dados atualizados do cliente
       const response = await apiRequest<Customer & { addresses?: Address[] }>(
         `/api/customers/${customer.id}`
       );
-      setSelectedCustomer(response.data || null);
+      
+      if (response.data) {
+        // Garantir que addresses seja um array
+        const customerData = {
+          ...response.data,
+          addresses: Array.isArray(response.data.addresses) ? response.data.addresses : [],
+        };
+        setSelectedCustomer(customerData);
+      } else {
+        setSelectedCustomer(null);
+      }
     } catch (error) {
       console.error('Erro ao carregar detalhes do cliente:', error);
+      setSelectedCustomer(null);
     }
   };
 
