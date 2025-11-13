@@ -193,22 +193,11 @@ export async function handleGetOrders(request: Request, env: Env): Promise<Respo
     const offset = limit ? 0 : (finalPage - 1) * pageSize;
 
     // Get orders with items count
-    const orders = await executeQuery<{
-      id: number;
-      order_number: string;
-      customer_id: number | null;
-      email: string;
-      status: string;
-      payment_status: string;
-      total_cents: number;
-      created_at: string;
-      updated_at: string;
-      items_count?: number;
-    }>(
+    const orders = await executeQuery<any>(
       db,
       `SELECT 
         o.*,
-        (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as items_count
+        CAST((SELECT COUNT(*) FROM order_items WHERE order_id = o.id) AS INTEGER) as items_count
       FROM orders o
       ${whereClause} 
       ORDER BY o.created_at DESC 
