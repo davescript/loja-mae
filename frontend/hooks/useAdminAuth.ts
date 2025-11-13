@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 import { handleError } from '../utils/errorHandler';
-import { useToast } from './useToast';
+import { useToast } from '../admin/hooks/useToast';
 
 type AdminUser = {
   id: number;
