@@ -29,23 +29,9 @@ const CART_KEY = 'loja-mae-cart'
 
 export const useCartStore = create<CartStore>()(
   persist(
-    (set, get) => {
-      // Carregar do servidor na inicialização se usuário estiver logado
-      if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('customer_token') || localStorage.getItem('token');
-        if (token) {
-          // Carregar do servidor após um pequeno delay para garantir que a store está inicializada
-          setTimeout(() => {
-            get().loadFromServer().catch(err => {
-              console.error('Erro ao carregar carrinho na inicialização:', err);
-            });
-          }, 100);
-        }
-      }
-
-      return {
-        items: [],
-        isLoading: false,
+    (set, get) => ({
+      items: [],
+      isLoading: false,
 
         addItem: (item) => {
           try {
