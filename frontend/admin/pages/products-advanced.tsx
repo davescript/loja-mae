@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { useToast } from "../hooks/useToast"
 import { handleError } from "../../utils/errorHandler"
 import { formatPrice } from "../../utils/format"
-import { Plus, Edit, Trash2, MoreVertical, Eye } from "lucide-react"
+import { validateImage } from "../../utils/validateImage"
+import { Plus, Edit, Trash2, MoreVertical, Eye, X } from "lucide-react"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import { useForm } from "react-hook-form"
 
@@ -27,7 +28,10 @@ type ProductFormData = {
   sku?: string | null
   stock_quantity: number
   status: "draft" | "active" | "archived"
+  featured?: boolean
   category_id?: number | null
+  meta_title?: string | null
+  meta_description?: string | null
 }
 
 export default function AdminProductsPageAdvanced() {
@@ -36,6 +40,8 @@ export default function AdminProductsPageAdvanced() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
+  const [uploadingImages, setUploadingImages] = useState<File[]>([])
+  const [imageErrors, setImageErrors] = useState<string[]>([])
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
@@ -78,13 +84,7 @@ export default function AdminProductsPageAdvanced() {
   })
 
   const saveMutation = useMutation({
-    mutationFn: async (data: ProductFormData) => {
-      const formData = new FormData()
-      Object.entries(data).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) {
-          formData.append(key, value.toString())
-        }
-      })
+    mutationFn: async (formData: FormData) => {
       const endpoint = editingProduct ? `/api/products/${editingProduct.id}` : "/api/products"
       return apiFormData<Product>(endpoint, formData, {
         method: editingProduct ? "PUT" : "POST",
@@ -92,12 +92,16 @@ export default function AdminProductsPageAdvanced() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "products"] })
+      queryClient.invalidateQueries({ queryKey: ["products"] })
+      queryClient.invalidateQueries({ queryKey: ["product"] })
       toast({
         title: "Sucesso",
         description: `Produto ${editingProduct ? "atualizado" : "criado"} com sucesso!`,
       })
       setIsModalOpen(false)
       setEditingProduct(null)
+      setUploadingImages([])
+      setImageErrors([])
       form.reset()
     },
     onError: (error: Error) => {
@@ -197,8 +201,19 @@ export default function AdminProductsPageAdvanced() {
       sku: product.sku || "",
       stock_quantity: product.stock_quantity,
       status: product.status as "draft" | "active" | "archived",
+      featured: (product as any).featured === 1,
       category_id: product.category_id,
+      meta_title: (product as any).meta_title || "",
+      meta_description: (product as any).meta_description || "",
     })
+    setIsModalOpen(true)
+  }
+
+  const handleNew = () => {
+    setEditingProduct(null)
+    form.reset()
+    setUploadingImages([])
+    setImageErrors([])
     setIsModalOpen(true)
   }
 
@@ -289,7 +304,7 @@ export default function AdminProductsPageAdvanced() {
     if (data.meta_description) formData.append("meta_description", data.meta_description)
 
     // Add images
-    uploadingImages.forEach((file, index) => {
+    uploadingImages.forEach((file: File) => {
       formData.append("images", file)
     })
 
