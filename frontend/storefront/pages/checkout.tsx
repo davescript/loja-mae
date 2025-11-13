@@ -145,7 +145,7 @@ export default function CheckoutPage() {
         })
         setPublishableKey(null)
       })
-  }, [])
+  }, [toast])
 
   // Criar Payment Intent quando a página carregar
   useEffect(() => {
