@@ -97,10 +97,18 @@ export default function CustomerPaymentsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => window.open(`/api/orders/${payment.order_id}/invoice`, '_blank')}
+                      onClick={() => {
+                        const url = `${import.meta.env.VITE_API_BASE_URL || 'https://api.leiasabores.pt'}/api/orders/${payment.order_id}/invoice`;
+                        const printWindow = window.open(url, '_blank');
+                        if (printWindow) {
+                          printWindow.onload = () => {
+                            setTimeout(() => printWindow.print(), 500);
+                          };
+                        }
+                      }}
                     >
                       <Download className="w-4 h-4 mr-2" />
-                      Fatura
+                      Baixar Fatura
                     </Button>
                     {payment.provider === 'stripe' && payment.provider_id && (
                       <Button

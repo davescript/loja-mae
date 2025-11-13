@@ -182,7 +182,13 @@ export default function CustomerOrdersPage() {
                           size="sm"
                   onClick={(e: React.MouseEvent) => {
                     e.stopPropagation();
-                    window.open(`/api/orders/${order.id}/invoice`, '_blank');
+                    const url = `${import.meta.env.VITE_API_BASE_URL || 'https://api.leiasabores.pt'}/api/orders/${order.id}/invoice`;
+                    const printWindow = window.open(url, '_blank');
+                    if (printWindow) {
+                      printWindow.onload = () => {
+                        setTimeout(() => printWindow.print(), 500);
+                      };
+                    }
                   }}
                         >
                           <Download className="w-4 h-4 mr-2" />

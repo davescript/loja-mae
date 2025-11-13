@@ -54,11 +54,16 @@ export async function handleGetInvoice(request: Request, env: Env): Promise<Resp
     );
 
     // Parse shipping address from JSON
-    let shippingAddress = {
+    let shippingAddress: any = {
       street: '',
       city: '',
       postal_code: '',
-      country: '',
+      country: 'PT',
+      first_name: '',
+      last_name: '',
+      address_line1: '',
+      address_line2: '',
+      phone: '',
     };
     if (order.shipping_address_json) {
       try {
@@ -69,17 +74,39 @@ export async function handleGetInvoice(request: Request, env: Env): Promise<Resp
           street: addr.street || addr.address_line1 || '',
           city: addr.city || '',
           postal_code: addr.postal_code || '',
-          country: addr.country || '',
+          country: addr.country || 'PT',
+          first_name: addr.first_name || '',
+          last_name: addr.last_name || '',
+          address_line1: addr.address_line1 || addr.street || '',
+          address_line2: addr.address_line2 || '',
+          phone: addr.phone || '',
         };
       } catch (e) {
         console.error('Error parsing shipping address:', e);
       }
     }
 
+    // Get customer name if available
+    let customerName = order.email.split('@')[0];
+    if (order.customer_id) {
+      try {
+        const customer = await executeOne<{ first_name: string; last_name: string }>(
+          db,
+          'SELECT first_name, last_name FROM customers WHERE id = ?',
+          [order.customer_id]
+        );
+        if (customer && customer.first_name) {
+          customerName = `${customer.first_name} ${customer.last_name || ''}`.trim();
+        }
+      } catch (e) {
+        console.error('Error fetching customer:', e);
+      }
+    }
+
     const invoiceData = {
       order_number: order.order_number,
       order_date: order.created_at,
-      customer_name: order.email.split('@')[0],
+      customer_name: customerName,
       customer_email: order.email,
       shipping_address: shippingAddress,
       items: orderItems.map(item => ({
@@ -93,6 +120,8 @@ export async function handleGetInvoice(request: Request, env: Env): Promise<Resp
       shipping_cents: order.shipping_cents,
       discount_cents: order.discount_cents,
       total_cents: order.total_cents,
+      payment_status: order.payment_status || 'pending',
+      payment_method: order.stripe_payment_intent_id ? 'Cartão (Stripe)' : 'Não especificado',
     };
 
     const html = generateInvoiceHTML(invoiceData);
