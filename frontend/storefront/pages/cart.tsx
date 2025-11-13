@@ -59,7 +59,7 @@ export default function CartPage() {
           <p className="text-sm text-muted-foreground">Subtotal</p>
           <p className="text-2xl font-semibold text-primary">{formatPrice(Math.round(subtotal * 100))}</p>
           <button className="mt-4 w-full px-4 py-3 rounded-full bg-primary text-primary-foreground" onClick={() => navigate('/checkout')}>Ir para Checkout</button>
-          <p className="mt-2 text-xs text-muted-foreground">Impostos e envio calculados no checkout.</p>
+          <p className="mt-2 text-xs text-muted-foreground">IVA e portes calculados no checkout.</p>
         </div>
       </div>
     </div>

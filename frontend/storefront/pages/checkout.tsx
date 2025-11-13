@@ -152,8 +152,8 @@ export default function CheckoutPage() {
           <p className="text-sm text-muted-foreground">Resumo</p>
           <div className="mt-2 space-y-1 text-sm">
             <div className="flex justify-between"><span>Subtotal</span><span>{formatPrice(Math.round(subtotal * 100))}</span></div>
-            <div className="flex justify-between"><span>Envio</span><span>{formatPrice(0)}</span></div>
-            <div className="flex justify-between"><span>Impostos</span><span>{formatPrice(0)}</span></div>
+            <div className="flex justify-between"><span>Portes</span><span>{formatPrice(0)}</span></div>
+            <div className="flex justify-between"><span>IVA</span><span>{formatPrice(0)}</span></div>
           </div>
           <div className="mt-2 flex justify-between font-semibold"><span>Total</span><span>{formatPrice(Math.round(subtotal * 100))}</span></div>
         </div>
