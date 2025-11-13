@@ -29,7 +29,7 @@ export default function CustomerDashboardPage() {
     queryKey: ['customer-orders', 'dashboard'],
     queryFn: async () => {
       const response = await apiRequest<{ items: Order[]; total: number }>('/api/customers/orders?limit=5');
-      return response;
+      return response.data || { items: [], total: 0 };
     },
     staleTime: 30000,
   });
@@ -44,7 +44,12 @@ export default function CustomerDashboardPage() {
         pending_orders: number;
         recent_order: Order | null;
       }>('/api/customers/stats');
-      return response;
+      return response.data || {
+        total_orders: 0,
+        total_spent: 0,
+        pending_orders: 0,
+        recent_order: null,
+      };
     },
     staleTime: 60000,
   });
@@ -163,7 +168,7 @@ export default function CustomerDashboardPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {orders.map((order) => (
+              {orders.map((order: Order) => (
                 <motion.div
                   key={order.id}
                   initial={{ opacity: 0, y: 20 }}

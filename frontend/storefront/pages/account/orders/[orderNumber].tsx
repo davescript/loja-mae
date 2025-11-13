@@ -50,7 +50,7 @@ export default function CustomerOrderDetailsPage() {
     queryKey: ['customer-order', orderNumber],
     queryFn: async () => {
       const response = await apiRequest<OrderWithHistory>(`/api/customers/orders/${orderNumber}`);
-      return response;
+      return response.data as OrderWithHistory;
     },
     enabled: !!orderNumber,
     staleTime: 0, // Always fetch fresh data for order details

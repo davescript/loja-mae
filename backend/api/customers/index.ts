@@ -13,6 +13,7 @@ import {
   deleteAddress,
 } from '../../modules/customers';
 import { updateCustomerSchema, listCustomersSchema, createAddressSchema, updateAddressSchema } from '../../validators/customers';
+import * as portalHandlers from './portal';
 
 export async function handleCustomersRoutes(request: Request, env: Env): Promise<Response> {
   try {
@@ -54,15 +55,94 @@ export async function handleCustomersRoutes(request: Request, env: Env): Promise
       return successResponse(customer);
     }
 
-    // Get my profile: GET /api/customers/me
+    // Portal routes - Customer self-service
+    // GET /api/customers/me
     if (method === 'GET' && path === '/api/customers/me') {
-      const user = await requireAuth(request, env, 'customer');
-      const db = getDb(env);
-      const customer = await getCustomer(db, user.id);
-      if (!customer) {
-        return notFoundResponse('Customer not found');
-      }
-      return successResponse(customer);
+      return await portalHandlers.handleGetMe(request, env);
+    }
+
+    // PUT /api/customers/me
+    if (method === 'PUT' && path === '/api/customers/me') {
+      return await portalHandlers.handleUpdateMe(request, env);
+    }
+
+    // PUT /api/customers/me/password
+    if (method === 'PUT' && path === '/api/customers/me/password') {
+      return await portalHandlers.handleUpdatePassword(request, env);
+    }
+
+    // GET /api/customers/stats
+    if (method === 'GET' && path === '/api/customers/stats') {
+      return await portalHandlers.handleGetStats(request, env);
+    }
+
+    // GET /api/customers/orders
+    if (method === 'GET' && path === '/api/customers/orders') {
+      return await portalHandlers.handleGetOrders(request, env);
+    }
+
+    // GET /api/customers/orders/:orderNumber
+    if (method === 'GET' && path.match(/^\/api\/customers\/orders\/[A-Z0-9-]+$/)) {
+      const orderNumber = path.split('/').pop() || '';
+      return await portalHandlers.handleGetOrder(request, env, orderNumber);
+    }
+
+    // GET /api/customers/addresses
+    if (method === 'GET' && path === '/api/customers/addresses') {
+      return await portalHandlers.handleGetAddresses(request, env);
+    }
+
+    // POST /api/customers/addresses
+    if (method === 'POST' && path === '/api/customers/addresses') {
+      return await portalHandlers.handleCreateAddress(request, env);
+    }
+
+    // PUT /api/customers/addresses/:id
+    if (method === 'PUT' && path.match(/^\/api\/customers\/addresses\/\d+$/)) {
+      const addressId = path.split('/').pop() || '';
+      return await portalHandlers.handleUpdateAddress(request, env, addressId);
+    }
+
+    // DELETE /api/customers/addresses/:id
+    if (method === 'DELETE' && path.match(/^\/api\/customers\/addresses\/\d+$/)) {
+      const addressId = path.split('/').pop() || '';
+      return await portalHandlers.handleDeleteAddress(request, env, addressId);
+    }
+
+    // GET /api/customers/payments
+    if (method === 'GET' && path === '/api/customers/payments') {
+      return await portalHandlers.handleGetPayments(request, env);
+    }
+
+    // GET /api/customers/notifications
+    if (method === 'GET' && path === '/api/customers/notifications') {
+      return await portalHandlers.handleGetNotifications(request, env);
+    }
+
+    // GET /api/customers/notifications/unread-count
+    if (method === 'GET' && path === '/api/customers/notifications/unread-count') {
+      return await portalHandlers.handleGetUnreadCount(request, env);
+    }
+
+    // PUT /api/customers/notifications/:id/read
+    if (method === 'PUT' && path.match(/^\/api\/customers\/notifications\/\d+\/read$/)) {
+      const notificationId = path.split('/')[3] || '';
+      return await portalHandlers.handleMarkNotificationRead(request, env, notificationId);
+    }
+
+    // PUT /api/customers/notifications/read-all
+    if (method === 'PUT' && path === '/api/customers/notifications/read-all') {
+      return await portalHandlers.handleMarkAllNotificationsRead(request, env);
+    }
+
+    // GET /api/customers/support/tickets
+    if (method === 'GET' && path === '/api/customers/support/tickets') {
+      return await portalHandlers.handleGetSupportTickets(request, env);
+    }
+
+    // POST /api/customers/support/tickets
+    if (method === 'POST' && path === '/api/customers/support/tickets') {
+      return await portalHandlers.handleCreateSupportTicket(request, env);
     }
 
     // Update customer: PUT /api/customers/:id or PUT /api/customers/me

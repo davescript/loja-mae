@@ -45,7 +45,7 @@ export default function CustomerOrdersPage() {
       const response = await apiRequest<PaginatedResponse<Order>>(
         `/api/customers/orders?${params.toString()}`
       );
-      return response;
+      return response.data || { items: [], total: 0, page: 1, pageSize: 10, totalPages: 0 };
     },
     staleTime: 30000,
   });
@@ -86,14 +86,14 @@ export default function CustomerOrdersPage() {
               <Input
                 placeholder="Buscar por número do pedido..."
                 value={search}
-                onChange={(e) => {
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   setSearch(e.target.value);
                   setPage(1);
                 }}
                 className="pl-10"
               />
             </div>
-            <Select value={statusFilter} onValueChange={(value) => {
+            <Select value={statusFilter} onValueChange={(value: string) => {
               setStatusFilter(value);
               setPage(1);
             }}>
@@ -140,7 +140,7 @@ export default function CustomerOrdersPage() {
       ) : (
         <>
           <div className="space-y-4">
-            {orders.map((order) => (
+            {orders.map((order: Order) => (
               <motion.div
                 key={order.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -180,10 +180,10 @@ export default function CustomerOrdersPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(`/api/orders/${order.id}/invoice`, '_blank');
-                          }}
+                  onClick={(e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    window.open(`/api/orders/${order.id}/invoice`, '_blank');
+                  }}
                         >
                           <Download className="w-4 h-4 mr-2" />
                           Fatura
@@ -191,10 +191,10 @@ export default function CustomerOrdersPage() {
                         <Button
                           variant="default"
                           size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/account/orders/${order.order_number}`);
-                          }}
+                  onClick={(e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    navigate(`/account/orders/${order.order_number}`);
+                  }}
                         >
                           Ver Detalhes
                         </Button>

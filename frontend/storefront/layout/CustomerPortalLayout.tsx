@@ -28,7 +28,7 @@ export default function CustomerPortalLayout() {
     queryKey: ['customer-notifications', 'unread-count'],
     queryFn: async () => {
       const response = await apiRequest<{ count: number }>('/api/customers/notifications/unread-count');
-      return response;
+      return response.data || { count: 0 };
     },
     enabled: isAuthenticated,
     staleTime: 30000, // 30 seconds
