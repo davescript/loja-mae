@@ -88,9 +88,13 @@ export function useAuth() {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
+      // Aguardar um pouco para garantir que qualquer operação pendente seja concluída
+      // Isso garante que endereços sejam salvos antes do logout
+      await new Promise(resolve => setTimeout(resolve, 500));
       await apiRequest('/api/auth/logout', { method: 'POST' });
     },
     onSuccess: () => {
+      // Limpar tokens apenas quando o usuário explicitamente clicar em "Sair"
       localStorage.removeItem('token');
       localStorage.removeItem('customer_token');
       setUser(null);
