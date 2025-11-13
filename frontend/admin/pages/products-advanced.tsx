@@ -196,22 +196,34 @@ export default function AdminProductsPageAdvanced() {
   ]
 
   const handleEdit = (product: Product) => {
-    setEditingProduct(product)
-    form.reset({
-      title: product.title,
-      description: product.description || "",
-      short_description: product.short_description || "",
-      price_cents: product.price_cents / 100,
-      compare_at_price_cents: product.compare_at_price_cents ? product.compare_at_price_cents / 100 : null,
-      sku: product.sku || "",
-      stock_quantity: product.stock_quantity,
-      status: product.status as "draft" | "active" | "archived",
-      featured: (product as any).featured === 1,
-      category_id: product.category_id,
-      meta_title: (product as any).meta_title || "",
-      meta_description: (product as any).meta_description || "",
-    })
-    setIsModalOpen(true)
+    try {
+      setEditingProduct(product)
+      setImagesToDelete([])
+      form.reset({
+        title: product.title || "",
+        description: product.description || "",
+        short_description: product.short_description || "",
+        price_cents: product.price_cents ? product.price_cents / 100 : 0,
+        compare_at_price_cents: product.compare_at_price_cents ? product.compare_at_price_cents / 100 : null,
+        sku: product.sku || "",
+        stock_quantity: product.stock_quantity || 0,
+        status: (product.status || "draft") as "draft" | "active" | "archived",
+        featured: product.featured === 1,
+        category_id: product.category_id || null,
+        meta_title: (product as any).meta_title || "",
+        meta_description: (product as any).meta_description || "",
+      })
+      setUploadingImages([])
+      setImageErrors([])
+      setIsModalOpen(true)
+    } catch (error) {
+      console.error('Erro ao editar produto:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os dados do produto",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleNew = () => {
@@ -602,7 +614,34 @@ export default function AdminProductsPageAdvanced() {
               </TabsContent>
 
               <TabsContent value="seo" className="space-y-4 mt-4">
-                <p className="text-sm text-muted-foreground">Campos SEO serão implementados aqui</p>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="meta_title">Meta Título (SEO)</Label>
+                    <Input
+                      id="meta_title"
+                      value={form.watch("meta_title") || ""}
+                      onChange={(e) => form.setValue("meta_title", e.target.value)}
+                      placeholder="Título para SEO (aparece nos resultados de busca)"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Recomendado: 50-60 caracteres
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="meta_description">Meta Descrição (SEO)</Label>
+                    <Textarea
+                      id="meta_description"
+                      value={form.watch("meta_description") || ""}
+                      onChange={(e) => form.setValue("meta_description", e.target.value)}
+                      rows={3}
+                      placeholder="Descrição para SEO (aparece nos resultados de busca)"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Recomendado: 150-160 caracteres
+                    </p>
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
 
