@@ -49,8 +49,8 @@ export default function AdminCustomersPage() {
         // Garantir que addresses seja um array
         const addresses = Array.isArray(response.data.addresses) 
           ? response.data.addresses 
-          : (response.data as any).addresses 
-            ? [response.data as any].addresses 
+          : (response.data as any).addresses && Array.isArray((response.data as any).addresses)
+            ? (response.data as any).addresses
             : [];
         
         const customerData = {

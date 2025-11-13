@@ -4,6 +4,7 @@ import { successResponse, errorResponse, notFoundResponse } from '../../utils/re
 import { handleError } from '../../utils/errors';
 import { requireAuth, requireAdmin } from '../../utils/auth';
 import { executeQuery } from '../../utils/db';
+import type { Address } from '@shared/types';
 import {
   getCustomer,
   listCustomers,
