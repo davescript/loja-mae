@@ -143,15 +143,51 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
           }
 
           // Salvar endereço do checkout no perfil do cliente
-          if (customerId && updatedOrder.shipping_address_json) {
+          // Primeiro tentar pegar do Payment Intent (Stripe Payment Element coleta automaticamente)
+          // Se não estiver disponível, usar o endereço salvo no pedido
+          let shippingAddress: any = null;
+          
+          try {
+            // Tentar recuperar endereço do Payment Intent (mais confiável)
+            const paymentIntentWithDetails = await stripe.paymentIntents.retrieve(paymentIntent.id, {
+              expand: ['payment_method'],
+            });
+            
+            if (paymentIntentWithDetails.shipping?.address) {
+              const stripeAddress = paymentIntentWithDetails.shipping.address;
+              const stripeName = paymentIntentWithDetails.shipping.name || '';
+              const nameParts = stripeName.split(' ');
+              shippingAddress = {
+                first_name: nameParts[0] || '',
+                last_name: nameParts.slice(1).join(' ') || '',
+                address_line1: stripeAddress.line1 || '',
+                address_line2: stripeAddress.line2 || null,
+                city: stripeAddress.city || '',
+                state: stripeAddress.state || '',
+                postal_code: stripeAddress.postal_code || '',
+                country: stripeAddress.country || 'PT',
+                phone: paymentIntentWithDetails.shipping.phone || null,
+              };
+              console.log(`[WEBHOOK] Retrieved address from Payment Intent for order ${finalOrderId}`);
+            }
+          } catch (err) {
+            console.warn('Could not retrieve address from Payment Intent:', err);
+          }
+          
+          // Se não conseguiu do Payment Intent, usar o endereço salvo no pedido
+          if (!shippingAddress && updatedOrder.shipping_address_json) {
+            shippingAddress = typeof updatedOrder.shipping_address_json === 'string'
+              ? JSON.parse(updatedOrder.shipping_address_json)
+              : updatedOrder.shipping_address_json;
+            console.log(`[WEBHOOK] Using address from order for order ${finalOrderId}`);
+          }
+          
+          // Salvar endereço no perfil do cliente se disponível
+          if (customerId && shippingAddress && shippingAddress.address_line1) {
             try {
               // Buscar pedido atualizado para garantir que temos o customer_id correto
               const orderWithCustomer = await getOrder(db, finalOrderId);
               if (orderWithCustomer?.customer_id) {
-                const shippingAddress = typeof updatedOrder.shipping_address_json === 'string'
-                  ? JSON.parse(updatedOrder.shipping_address_json)
-                  : updatedOrder.shipping_address_json;
-
                 // Verificar se já existe um endereço similar para evitar duplicatas
                 const existingAddresses = await getAddresses(db, orderWithCustomer.customer_id);
                 const addressExists = existingAddresses?.some(addr => 
@@ -160,7 +196,7 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
                   addr.city === shippingAddress.city
                 );
 
-                if (!addressExists && shippingAddress.address_line1) {
+                if (!addressExists) {
                   // Criar novo endereço com os dados do checkout
                   await createAddress(db, orderWithCustomer.customer_id, {
                     type: 'shipping',
@@ -177,7 +213,7 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
                     is_default: existingAddresses?.length === 0 ? 1 : 0, // Marcar como padrão se for o primeiro endereço
                   });
                   console.log(`[WEBHOOK] Saved shipping address from checkout for customer ${orderWithCustomer.customer_id}`);
-                } else if (addressExists) {
+                } else {
                   console.log(`[WEBHOOK] Address already exists for customer ${orderWithCustomer.customer_id}, skipping`);
                 }
               }
