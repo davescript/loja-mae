@@ -161,7 +161,8 @@ export default function AdminOrdersPageAdvanced() {
     queryKey: ["admin", "order", selectedOrder?.id],
     queryFn: async () => {
       if (!selectedOrder) return null
-      const response = await apiRequest<Order>(`/api/orders/${selectedOrder.id}`)
+      // Buscar pedido com itens incluídos
+      const response = await apiRequest<Order>(`/api/orders/${selectedOrder.id}?include=items`)
       return response.data
     },
     enabled: !!selectedOrder,
@@ -399,7 +400,32 @@ export default function AdminOrdersPageAdvanced() {
                   <CardTitle>Itens do Pedido</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">Itens serão carregados aqui</p>
+                  {orderDetails.items && orderDetails.items.length > 0 ? (
+                    <div className="space-y-4">
+                      {orderDetails.items.map((item) => (
+                        <div key={item.id} className="flex items-start gap-4 pb-4 border-b last:border-0">
+                          {item.image_url && (
+                            <img
+                              src={item.image_url}
+                              alt={item.title}
+                              className="w-16 h-16 object-cover rounded"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <div className="font-medium">{item.title}</div>
+                            {item.sku && (
+                              <div className="text-sm text-muted-foreground">SKU: {item.sku}</div>
+                            )}
+                            <div className="text-sm text-muted-foreground">
+                              Quantidade: {item.quantity} × {formatPrice(item.price_cents)} = {formatPrice(item.total_cents)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Nenhum item encontrado</p>
+                  )}
                 </CardContent>
               </Card>
 

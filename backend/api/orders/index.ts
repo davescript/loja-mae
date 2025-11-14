@@ -53,7 +53,10 @@ export async function handleOrdersRoutes(request: Request, env: Env): Promise<Re
       const user = await requireAuth(request, env);
       const id = parseInt(path.split('/').pop() || '0');
       const db = getDb(env);
-      const order = await getOrder(db, id, true);
+      
+      // Verificar se deve incluir itens (query param include=items)
+      const includeItems = url.searchParams.get('include') === 'items';
+      const order = await getOrder(db, id, includeItems);
 
       if (!order) {
         return notFoundResponse('Order not found');

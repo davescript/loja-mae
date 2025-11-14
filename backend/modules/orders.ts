@@ -180,13 +180,15 @@ export async function getOrder(
     customer_first_name: string | null;
     customer_last_name: string | null;
     customer_email: string | null;
+    customer_phone: string | null;
   }>(
     db,
     `SELECT 
       o.*,
       c.first_name as customer_first_name,
       c.last_name as customer_last_name,
-      c.email as customer_email
+      c.email as customer_email,
+      c.phone as customer_phone
     FROM orders o
     LEFT JOIN customers c ON o.customer_id = c.id
     WHERE o.id = ?`,
@@ -197,30 +199,68 @@ export async function getOrder(
     return null;
   }
 
+  // Buscar endereços do cliente se existir customer_id
+  let customerAddresses: any[] = [];
+  if (order.customer_id) {
+    try {
+      const { getAddresses } = await import('./customers');
+      const addresses = await getAddresses(db, order.customer_id);
+      customerAddresses = addresses || [];
+      console.log(`[ORDERS] Found ${customerAddresses.length} addresses for customer ${order.customer_id}`);
+    } catch (err) {
+      console.error(`[ORDERS] Error fetching addresses for customer ${order.customer_id}:`, err);
+    }
+  }
+
   // Montar objeto customer se existir
   const customer = order.customer_id ? {
     id: order.customer_id,
     email: order.customer_email || order.email,
     first_name: order.customer_first_name,
     last_name: order.customer_last_name,
-    phone: null,
+    phone: order.customer_phone,
     date_of_birth: null,
     gender: null,
     is_active: 1,
     email_verified: 0,
     created_at: '',
     updated_at: '',
+    addresses: customerAddresses, // Incluir endereços do cliente
   } : undefined;
+
+  // Se o pedido não tem endereço mas o cliente tem, usar o endereço padrão do cliente
+  let shippingAddressJson = order.shipping_address_json;
+  if (!shippingAddressJson && customerAddresses.length > 0) {
+    // Buscar endereço padrão ou o primeiro endereço
+    const defaultAddress = customerAddresses.find(addr => addr.is_default === 1) || customerAddresses[0];
+    if (defaultAddress) {
+      shippingAddressJson = JSON.stringify({
+        first_name: defaultAddress.first_name || customer?.first_name || '',
+        last_name: defaultAddress.last_name || customer?.last_name || '',
+        company: defaultAddress.company || null,
+        address_line1: defaultAddress.address_line1 || '',
+        address_line2: defaultAddress.address_line2 || null,
+        city: defaultAddress.city || '',
+        state: defaultAddress.state || '',
+        postal_code: defaultAddress.postal_code || '',
+        country: defaultAddress.country || 'PT',
+        phone: defaultAddress.phone || customer?.phone || null,
+      });
+      console.log(`[ORDERS] Using customer default address for order ${id}`);
+    }
+  }
 
   const orderResult: Order = {
     ...order,
     customer: customer,
+    shipping_address_json: shippingAddressJson, // Usar endereço do cliente se pedido não tiver
   };
 
   // Remover campos temporários
   delete (orderResult as any).customer_first_name;
   delete (orderResult as any).customer_last_name;
   delete (orderResult as any).customer_email;
+  delete (orderResult as any).customer_phone;
 
   if (includeItems) {
     const items = await executeQuery<OrderItem>(
