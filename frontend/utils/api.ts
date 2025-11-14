@@ -58,7 +58,8 @@ export async function apiRequest<T = any>(
       endpoint.startsWith('/api/customers/stats') ||
       endpoint.startsWith('/api/customers/notifications') ||
       endpoint.startsWith('/api/customers/support');
-    const isCustomerEndpoint = isCustomerSelfEndpoint || endpoint.startsWith('/api/favorites');
+    const isCheckoutEndpoint = endpoint.startsWith('/api/stripe/create-intent');
+    const isCustomerEndpoint = isCustomerSelfEndpoint || endpoint.startsWith('/api/favorites') || isCheckoutEndpoint;
     
     let token: string | null = null;
     if (typeof window !== 'undefined') {
@@ -75,8 +76,9 @@ export async function apiRequest<T = any>(
         // Customer self-service endpoints: prefer customer token, fallback to admin if not available
         token = customerToken || adminToken;
       } else {
-        // Other endpoints (auth, products, etc): try all tokens in order
-        token = adminToken || customerToken;
+        // Other endpoints (auth, products, etc)
+        // Prefer customer token when available to avoid admin context em checkout
+        token = customerToken || adminToken;
       }
     }
     
