@@ -49,7 +49,7 @@ export async function apiRequest<T = any>(
     // Determine which token to use based on the endpoint
     // Customer endpoints should NEVER use admin_token
     const isAdminEndpoint = endpoint.startsWith('/api/admin/');
-    const isCustomerEndpoint = endpoint.startsWith('/api/customers/');
+    const isCustomerEndpoint = endpoint.startsWith('/api/customers/') || endpoint.startsWith('/api/favorites');
     
     let token: string | null = null;
     if (typeof window !== 'undefined') {
