@@ -38,7 +38,7 @@ export default function HomePage() {
     queryFn: async () => {
       try {
         const response = await apiRequest<{ items: Product[] }>(
-          '/api/products?status=active&pageSize=10'
+          '/api/products?status=active&pageSize=10&include=images'
         );
         return response.data?.items || [];
       } catch (error) {
