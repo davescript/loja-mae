@@ -522,49 +522,53 @@ export default function CheckoutPage() {
         quantity: item.quantity,
       }))
 
-      const response = await fetch(`${API_BASE_URL}/api/stripe/create-intent`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          items: cartItems,
-          address_id: addressId,
-        }),
-      })
+      // Incluir o endereço completo no payload para garantir criação mesmo sem cookie
+      const normalizedAddress = selectedAddress ? {
+        first_name: selectedAddress.first_name,
+        last_name: selectedAddress.last_name,
+        company: selectedAddress.company,
+        address_line1: selectedAddress.address_line1,
+        address_line2: selectedAddress.address_line2,
+        city: selectedAddress.city,
+        state: selectedAddress.state,
+        postal_code: selectedAddress.postal_code,
+        country: selectedAddress.country || 'PT',
+        phone: selectedAddress.phone || null,
+      } : undefined
 
-      const data = await response.json() as { 
-        success?: boolean;
-        data?: { 
-          client_secret?: string; 
-          order_number?: string; 
-          order_id?: number;
-          total_cents?: number;
-          payment_intent_id?: string;
-        };
-        error?: string;
-        // Fallback para formato antigo
-        client_secret?: string;
-        order_number?: string;
-        order_id?: number;
-        payment_intent_id?: string;
-      }
+      const apiResp = await apiRequest<{ 
+        client_secret: string; 
+        order_number: string; 
+        order_id: number; 
+        total_cents: number; 
+        payment_intent_id: string; 
+      }>(
+        '/api/stripe/create-intent',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            items: cartItems,
+            address_id: addressId,
+            shipping_address: normalizedAddress,
+          }),
+        }
+      )
 
-      if (!response.ok) {
-        const errorMsg = (data as any).error || (data as any).data?.error || 'Falha ao criar pedido'
-        console.error('Erro na resposta:', { status: response.status, data })
+      if (!apiResp.success) {
+        const errorMsg = apiResp.error || 'Falha ao criar pedido'
+        console.error('Erro na resposta:', { data: apiResp })
         throw new Error(errorMsg)
       }
 
-      // Suportar ambos os formatos de resposta (com e sem wrapper success/data)
-      const clientSecret = data.data?.client_secret || data.client_secret
-      const orderNum = data.data?.order_number || data.order_number
-      const createdOrderId = data.data?.order_id ?? data.order_id ?? null
-      const createdPaymentIntentId = data.data?.payment_intent_id ?? data.payment_intent_id ?? null
+      const data = apiResp.data!
+
+      const clientSecret = data.client_secret
+      const orderNum = data.order_number
+      const createdOrderId = data.order_id ?? null
+      const createdPaymentIntentId = data.payment_intent_id ?? null
 
       if (!clientSecret) {
-        console.error('Resposta sem client_secret:', data)
+        console.error('Resposta sem client_secret:', apiResp)
         throw new Error('Client secret não recebido da API')
       }
 
