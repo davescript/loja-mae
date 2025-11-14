@@ -124,7 +124,7 @@ export default function AdminOrdersPageAdvanced() {
       if (orderNumber) params.append('order_number', orderNumber)
       if (paymentIntentId) params.append('payment_intent_id', paymentIntentId)
       
-      const response = await apiRequest<{ message: string; payment_status: string; status: string }>(
+      const response = await apiRequest<{ message: string; payment_status: string; status: string; address_saved?: boolean }>(
         `/api/orders/sync-payment?${params.toString()}`,
         { method: 'POST' }
       )
@@ -133,13 +133,19 @@ export default function AdminOrdersPageAdvanced() {
     onSuccess: (data) => {
       if (data) {
         toast({
-          title: 'Status sincronizado',
-          description: data.message || 'Status do pagamento atualizado com sucesso',
+          title: 'Sincronização concluída',
+          description: data.address_saved 
+            ? 'Status do pagamento e endereço atualizados com sucesso'
+            : data.message || 'Status do pagamento atualizado com sucesso',
         })
       }
       queryClient.invalidateQueries({ queryKey: ["admin", "orders"] })
       if (selectedOrder) {
         queryClient.invalidateQueries({ queryKey: ["admin", "order", selectedOrder.id] })
+        // Recarregar detalhes do pedido para mostrar o endereço atualizado
+        setTimeout(() => {
+          setSelectedOrder(selectedOrder) // Isso vai recarregar os detalhes
+        }, 500)
       }
     },
     onError: (error: any) => {
@@ -342,7 +348,7 @@ export default function AdminOrdersPageAdvanced() {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     Status do Pedido
-                    {orderDetails.payment_status === 'pending' && orderDetails.stripe_payment_intent_id && (
+                    {orderDetails.stripe_payment_intent_id && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -353,9 +359,10 @@ export default function AdminOrdersPageAdvanced() {
                         })}
                         disabled={syncPaymentMutation.isPending}
                         className="flex items-center gap-2"
+                        title="Sincronizar status do pagamento e endereço de entrega do Stripe"
                       >
                         <RefreshCw className={`w-4 h-4 ${syncPaymentMutation.isPending ? 'animate-spin' : ''}`} />
-                        Sincronizar Pagamento
+                        Sincronizar Pagamento e Endereço
                       </Button>
                     )}
                   </CardTitle>
