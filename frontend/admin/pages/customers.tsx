@@ -8,13 +8,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { MapPin, Mail, Phone, Calendar, User, RefreshCw } from 'lucide-react';
+import { MapPin, Mail, Phone, Calendar, User, RefreshCw, ShoppingCart, Euro } from 'lucide-react';
 import { formatPrice } from '../../utils/format';
+
+type AdminCustomer = Customer & {
+  orders_count?: number;
+  total_spent?: number;
+};
 
 export default function AdminCustomersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer & { addresses?: Address[] } | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<AdminCustomer & { addresses?: Address[] } | null>(null);
   const queryClient = useQueryClient();
 
   const { data: customersData, isLoading } = useQuery({
@@ -25,14 +30,14 @@ export default function AdminCustomersPage() {
         pageSize: '20',
         ...(search && { search }),
       });
-      const response = await apiRequest<{ items: Customer[]; total: number; totalPages: number }>(
+      const response = await apiRequest<{ items: AdminCustomer[]; total: number; totalPages: number }>(
         `/api/customers?${params.toString()}`
       );
       return response.data || { items: [], total: 0, totalPages: 0 };
     },
   });
 
-  const handleViewCustomer = async (customer: Customer, forceRefresh = false) => {
+  const handleViewCustomer = async (customer: AdminCustomer, forceRefresh = false) => {
     try {
       // SEMPRE invalidar cache para garantir dados frescos
       queryClient.invalidateQueries({ queryKey: ['admin', 'customer', customer.id] });
@@ -72,7 +77,7 @@ export default function AdminCustomersPage() {
     }
   };
 
-  const columns: Column<Customer>[] = [
+  const columns: Column<AdminCustomer>[] = [
     {
       key: 'id',
       header: 'ID',
@@ -104,6 +109,18 @@ export default function AdminCustomersPage() {
       key: 'phone',
       header: 'Telefone',
       accessor: (customer) => customer.phone || '-',
+    },
+    {
+      key: 'orders_count',
+      header: 'Pedidos',
+      sortable: true,
+      accessor: (customer) => customer.orders_count ?? 0,
+    },
+    {
+      key: 'total_spent',
+      header: 'Total gasto',
+      sortable: true,
+      accessor: (customer) => formatPrice(customer.total_spent ?? 0),
     },
     {
       key: 'status',
@@ -343,6 +360,34 @@ export default function AdminCustomersPage() {
                     ) : (
                       <p className="text-sm text-muted-foreground">Nenhum endereço cadastrado</p>
                     )}
+                  </CardContent>
+                </Card>
+
+                {/* Stats */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <ShoppingCart className="w-5 h-5" />
+                      Estatísticas
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 border rounded-lg space-y-1">
+                      <div className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                        <ShoppingCart className="w-4 h-4" />
+                        Total de pedidos
+                      </div>
+                      <p className="text-2xl font-semibold">{selectedCustomer.orders_count ?? 0}</p>
+                    </div>
+                    <div className="p-4 border rounded-lg space-y-1">
+                      <div className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                        <Euro className="w-4 h-4" />
+                        Total gasto
+                      </div>
+                      <p className="text-2xl font-semibold">
+                        {formatPrice(selectedCustomer.total_spent ?? 0)}
+                      </p>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
