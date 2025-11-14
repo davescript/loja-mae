@@ -204,13 +204,14 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              onClick={(e) => {
+              onClick={async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                toggleFavorite(product.id);
+                const wasFavorite = favorites.includes(product.id);
+                await toggleFavorite(product.id);
                 toast({
-                  title: isProductFavorite ? 'Removido dos favoritos' : 'Adicionado aos favoritos',
-                  description: isProductFavorite 
+                  title: wasFavorite ? 'Removido dos favoritos' : 'Adicionado aos favoritos',
+                  description: wasFavorite 
                     ? 'Produto removido da sua lista de favoritos'
                     : 'Produto adicionado à sua lista de favoritos',
                 });
