@@ -44,12 +44,25 @@ export const useFavoritesStore = create<FavoritesStore>()(
             console.log('❤️ Sincronizando com servidor...')
             const response = await apiRequest('/api/favorites', {
               method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
               body: JSON.stringify({ product_id: productId }),
             })
-            console.log('✅ Favorito adicionado no servidor:', response)
+            console.log('✅ Resposta do servidor:', response)
+            
+            // Verificar se a resposta foi bem-sucedida
+            if (!response.success) {
+              throw new Error(response.error || 'Erro ao adicionar favorito')
+            }
+            
+            console.log('✅ Favorito adicionado no servidor com sucesso')
           } catch (error: any) {
             console.error('❌ Erro ao adicionar favorito no servidor:', error)
-            console.error('❌ Detalhes do erro:', error.message, error.response)
+            console.error('❌ Detalhes do erro:', error.message)
+            if (error.response) {
+              console.error('❌ Resposta do servidor:', error.response)
+            }
             // Reverter se falhar
             console.log('❤️ Revertendo favoritos para estado anterior:', favorites)
             set({ favorites })
