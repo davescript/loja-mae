@@ -9,7 +9,7 @@ export default function StoreFooter() {
           {/* About */}
           <div>
             <h3 className="text-white font-heading text-lg font-semibold mb-4">
-              Loja Mãe
+              Leiasabores
             </h3>
             <p className="text-sm leading-relaxed mb-4">
               Sua loja especializada em acessórios premium para confeitaria, bolos e eventos.
@@ -138,9 +138,9 @@ export default function StoreFooter() {
 
         {/* Bottom Bar */}
         <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-gray-400">
-            © {new Date().getFullYear()} Loja Mãe. Todos os direitos reservados.
-          </p>
+            <p className="text-sm text-gray-400">
+              © {new Date().getFullYear()} Leiasabores. Todos os direitos reservados.
+            </p>
           <div className="flex gap-6 text-sm">
             <Link to="/privacy" className="hover:text-primary transition">
               Privacidade

@@ -117,7 +117,7 @@ export default function StoreHeader() {
           {/* Header Top - Social & Welcome */}
           <div className="hidden md:flex items-center justify-between py-2 text-xs text-muted-foreground border-b border-border/50">
             <div className="flex items-center gap-4">
-              <span>✨ Bem-vindo à Loja Mãe</span>
+              <span>✨ Bem-vindo à Leiasabores</span>
             </div>
             <div className="flex items-center gap-4">
               <a href="https://www.facebook.com/leiasabores" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Facebook</a>
@@ -143,7 +143,7 @@ export default function StoreHeader() {
                 whileHover={{ scale: 1.05 }}
                 className="text-2xl md:text-3xl font-heading font-bold gradient-text"
               >
-                Loja Mãe
+                Leiasabores
               </motion.h1>
             </Link>
 

@@ -63,7 +63,7 @@ export default function CustomerPortalLayout() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Button variant="ghost" onClick={() => navigate('/')} className="text-lg font-bold">
-                Loja Mãe
+                Leiasabores
               </Button>
               <span className="text-muted-foreground">/</span>
               <span className="font-medium">Portal do Cliente</span>
@@ -164,4 +164,3 @@ export default function CustomerPortalLayout() {
     </div>
   );
 }
-

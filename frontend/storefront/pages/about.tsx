@@ -10,7 +10,7 @@ export default function AboutPage() {
           />
         </div>
         <div>
-          <h1 className="text-3xl md:text-4xl font-heading">Sobre a Loja Mãe</h1>
+          <h1 className="text-3xl md:text-4xl font-heading">Sobre a Leiasabores</h1>
           <p className="mt-4 text-muted-foreground leading-relaxed">
             Inspirados pela estética de interiores e lifestyle moderno, criamos coleções que evocam luxo discreto e conforto visual. Nossa missão é simplificar sua experiência de compra, oferecendo peças de qualidade superior com acabamentos impecáveis.
           </p>
@@ -29,4 +29,3 @@ export default function AboutPage() {
     </div>
   );
 }
-

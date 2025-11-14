@@ -15,7 +15,7 @@ interface EmailOptions {
 export async function sendEmail(env: Env, options: EmailOptions): Promise<boolean> {
   try {
     const fromEmail = options.from || env.FROM_EMAIL || 'noreply@leiasabores.pt';
-    const fromName = env.FROM_NAME || 'Loja Mãe';
+    const fromName = env.FROM_NAME || 'Leiasabores';
 
     // MailChannels API endpoint
     const response = await fetch('https://api.mailchannels.net/tx/v1/send', {
@@ -163,4 +163,3 @@ export function generateOrderConfirmationEmail(order: {
 </html>
   `.trim();
 }
-
