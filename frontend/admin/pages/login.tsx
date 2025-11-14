@@ -3,6 +3,7 @@ import { useAdminAuth } from '../../hooks/useAdminAuth';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Lock, Mail, AlertCircle, Eye, EyeOff, KeyRound } from 'lucide-react';
+import { useToast } from '../hooks/useToast';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
@@ -15,6 +16,7 @@ export default function AdminLoginPage() {
   const navigate = useNavigate();
   const { login, isLoggingIn, loginError, isAuthenticated } = useAdminAuth();
   const [submitting, setSubmitting] = useState(false);
+  const { toast } = useToast();
   
   // Redirect if already authenticated
   useEffect(() => {
@@ -47,6 +49,7 @@ export default function AdminLoginPage() {
           if (!res.ok || json?.success === false) {
             throw new Error(json?.error || 'Falha ao enviar código');
           }
+          toast({ title: 'Código enviado', description: 'Verifique seu email para o código de 6 dígitos.' });
           return;
         }
         const res2 = await fetch('/api/auth/admin/reset', {
@@ -59,6 +62,7 @@ export default function AdminLoginPage() {
         if (!res2.ok || json2?.success === false) {
           throw new Error(json2?.error || 'Falha ao resetar senha');
         }
+        toast({ title: 'Senha atualizada', description: 'Use sua nova senha para entrar.' });
         setMode('login');
         setEmail(forgotEmail);
       } finally {
