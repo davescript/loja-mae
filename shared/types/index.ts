@@ -138,7 +138,8 @@ export type Order = {
   coupon_id: number | null;
   coupon_code: string | null;
   coupon_discount_cents: number;
-  shipping_address_json: string;
+  shipping_address_id: number | null;
+  shipping_address_json: string | null;
   billing_address_json: string | null;
   stripe_payment_intent_id: string | null;
   stripe_charge_id: string | null;

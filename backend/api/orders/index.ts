@@ -1,5 +1,5 @@
 import type { Env } from '../../types';
-import { getDb } from '../../utils/db';
+import { getDb, executeRun, executeOne } from '../../utils/db';
 import { successResponse, errorResponse, notFoundResponse } from '../../utils/response';
 import { handleError } from '../../utils/errors';
 import { requireAuth, requireAdmin } from '../../utils/auth';
@@ -46,6 +46,93 @@ export async function handleOrdersRoutes(request: Request, env: Env): Promise<Re
         pageSize: validated.pageSize,
         totalPages: Math.ceil(result.total / validated.pageSize),
       });
+    }
+
+    // Update shipping address: PUT /api/orders/:id/shipping
+    if (method === 'PUT' && path.match(/^\/api\/orders\/\d+\/shipping$/)) {
+      const segments = path.split('/');
+      const id = parseInt(segments[3] || '0');
+      const db = getDb(env);
+      let authUser: { type: 'admin' | 'customer'; id: number } | null = null;
+
+      try {
+        authUser = await requireAuth(request, env);
+      } catch {
+        // Permitir fallback via payment_intent_id (para guest checkout)
+      }
+
+      const body = await request.json() as {
+        shipping_address?: any;
+        payment_intent_id?: string;
+        address_id?: number;
+      };
+      const shippingAddress = body.shipping_address;
+      const addressIdFromBody = body.address_id;
+      const paymentIntentId = body.payment_intent_id;
+
+      const order = await getOrder(db, id);
+      if (!order) {
+        return notFoundResponse('Order not found');
+      }
+
+      let authorized = false;
+      if (authUser) {
+        if (authUser.type === 'admin') {
+          authorized = true;
+        } else if (authUser.type === 'customer' && order.customer_id === authUser.id) {
+          authorized = true;
+        }
+      } else if (paymentIntentId && order.stripe_payment_intent_id === paymentIntentId) {
+        authorized = true;
+      }
+
+      if (!authorized) {
+        return errorResponse('Authentication required', 401);
+      }
+
+      let resolvedAddress = shippingAddress;
+      let shippingAddressId = addressIdFromBody || null;
+
+      if (addressIdFromBody) {
+        if (!order.customer_id) {
+          return errorResponse('Pedido não possui cliente associado para atualizar endereço salvo', 400);
+        }
+
+        const savedAddress = await executeOne(
+          db,
+          'SELECT * FROM addresses WHERE id = ? AND customer_id = ?',
+          [addressIdFromBody, order.customer_id]
+        );
+
+        if (!savedAddress) {
+          return errorResponse('Endereço selecionado não encontrado', 404);
+        }
+
+        resolvedAddress = {
+          first_name: savedAddress.first_name,
+          last_name: savedAddress.last_name,
+          company: savedAddress.company,
+          address_line1: savedAddress.address_line1,
+          address_line2: savedAddress.address_line2,
+          city: savedAddress.city,
+          state: savedAddress.state,
+          postal_code: savedAddress.postal_code,
+          country: savedAddress.country || 'PT',
+          phone: savedAddress.phone,
+        };
+      }
+
+      if (!resolvedAddress) {
+        return errorResponse('Shipping address is required', 400);
+      }
+
+      await executeRun(
+        db,
+        'UPDATE orders SET shipping_address_json = ?, shipping_address_id = ?, updated_at = datetime(\'now\') WHERE id = ?',
+        [JSON.stringify(resolvedAddress), shippingAddressId, id]
+      );
+
+      return successResponse({ updated: true });
     }
 
     // Get order: GET /api/orders/:id

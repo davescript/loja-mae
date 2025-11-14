@@ -6,9 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { formatPrice } from "../../utils/format"
-import { Eye, Mail, Phone, MapPin, ShoppingCart, Euro } from "lucide-react"
+import { Eye, Mail, Phone, MapPin, ShoppingCart, Euro, Edit, Save, X } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import type { Address } from "../../../../shared/types"
 
 type Customer = {
   id: number
@@ -19,6 +20,7 @@ type Customer = {
   created_at: string
   total_spent?: number
   orders_count?: number
+  addresses?: Address[]
 }
 
 export default function AdminCustomersPageAdvanced() {
@@ -237,7 +239,40 @@ export default function AdminCustomersPageAdvanced() {
                     <CardTitle>Endereços</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-muted-foreground">Endereços serão carregados aqui</p>
+                    {customerDetails.addresses && customerDetails.addresses.length > 0 ? (
+                      <div className="space-y-4">
+                        {customerDetails.addresses.map((address: Address) => (
+                          <div key={address.id} className="flex items-start gap-3 p-4 border rounded-lg">
+                            <MapPin className="w-5 h-5 text-muted-foreground mt-0.5" />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="font-medium">
+                                  {address.first_name} {address.last_name}
+                                </span>
+                                <span className="text-xs bg-muted px-2 py-1 rounded">
+                                  {address.type === 'shipping' ? 'Entrega' : address.type === 'billing' ? 'Cobrança' : 'Ambos'}
+                                </span>
+                                {address.is_default ? (
+                                  <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded">
+                                    Padrão
+                                  </span>
+                                ) : null}
+                              </div>
+                              <div className="text-sm text-muted-foreground space-y-1">
+                                {address.company && <div>{address.company}</div>}
+                                <div>{address.address_line1}</div>
+                                {address.address_line2 && <div>{address.address_line2}</div>}
+                                <div>{address.city}, {address.state} {address.postal_code}</div>
+                                <div>{address.country}</div>
+                                {address.phone && <div>Tel: {address.phone}</div>}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Nenhum endereço cadastrado</p>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

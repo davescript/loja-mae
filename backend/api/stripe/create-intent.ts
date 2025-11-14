@@ -5,7 +5,7 @@ import { handleError } from '../../utils/errors';
 import { requireAuth } from '../../utils/auth';
 import { generateOrderNumber } from '../../utils/db';
 import Stripe from 'stripe';
-import { executeOne, executeRun, executeQuery } from '../../utils/db';
+import { executeOne, executeRun } from '../../utils/db';
 
 interface CreateIntentRequest {
   items: Array<{
@@ -13,6 +13,7 @@ interface CreateIntentRequest {
     variant_id?: number | null;
     quantity: number;
   }>;
+  address_id?: number;
   shipping_address?: any;
 }
 
@@ -156,32 +157,77 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
       }
     }
     
-    // Criar endereço padrão se não fornecido (shipping_address_json é NOT NULL)
-    const defaultAddress = {
-      street: '',
-      city: '',
-      postal_code: '',
-      country: 'PT',
-      address_line1: '',
-      address_line2: '',
-      state: '',
-    };
-    
-    const shippingAddressJson = body.shipping_address 
-      ? JSON.stringify(body.shipping_address)
-      : JSON.stringify(defaultAddress);
-    
-    const billingAddressJson = body.shipping_address 
-      ? JSON.stringify(body.shipping_address)
-      : JSON.stringify(defaultAddress);
+    // Resolver endereço selecionado
+    let shippingAddressPayload: any = null;
+    let shippingAddressId: number | null = null;
+
+    if (body.address_id) {
+      if (!customerId) {
+        return errorResponse('Autenticação necessária para usar um endereço salvo', 401);
+      }
+
+      const savedAddress = await executeOne<{
+        id: number;
+        first_name: string;
+        last_name: string;
+        company: string | null;
+        address_line1: string;
+        address_line2: string | null;
+        city: string;
+        state: string;
+        postal_code: string;
+        country: string;
+        phone: string | null;
+      }>(
+        db,
+        'SELECT * FROM addresses WHERE id = ? AND customer_id = ?',
+        [body.address_id, customerId]
+      );
+
+      if (!savedAddress) {
+        return errorResponse('Endereço selecionado não encontrado', 404);
+      }
+
+      shippingAddressId = savedAddress.id;
+      shippingAddressPayload = {
+        first_name: savedAddress.first_name,
+        last_name: savedAddress.last_name,
+        company: savedAddress.company,
+        address_line1: savedAddress.address_line1,
+        address_line2: savedAddress.address_line2,
+        city: savedAddress.city,
+        state: savedAddress.state,
+        postal_code: savedAddress.postal_code,
+        country: savedAddress.country || 'PT',
+        phone: savedAddress.phone,
+      };
+    } else if (body.shipping_address) {
+      shippingAddressPayload = {
+        first_name: body.shipping_address.first_name || '',
+        last_name: body.shipping_address.last_name || '',
+        company: body.shipping_address.company || null,
+        address_line1: body.shipping_address.address_line1 || '',
+        address_line2: body.shipping_address.address_line2 || null,
+        city: body.shipping_address.city || '',
+        state: body.shipping_address.state || '',
+        postal_code: body.shipping_address.postal_code || '',
+        country: body.shipping_address.country || 'PT',
+        phone: body.shipping_address.phone || null,
+      };
+    }
+
+    if (!shippingAddressPayload || !shippingAddressPayload.address_line1) {
+      return errorResponse('Endereço de entrega obrigatório', 400);
+    }
     
     const orderResult = await executeRun(
       db,
       `INSERT INTO orders (
         order_number, customer_id, email, status, payment_status, fulfillment_status,
         subtotal_cents, tax_cents, shipping_cents, discount_cents, total_cents,
-        shipping_address_json, billing_address_json, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
+        currency, shipping_address_json, billing_address_json, shipping_address_id,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
       [
         orderNumber,
         customerId,
@@ -194,8 +240,10 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
         shippingCents,
         discountCents,
         totalCents,
-        shippingAddressJson,
-        billingAddressJson,
+        'EUR',
+        JSON.stringify(shippingAddressPayload),
+        JSON.stringify(shippingAddressPayload),
+        shippingAddressId,
       ]
     );
 
@@ -273,6 +321,7 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
       order_id: orderId,
       order_number: orderNumber,
       total_cents: totalCents,
+      payment_intent_id: paymentIntent.id,
     });
   } catch (error) {
     console.error('Create intent error:', error);

@@ -58,10 +58,22 @@ export async function createCustomer(
 export async function getCustomer(
   db: D1Database,
   id: number
-): Promise<Customer | null> {
-  return executeOne<Customer>(
+): Promise<(Customer & { orders_count?: number; total_spent?: number }) | null> {
+  return executeOne<Customer & { orders_count: number; total_spent: number }>(
     db,
-    'SELECT id, email, first_name, last_name, phone, date_of_birth, gender, is_active, email_verified, created_at, updated_at FROM customers WHERE id = ?',
+    `SELECT c.id, c.email, c.first_name, c.last_name, c.phone, c.date_of_birth, c.gender, c.is_active, c.email_verified, c.created_at, c.updated_at,
+            COALESCE(stats.orders_count, 0) as orders_count,
+            COALESCE(stats.total_spent, 0) as total_spent
+     FROM customers c
+     LEFT JOIN (
+       SELECT customer_id,
+              COUNT(*) as orders_count,
+              SUM(total_cents) as total_spent
+       FROM orders
+       WHERE payment_status = 'paid'
+       GROUP BY customer_id
+     ) stats ON c.id = stats.customer_id
+     WHERE c.id = ?`,
     [id]
   );
 }
@@ -108,7 +120,7 @@ export async function listCustomers(
     search?: string;
     is_active?: number;
   } = {}
-): Promise<{ items: Customer[]; total: number }> {
+): Promise<{ items: (Customer & { orders_count?: number; total_spent?: number })[]; total: number }> {
   const { page = 1, pageSize = 20, search, is_active } = filters;
 
   let whereClause = '1=1';
@@ -128,10 +140,21 @@ export async function listCustomers(
   const offset = (page - 1) * pageSize;
 
   const [items, totalResult] = await Promise.all([
-    executeQuery<Customer>(
+    executeQuery<Customer & { orders_count: number; total_spent: number }>(
       db,
-      `SELECT id, email, first_name, last_name, phone, date_of_birth, gender, is_active, email_verified, created_at, updated_at
-       FROM customers WHERE ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      `SELECT c.id, c.email, c.first_name, c.last_name, c.phone, c.date_of_birth, c.gender, c.is_active, c.email_verified, c.created_at, c.updated_at,
+              COALESCE(stats.orders_count, 0) as orders_count,
+              COALESCE(stats.total_spent, 0) as total_spent
+       FROM customers c
+       LEFT JOIN (
+         SELECT customer_id,
+                COUNT(*) as orders_count,
+                SUM(total_cents) as total_spent
+         FROM orders
+         WHERE payment_status = 'paid'
+         GROUP BY customer_id
+       ) stats ON c.id = stats.customer_id
+       WHERE ${whereClause} ORDER BY c.created_at DESC LIMIT ? OFFSET ?`,
       [...params, pageSize, offset]
     ),
     executeOne<{ count: number }>(
