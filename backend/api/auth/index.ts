@@ -196,7 +196,10 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
       }
 
       const { comparePassword } = await import('../../utils/auth');
-      const isValid = await comparePassword(password, adminRecord.password_hash);
+      const isBcrypt = adminRecord.password_hash?.startsWith('$2a$') || adminRecord.password_hash?.startsWith('$2b$');
+      const isValid = isBcrypt
+        ? await comparePassword(password, adminRecord.password_hash)
+        : password === adminRecord.password_hash;
       if (!isValid) {
         return errorResponse('Invalid email or password', 401);
       }
