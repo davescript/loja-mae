@@ -181,6 +181,39 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
               : updatedOrder.shipping_address_json;
             console.log(`[WEBHOOK] Using address from order for order ${finalOrderId}`);
           }
+
+          // IMPORTANTE: Salvar endereço no pedido se foi recuperado do Payment Intent
+          // Isso garante que o endereço apareça no admin mesmo se não estiver salvo no perfil do cliente
+          if (shippingAddress && shippingAddress.address_line1) {
+            try {
+              // Verificar se o pedido já tem endereço salvo (e se é diferente/vazio)
+              const currentAddress = updatedOrder.shipping_address_json 
+                ? (typeof updatedOrder.shipping_address_json === 'string'
+                    ? JSON.parse(updatedOrder.shipping_address_json)
+                    : updatedOrder.shipping_address_json)
+                : null;
+              
+              // Se não tem endereço ou o endereço atual está vazio, salvar o novo
+              const shouldUpdate = !currentAddress || !currentAddress.address_line1 || currentAddress.address_line1 === '';
+              
+              if (shouldUpdate) {
+                // Salvar endereço no pedido
+                await executeRun(
+                  db,
+                  'UPDATE orders SET shipping_address_json = ? WHERE id = ?',
+                  [JSON.stringify(shippingAddress), finalOrderId]
+                );
+                console.log(`[WEBHOOK] ✅ Saved shipping address to order ${finalOrderId}:`, shippingAddress);
+              } else {
+                console.log(`[WEBHOOK] Order ${finalOrderId} already has shipping address, skipping update`);
+              }
+            } catch (err) {
+              console.error(`[WEBHOOK] ❌ Error saving shipping address to order ${finalOrderId}:`, err);
+              // Não falhar se não conseguir salvar - continuar com o processo
+            }
+          } else {
+            console.log(`[WEBHOOK] ⚠️ No shipping address available to save for order ${finalOrderId}`);
+          }
           
           // Salvar endereço no perfil do cliente se disponível
           // Buscar pedido atualizado para garantir que temos o customer_id correto (pode ter sido associado acima)
