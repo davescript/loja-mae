@@ -14,30 +14,23 @@ export default function StorefrontLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { loadFromServer } = useCartStore();
 
-  // Load cart from server when user logs in or when page loads
+  // Load cart from server when user logs in
+  // IMPORTANTE: Não carregar automaticamente ao recarregar página para não sobrescrever localStorage
+  // O Zustand persist já carrega do localStorage automaticamente
   useEffect(() => {
-    // Carregar carrinho sempre que a página carregar (mesmo se não autenticado, para manter localStorage)
-    // Se autenticado, carregar do servidor; se não, manter do localStorage
+    // Só carregar do servidor quando usuário faz login (mudança de isAuthenticated)
+    // Não carregar em recarregamentos normais para preservar localStorage
     if (isAuthenticated) {
-      console.log('🛒 Usuário autenticado, carregando carrinho do servidor...');
-      loadFromServer();
-    } else {
-      // Mesmo não autenticado, garantir que o carrinho do localStorage está carregado
-      console.log('🛒 Usuário não autenticado, carrinho será mantido do localStorage');
-    }
-  }, [isAuthenticated, loadFromServer]);
-
-  // Também carregar quando a página é montada (primeira vez)
-  useEffect(() => {
-    const token = localStorage.getItem('customer_token') || localStorage.getItem('token');
-    if (token) {
-      // Pequeno delay para garantir que tudo está inicializado
+      console.log('🛒 Usuário autenticado detectado, verificando carrinho do servidor...');
+      // Delay para garantir que localStorage já foi carregado pelo persist
       const timer = setTimeout(() => {
         loadFromServer();
-      }, 500);
+      }, 1000);
       return () => clearTimeout(timer);
+    } else {
+      console.log('🛒 Usuário não autenticado, carrinho será mantido do localStorage');
     }
-  }, [loadFromServer]);
+  }, [isAuthenticated]); // Remover loadFromServer da dependência para evitar loops
 
   // Removido AppShell (Sidebar/Topbar) em favor de layout estilo loja
 

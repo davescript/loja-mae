@@ -160,16 +160,28 @@ export const useCartStore = create<CartStore>()(
         set({ isLoading: true })
         try {
           console.log('🛒 Carregando carrinho do servidor...');
+          const { items: currentItems } = get(); // Salvar itens atuais do localStorage
+          console.log('🛒 Itens atuais no localStorage:', currentItems.length);
+          
           const response = await apiRequest<{ items: CartItem[] }>('/api/cart')
-          if (response.data?.items && Array.isArray(response.data.items)) {
+          if (response.data?.items && Array.isArray(response.data.items) && response.data.items.length > 0) {
             console.log('🛒 Carrinho carregado do servidor:', response.data.items.length, 'itens');
+            // Servidor tem itens - usar do servidor
             set({ items: response.data.items })
           } else {
-            console.log('🛒 Nenhum item no carrinho do servidor, mantendo localStorage');
+            // Servidor não tem itens - manter do localStorage se houver
+            if (currentItems.length > 0) {
+              console.log('🛒 Servidor vazio, mantendo', currentItems.length, 'itens do localStorage');
+              // Não fazer set, manter como está
+            } else {
+              console.log('🛒 Servidor vazio e localStorage vazio');
+            }
           }
         } catch (error) {
           console.error('❌ Erro ao carregar carrinho do servidor:', error);
-          // Em caso de erro, manter itens do localStorage
+          // Em caso de erro, manter itens do localStorage (não fazer nada)
+          const { items: currentItems } = get();
+          console.log('🛒 Mantendo', currentItems.length, 'itens do localStorage após erro');
         } finally {
           set({ isLoading: false })
         }
