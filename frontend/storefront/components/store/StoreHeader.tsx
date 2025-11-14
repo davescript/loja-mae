@@ -18,11 +18,11 @@ export default function StoreHeader() {
   const searchRef = useRef<HTMLDivElement>(null);
   const { isAuthenticated, user } = useAuth();
   const { getItemCount } = useCartStore();
-  const { getCount: getFavoritesCount } = useFavoritesStore();
+  const { favorites } = useFavoritesStore(); // Usar favorites diretamente para re-renderizar
   const navigate = useNavigate();
   
   const cartItemCount = getItemCount();
-  const favoritesCount = getFavoritesCount();
+  const favoritesCount = favorites.length; // Calcular do array diretamente
   
   // Debounce search query para evitar muitas requisições
   const debouncedSearchQuery = useDebounce(searchQuery, 300);

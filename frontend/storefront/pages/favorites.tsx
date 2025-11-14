@@ -9,7 +9,7 @@ import { useFavoritesStore } from '../../store/favoritesStore';
 import { motion } from 'framer-motion';
 
 export default function FavoritesPage() {
-  const { favorites, getCount } = useFavoritesStore();
+  const { favorites } = useFavoritesStore(); // Usar favorites diretamente
   const [quickOpen, setQuickOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | undefined>();
 
@@ -40,7 +40,7 @@ export default function FavoritesPage() {
     staleTime: 0,
   });
 
-  const favoriteCount = getCount();
+  const favoriteCount = favorites.length; // Calcular do array diretamente
 
   if (isLoading) {
     return (

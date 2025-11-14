@@ -26,10 +26,10 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
   const modalRef = useRef<HTMLDivElement>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const { addItem } = useCartStore();
-  const { toggleFavorite, isFavorite } = useFavoritesStore();
+  const { toggleFavorite, favorites } = useFavoritesStore(); // Usar favorites diretamente
   const { toast } = useToast();
   
-  const isProductFavorite = product ? isFavorite(product.id) : false;
+  const isProductFavorite = product ? favorites.includes(product.id) : false; // Verificar do array
 
   const images = product?.images && product.images.length > 0 
     ? product.images 
@@ -452,12 +452,13 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
                   <div className="mt-auto space-y-3">
                     <div className="flex gap-3">
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           if (product) {
-                            toggleFavorite(product.id);
+                            const wasFavorite = favorites.includes(product.id);
+                            await toggleFavorite(product.id);
                             toast({
-                              title: isProductFavorite ? 'Removido dos favoritos' : 'Adicionado aos favoritos',
-                              description: isProductFavorite 
+                              title: wasFavorite ? 'Removido dos favoritos' : 'Adicionado aos favoritos',
+                              description: wasFavorite 
                                 ? 'Produto removido da sua lista de favoritos'
                                 : 'Produto adicionado à sua lista de favoritos',
                             });

@@ -18,8 +18,8 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
   const [isHovered, setIsHovered] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
-  const { toggleFavorite, isFavorite } = useFavoritesStore();
-  const isProductFavorite = isFavorite(product.id);
+  const { toggleFavorite, favorites } = useFavoritesStore(); // Usar favorites diretamente
+  const isProductFavorite = favorites.includes(product.id); // Verificar do array
   
   const images = product.images && product.images.length > 0 
     ? product.images 
