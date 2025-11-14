@@ -59,6 +59,7 @@ export async function apiRequest<T = any>(
       endpoint.startsWith('/api/customers/notifications') ||
       endpoint.startsWith('/api/customers/support');
     const isCheckoutEndpoint = endpoint.startsWith('/api/stripe/create-intent');
+    const isAuthLoginEndpoint = endpoint === '/api/auth/admin/login' || endpoint === '/api/auth/login';
     const isCustomerEndpoint = isCustomerSelfEndpoint || endpoint.startsWith('/api/favorites') || isCheckoutEndpoint;
     
     let token: string | null = null;
@@ -87,7 +88,7 @@ export async function apiRequest<T = any>(
       ...(options.headers as Record<string, string> || {}),
     };
 
-    if (token) {
+    if (token && !isAuthLoginEndpoint) {
       headers['Authorization'] = `Bearer ${token}`;
       // Log para debug
       console.log(`[API] Request para ${endpoint} com token: ${token.substring(0, 20)}...`);
