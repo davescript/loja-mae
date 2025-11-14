@@ -27,9 +27,12 @@ export default function StorefrontLayout() {
       // Delay para garantir que localStorage já foi carregado pelo persist
       const timer = setTimeout(() => {
         loadCartFromServer();
-        loadFavoritesFromServer();
-        // Sincronizar favoritos locais com servidor
-        syncFavoritesWithServer();
+        // Sincronizar favoritos locais com servidor ANTES de carregar do servidor
+        // Isso garante que favoritos locais não sejam perdidos
+        syncFavoritesWithServer().then(() => {
+          // Depois de sincronizar, carregar do servidor
+          loadFavoritesFromServer();
+        });
       }, 1000);
       return () => clearTimeout(timer);
     } else {

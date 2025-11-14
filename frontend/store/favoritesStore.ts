@@ -25,27 +25,37 @@ export const useFavoritesStore = create<FavoritesStore>()(
 
       addFavorite: async (productId: number) => {
         const { favorites } = get()
+        console.log('❤️ addFavorite chamado para produto:', productId, 'Favoritos atuais:', favorites)
+        
         if (favorites.includes(productId)) {
+          console.log('❤️ Produto já está nos favoritos, ignorando')
           return // Já está nos favoritos
         }
 
         // Atualizar localmente primeiro (otimistic update)
-        set({ favorites: [...favorites, productId] })
+        const newFavorites = [...favorites, productId]
+        console.log('❤️ Atualizando favoritos localmente:', newFavorites)
+        set({ favorites: newFavorites })
 
         // Sincronizar com servidor se autenticado
         const token = localStorage.getItem('customer_token') || localStorage.getItem('token')
         if (token) {
           try {
-            await apiRequest('/api/favorites', {
+            console.log('❤️ Sincronizando com servidor...')
+            const response = await apiRequest('/api/favorites', {
               method: 'POST',
               body: JSON.stringify({ product_id: productId }),
             })
-            console.log('✅ Favorito adicionado no servidor')
-          } catch (error) {
+            console.log('✅ Favorito adicionado no servidor:', response)
+          } catch (error: any) {
             console.error('❌ Erro ao adicionar favorito no servidor:', error)
+            console.error('❌ Detalhes do erro:', error.message, error.response)
             // Reverter se falhar
+            console.log('❤️ Revertendo favoritos para estado anterior:', favorites)
             set({ favorites })
           }
+        } else {
+          console.log('❤️ Usuário não autenticado, favorito apenas no localStorage')
         }
       },
 
@@ -73,12 +83,21 @@ export const useFavoritesStore = create<FavoritesStore>()(
       },
 
       toggleFavorite: async (productId: number) => {
-        const { isFavorite, addFavorite, removeFavorite } = get()
-        if (isFavorite(productId)) {
-          await removeFavorite(productId)
+        const { favorites } = get()
+        const isCurrentlyFavorite = favorites.includes(productId)
+        console.log('❤️ toggleFavorite chamado para produto:', productId, 'Atualmente favorito:', isCurrentlyFavorite)
+        
+        if (isCurrentlyFavorite) {
+          console.log('❤️ Removendo dos favoritos...')
+          await get().removeFavorite(productId)
         } else {
-          await addFavorite(productId)
+          console.log('❤️ Adicionando aos favoritos...')
+          await get().addFavorite(productId)
         }
+        
+        // Verificar estado final
+        const finalFavorites = get().favorites
+        console.log('❤️ Estado final dos favoritos:', finalFavorites)
       },
 
       isFavorite: (productId: number) => {
