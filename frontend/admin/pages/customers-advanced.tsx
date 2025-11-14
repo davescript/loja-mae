@@ -9,7 +9,7 @@ import { formatPrice } from "../../utils/format"
 import { Eye, Mail, Phone, MapPin, ShoppingCart, Euro, Edit, Save, X } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import type { Address } from "../../../../shared/types"
+import type { Address } from "@shared/types"
 
 type Customer = {
   id: number
@@ -283,4 +283,3 @@ export default function AdminCustomersPageAdvanced() {
     </div>
   )
 }
-

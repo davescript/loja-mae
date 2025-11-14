@@ -516,31 +516,31 @@ export default function CheckoutPage() {
   }, [items.length, authLoading, isAuthenticated, selectedAddressId, addressesLoading, clientSecret])
 
   const createPaymentIntent = async (addressId?: number | null) => {
+    const cartItems = items.map((item) => ({
+      product_id: item.product_id,
+      variant_id: item.variant_id || null,
+      quantity: item.quantity,
+    }))
+
+    // Incluir o endereço completo no payload para garantir criação mesmo sem cookie
+    const normalizedAddress = selectedAddress ? {
+      first_name: selectedAddress.first_name,
+      last_name: selectedAddress.last_name,
+      company: selectedAddress.company,
+      address_line1: selectedAddress.address_line1,
+      address_line2: selectedAddress.address_line2,
+      city: selectedAddress.city,
+      state: selectedAddress.state,
+      postal_code: selectedAddress.postal_code,
+      country: selectedAddress.country || 'PT',
+      phone: selectedAddress.phone || null,
+    } : undefined
+    
     try {
       setCreating(true)
       if (!addressId) {
         throw new Error('Selecione um endereço de entrega antes de continuar.')
       }
-      
-      const cartItems = items.map((item) => ({
-        product_id: item.product_id,
-        variant_id: item.variant_id || null,
-        quantity: item.quantity,
-      }))
-
-      // Incluir o endereço completo no payload para garantir criação mesmo sem cookie
-      const normalizedAddress = selectedAddress ? {
-        first_name: selectedAddress.first_name,
-        last_name: selectedAddress.last_name,
-        company: selectedAddress.company,
-        address_line1: selectedAddress.address_line1,
-        address_line2: selectedAddress.address_line2,
-        city: selectedAddress.city,
-        state: selectedAddress.state,
-        postal_code: selectedAddress.postal_code,
-        country: selectedAddress.country || 'PT',
-        phone: selectedAddress.phone || null,
-      } : undefined
 
       const apiResp = await apiRequest<{ 
         client_secret: string; 
@@ -597,12 +597,12 @@ export default function CheckoutPage() {
               shipping_address: normalizedAddress,
             }),
           })
-          const json = await response.json()
+          const json: any = await response.json()
           if (response.ok && (json?.data?.client_secret || json?.client_secret)) {
-            const clientSecret = json.data?.client_secret || json.client_secret
-            const orderNum = json.data?.order_number || json.order_number || null
-            const createdOrderId = json.data?.order_id ?? json.order_id ?? null
-            const createdPaymentIntentId = json.data?.payment_intent_id ?? json.payment_intent_id ?? null
+            const clientSecret: string = json.data?.client_secret || json.client_secret
+            const orderNum: string | null = json.data?.order_number || json.order_number || null
+            const createdOrderId: number | null = json.data?.order_id ?? json.order_id ?? null
+            const createdPaymentIntentId: string | null = json.data?.payment_intent_id ?? json.payment_intent_id ?? null
             setClientSecret(clientSecret)
             setOrderNumber(orderNum)
             setOrderId(createdOrderId)
