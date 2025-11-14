@@ -334,6 +334,7 @@ export default function CheckoutPage() {
     data: addresses = [],
     isLoading: addressesLoading,
     refetch: refetchAddresses,
+    error: addressesError,
   } = useQuery({
     queryKey: ['checkout-addresses'],
     queryFn: async () => {
@@ -385,6 +386,11 @@ export default function CheckoutPage() {
     : null
 
   useEffect(() => {
+    // Se autenticado e sem endereços, abrir diálogo automaticamente
+    if (isAuthenticated && !addressesLoading && addresses.length === 0 && !isAddressDialogOpen) {
+      setIsAddressDialogOpen(true)
+    }
+
     if (!isAuthenticated) {
       setSelectedAddressId(null)
       return
@@ -578,10 +584,39 @@ export default function CheckoutPage() {
       setPaymentIntentId(createdPaymentIntentId)
     } catch (error: any) {
       console.error('Erro ao criar Payment Intent:', error)
-      const { message } = handleError(error)
+      const handled = handleError(error)
+      // Evitar mensagem de sessão expirada durante checkout: tentar fallback guest
+      if (handled.type === 'authentication') {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/stripe/create-intent`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              items: cartItems,
+              shipping_address: normalizedAddress,
+            }),
+          })
+          const json = await response.json()
+          if (response.ok && (json?.data?.client_secret || json?.client_secret)) {
+            const clientSecret = json.data?.client_secret || json.client_secret
+            const orderNum = json.data?.order_number || json.order_number || null
+            const createdOrderId = json.data?.order_id ?? json.order_id ?? null
+            const createdPaymentIntentId = json.data?.payment_intent_id ?? json.payment_intent_id ?? null
+            setClientSecret(clientSecret)
+            setOrderNumber(orderNum)
+            setOrderId(createdOrderId)
+            setPaymentIntentId(createdPaymentIntentId)
+            return
+          }
+        } catch (fallbackErr) {
+          console.error('Fallback guest checkout falhou:', fallbackErr)
+        }
+      }
+
       toast({
         title: 'Erro ao criar pedido',
-        description: message || 'Erro ao iniciar checkout. Verifique se há produtos no carrinho.',
+        description: handled.message || 'Erro ao iniciar checkout. Verifique se há produtos no carrinho.',
         variant: 'destructive',
       })
       // Não navegar automaticamente - deixar usuário tentar novamente
