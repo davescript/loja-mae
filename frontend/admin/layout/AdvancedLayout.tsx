@@ -18,6 +18,7 @@ import {
   Megaphone,
   ChevronLeft,
   ChevronRight,
+  Heart,
 } from "lucide-react"
 import { Topbar } from "../components/common/Topbar"
 import { Breadcrumbs } from "../components/common/Breadcrumbs"
@@ -50,6 +51,7 @@ export default function AdvancedLayout() {
     { path: "/admin/products", icon: Package, label: "Produtos" },
     { path: "/admin/orders", icon: ShoppingCart, label: "Pedidos" },
     { path: "/admin/customers", icon: Users, label: "Clientes" },
+    { path: "/admin/favorites", icon: Heart, label: "Favoritos" },
     { path: "/admin/categories", icon: FolderTree, label: "Catálogo" },
     { path: "/admin/collections", icon: Package, label: "Coleções" },
     {

@@ -1,16 +1,18 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Product } from '@shared/types'
+import { apiRequest } from '../utils/api'
 
 interface FavoritesStore {
   favorites: number[] // Array de product IDs
   isLoading: boolean
-  addFavorite: (productId: number) => void
-  removeFavorite: (productId: number) => void
-  toggleFavorite: (productId: number) => void
+  addFavorite: (productId: number) => Promise<void>
+  removeFavorite: (productId: number) => Promise<void>
+  toggleFavorite: (productId: number) => Promise<void>
   isFavorite: (productId: number) => boolean
   clearFavorites: () => void
   getCount: () => number
+  loadFromServer: () => Promise<void>
+  syncWithServer: () => Promise<void>
 }
 
 const FAVORITES_KEY = 'loja-mae-favorites'
@@ -21,24 +23,61 @@ export const useFavoritesStore = create<FavoritesStore>()(
       favorites: [],
       isLoading: false,
 
-      addFavorite: (productId: number) => {
+      addFavorite: async (productId: number) => {
         const { favorites } = get()
-        if (!favorites.includes(productId)) {
-          set({ favorites: [...favorites, productId] })
+        if (favorites.includes(productId)) {
+          return // Já está nos favoritos
+        }
+
+        // Atualizar localmente primeiro (otimistic update)
+        set({ favorites: [...favorites, productId] })
+
+        // Sincronizar com servidor se autenticado
+        const token = localStorage.getItem('customer_token') || localStorage.getItem('token')
+        if (token) {
+          try {
+            await apiRequest('/api/favorites', {
+              method: 'POST',
+              body: JSON.stringify({ product_id: productId }),
+            })
+            console.log('✅ Favorito adicionado no servidor')
+          } catch (error) {
+            console.error('❌ Erro ao adicionar favorito no servidor:', error)
+            // Reverter se falhar
+            set({ favorites })
+          }
         }
       },
 
-      removeFavorite: (productId: number) => {
+      removeFavorite: async (productId: number) => {
         const { favorites } = get()
-        set({ favorites: favorites.filter((id) => id !== productId) })
+        const updatedFavorites = favorites.filter((id) => id !== productId)
+
+        // Atualizar localmente primeiro (otimistic update)
+        set({ favorites: updatedFavorites })
+
+        // Sincronizar com servidor se autenticado
+        const token = localStorage.getItem('customer_token') || localStorage.getItem('token')
+        if (token) {
+          try {
+            await apiRequest(`/api/favorites/${productId}`, {
+              method: 'DELETE',
+            })
+            console.log('✅ Favorito removido do servidor')
+          } catch (error) {
+            console.error('❌ Erro ao remover favorito do servidor:', error)
+            // Reverter se falhar
+            set({ favorites })
+          }
+        }
       },
 
-      toggleFavorite: (productId: number) => {
+      toggleFavorite: async (productId: number) => {
         const { isFavorite, addFavorite, removeFavorite } = get()
         if (isFavorite(productId)) {
-          removeFavorite(productId)
+          await removeFavorite(productId)
         } else {
-          addFavorite(productId)
+          await addFavorite(productId)
         }
       },
 
@@ -55,9 +94,86 @@ export const useFavoritesStore = create<FavoritesStore>()(
         const { favorites } = get()
         return favorites.length
       },
+
+      loadFromServer: async () => {
+        const token = localStorage.getItem('customer_token') || localStorage.getItem('token')
+        if (!token) {
+          console.log('❤️ Usuário não logado, mantendo favoritos do localStorage')
+          return
+        }
+
+        set({ isLoading: true })
+        try {
+          console.log('❤️ Carregando favoritos do servidor...')
+          const { favorites: currentFavorites } = get()
+          console.log('❤️ Favoritos atuais no localStorage:', currentFavorites.length)
+
+          const response = await apiRequest<{ favorites: number[] }>('/api/favorites')
+          if (response.data?.favorites && Array.isArray(response.data.favorites) && response.data.favorites.length > 0) {
+            console.log('❤️ Favoritos carregados do servidor:', response.data.favorites.length, 'itens')
+            // Servidor tem favoritos - usar do servidor
+            set({ favorites: response.data.favorites })
+          } else {
+            // Servidor não tem favoritos - manter do localStorage se houver
+            if (currentFavorites.length > 0) {
+              console.log('❤️ Servidor vazio, mantendo', currentFavorites.length, 'favoritos do localStorage')
+              // Não fazer set, manter como está
+            } else {
+              console.log('❤️ Servidor vazio e localStorage vazio')
+            }
+          }
+        } catch (error) {
+          console.error('❌ Erro ao carregar favoritos do servidor:', error)
+          // Em caso de erro, manter favoritos do localStorage (não fazer nada)
+          const { favorites: currentFavorites } = get()
+          console.log('❤️ Mantendo', currentFavorites.length, 'favoritos do localStorage após erro')
+        } finally {
+          set({ isLoading: false })
+        }
+      },
+
+      syncWithServer: async () => {
+        const token = localStorage.getItem('customer_token') || localStorage.getItem('token')
+        if (!token) {
+          return
+        }
+
+        const { favorites } = get()
+        if (favorites.length === 0) {
+          return
+        }
+
+        try {
+          console.log('❤️ Sincronizando favoritos com servidor...')
+          // Carregar favoritos do servidor e fazer merge
+          const response = await apiRequest<{ favorites: number[] }>('/api/favorites')
+          const serverFavorites = response.data?.favorites || []
+
+          // Fazer merge: adicionar favoritos locais que não estão no servidor
+          const localOnly = favorites.filter((id) => !serverFavorites.includes(id))
+          for (const productId of localOnly) {
+            try {
+              await apiRequest('/api/favorites', {
+                method: 'POST',
+                body: JSON.stringify({ product_id: productId }),
+              })
+            } catch (error) {
+              console.error(`❌ Erro ao sincronizar favorito ${productId}:`, error)
+            }
+          }
+
+          // Atualizar com favoritos do servidor (fonte da verdade)
+          if (serverFavorites.length > 0) {
+            set({ favorites: serverFavorites })
+          }
+        } catch (error) {
+          console.error('❌ Erro ao sincronizar favoritos:', error)
+        }
+      },
     }),
     {
       name: FAVORITES_KEY,
+      partialize: (state) => ({ favorites: state.favorites }),
     }
   )
 )

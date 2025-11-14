@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   ShoppingBag,
+  Heart,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -43,6 +44,7 @@ export default function AdminLayout() {
     { path: '/admin/orders', icon: ShoppingCart, label: 'Pedidos' },
     { path: '/admin/abandoned-carts', icon: ShoppingBag, label: 'Carrinhos Abandonados' },
     { path: '/admin/customers', icon: Users, label: 'Clientes' },
+    { path: '/admin/favorites', icon: Heart, label: 'Favoritos' },
     { path: '/admin/coupons', icon: Ticket, label: 'Cupons' },
     { path: '/admin/settings', icon: Settings, label: 'Configurações' },
   ];

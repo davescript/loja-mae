@@ -141,8 +141,13 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
           return handleCORS(await handleGetOrderUpdates(request, env), env, request);
         }
 
+        // Admin favorites routes
+        if (path.startsWith('/api/admin/favorites')) {
+          const { handleAdminFavoritesRoutes } = await import('./admin/favorites');
+          return handleCORS(await handleAdminFavoritesRoutes(request, env), env, request);
+        }
 
-        // Favorites routes
+        // Favorites routes (customer)
         if (path.startsWith('/api/favorites')) {
           return handleCORS(await handleFavoritesRoutes(request, env), env, request);
         }
@@ -183,7 +188,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
 
 
 async function handleFavoritesRoutes(request: Request, env: Env): Promise<Response> {
-  // TODO: Implement favorites routes
-  return errorResponse('Favorites routes not implemented yet', 501);
+  const { handleFavoritesRoutes } = await import('./favorites');
+  return handleFavoritesRoutes(request, env);
 }
 
