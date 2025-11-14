@@ -193,22 +193,31 @@ export const useCartStore = create<CartStore>()(
       // Garantir que o carrinho seja sempre persistido
       storage: {
         getItem: (name) => {
-          const str = localStorage.getItem(name);
-          if (!str) return null;
           try {
-            return JSON.parse(str);
-          } catch {
+            const str = localStorage.getItem(name);
+            if (!str) {
+              console.log('🛒 Nenhum carrinho encontrado no localStorage');
+              return null;
+            }
+            const parsed = JSON.parse(str);
+            console.log('🛒 Carrinho carregado do localStorage:', parsed?.state?.items?.length || 0, 'itens');
+            return parsed;
+          } catch (err) {
+            console.error('❌ Erro ao ler carrinho do localStorage:', err);
             return null;
           }
         },
         setItem: (name, value) => {
           try {
+            const items = value?.state?.items || [];
+            console.log('🛒 Salvando carrinho no localStorage:', items.length, 'itens');
             localStorage.setItem(name, JSON.stringify(value));
           } catch (err) {
-            console.error('Erro ao salvar carrinho no localStorage:', err);
+            console.error('❌ Erro ao salvar carrinho no localStorage:', err);
           }
         },
         removeItem: (name) => {
+          console.log('🛒 Removendo carrinho do localStorage');
           localStorage.removeItem(name);
         },
       },
