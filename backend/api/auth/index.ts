@@ -1,5 +1,5 @@
 import type { Env } from '../../types';
-import { getDb } from '../../utils/db';
+import { getDb, executeOne, executeRun } from '../../utils/db';
 import { successResponse, errorResponse } from '../../utils/response';
 import { handleError } from '../../utils/errors';
 import {
@@ -8,8 +8,9 @@ import {
   getCustomerByEmail,
 } from '../../modules/customers';
 import { registerSchema, loginSchema } from '../../validators/customers';
-import { setAuthCookie, clearAuthCookie } from '../../utils/auth';
+import { setAuthCookie, clearAuthCookie, hashPassword } from '../../utils/auth';
 import { signToken } from '../../utils/jwt';
+import { sendEmail } from '../../utils/email';
 
 export async function handleAuthRoutes(request: Request, env: Env): Promise<Response> {
   try {
@@ -115,6 +116,60 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
       response.headers.set('Set-Cookie', `customer_token=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${90 * 24 * 60 * 60}`);
 
       return response;
+    }
+
+    if (method === 'POST' && path === '/api/auth/admin/register') {
+      const body = await request.json() as { email: string; password: string; name?: string };
+      const existing = await executeOne<{ count: number }>(db, 'SELECT COUNT(*) as count FROM admins');
+      if ((existing?.count || 0) > 0) {
+        return errorResponse('Admin registration disabled', 403);
+      }
+      const passwordHash = await hashPassword(body.password);
+      const result = await executeRun(
+        db,
+        'INSERT INTO admins (email, password_hash, name, role, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, 1, datetime("now"), datetime("now"))',
+        [body.email.toLowerCase(), passwordHash, body.name || body.email.split('@')[0], 'super_admin']
+      );
+      const token = signToken({ id: result.meta.last_row_id, email: body.email.toLowerCase(), type: 'admin', role: 'super_admin' as any }, jwtSecret, '7d');
+      const response = successResponse({ admin: { id: result.meta.last_row_id, email: body.email.toLowerCase(), name: body.name || body.email.split('@')[0], role: 'super_admin' }, token }, 'Admin registration successful');
+      response.headers.set('Set-Cookie', setAuthCookie(token, 'admin_token', 7 * 24 * 60 * 60));
+      return response;
+    }
+
+    if (method === 'POST' && path === '/api/auth/admin/forgot') {
+      const body = await request.json() as { email: string };
+      const admin = await executeOne<{ id: number; email: string }>(db, 'SELECT id, email FROM admins WHERE email = ?', [body.email.toLowerCase()]);
+      if (!admin) {
+        return errorResponse('Admin not found', 404);
+      }
+      await executeRun(db, 'CREATE TABLE IF NOT EXISTS admin_password_resets (email TEXT PRIMARY KEY, code TEXT, expires_at TEXT, created_at TEXT)');
+      const code = String(Math.floor(100000 + Math.random() * 900000));
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+      await executeRun(db, 'INSERT OR REPLACE INTO admin_password_resets (email, code, expires_at, created_at) VALUES (?, ?, ?, datetime("now"))', [admin.email, code, expiresAt]);
+      const ok = await sendEmail(env, { to: admin.email, subject: 'Código de recuperação de senha', html: `<p>Seu código de verificação é <strong>${code}</strong>. Ele expira em 15 minutos.</p>` });
+      if (!ok) {
+        return errorResponse('Failed to send email', 500);
+      }
+      return successResponse({ sent: true });
+    }
+
+    if (method === 'POST' && path === '/api/auth/admin/reset') {
+      const body = await request.json() as { email: string; code: string; new_password: string };
+      const row = await executeOne<{ email: string; code: string; expires_at: string }>(db, 'SELECT email, code, expires_at FROM admin_password_resets WHERE email = ?', [body.email.toLowerCase()]);
+      if (!row || row.code !== body.code) {
+        return errorResponse('Invalid code', 400);
+      }
+      if (new Date(row.expires_at).getTime() < Date.now()) {
+        return errorResponse('Code expired', 400);
+      }
+      const admin = await executeOne<{ id: number }>(db, 'SELECT id FROM admins WHERE email = ?', [body.email.toLowerCase()]);
+      if (!admin) {
+        return errorResponse('Admin not found', 404);
+      }
+      const passwordHash = await hashPassword(body.new_password);
+      await executeRun(db, 'UPDATE admins SET password_hash = ?, updated_at = datetime("now") WHERE id = ?', [passwordHash, admin.id]);
+      await executeRun(db, 'DELETE FROM admin_password_resets WHERE email = ?', [body.email.toLowerCase()]);
+      return successResponse({ reset: true }, 'Password updated');
     }
 
     // Admin Login: POST /api/auth/admin/login
@@ -269,4 +324,3 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
     return errorResponse(message, status, details);
   }
 }
-
