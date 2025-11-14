@@ -2,14 +2,13 @@ import { useState, useEffect } from 'react';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Lock, Mail, AlertCircle, Eye, EyeOff, UserPlus, KeyRound } from 'lucide-react';
+import { Lock, Mail, AlertCircle, Eye, EyeOff, KeyRound } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
-  const [name, setName] = useState('');
+  const [mode, setMode] = useState<'login' | 'forgot'>('login');
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotCode, setForgotCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -32,28 +31,6 @@ export default function AdminLoginPage() {
     e.preventDefault();
     if (mode === 'login') {
       await login({ email, password });
-      return;
-    }
-    if (mode === 'register') {
-      try {
-        setSubmitting(true);
-        const response = await fetch('/api/auth/admin/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, name }),
-          credentials: 'include',
-        });
-        const data: any = await response.json();
-        if (!response.ok || data?.success === false) {
-          throw new Error(data?.error || 'Falha ao registrar');
-        }
-        if (data?.data?.token) {
-          localStorage.setItem('admin_token', data.data.token);
-        }
-        navigate('/admin/dashboard');
-      } finally {
-        setSubmitting(false);
-      }
       return;
     }
     if (mode === 'forgot') {
@@ -99,8 +76,8 @@ export default function AdminLoginPage() {
       >
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{mode === 'login' ? 'Admin Login' : mode === 'register' ? 'Criar Admin' : 'Recuperar Senha'}</h1>
-            <p className="text-gray-600">{mode === 'login' ? 'Acesse o painel administrativo' : mode === 'register' ? 'Crie um administrador' : 'Receba um código por email'}</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">{mode === 'login' ? 'Admin Login' : 'Recuperar Senha'}</h1>
+            <p className="text-gray-600">{mode === 'login' ? 'Acesse o painel administrativo' : 'Receba um código por email'}</p>
           </div>
 
           {loginError && (
@@ -124,13 +101,6 @@ export default function AdminLoginPage() {
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="admin@loja-mae.com" />
                 </div>
-              </div>
-            )}
-
-            {mode === 'register' && (
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
-                <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Seu nome" />
               </div>
             )}
 
@@ -168,7 +138,7 @@ export default function AdminLoginPage() {
             )}
 
             <motion.button type="submit" disabled={isLoggingIn || submitting} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-              {mode === 'login' ? (isLoggingIn ? 'Entrando...' : 'Entrar') : submitting ? 'Enviando...' : mode === 'register' ? 'Registrar' : forgotCode ? 'Resetar Senha' : 'Enviar Código'}
+              {mode === 'login' ? (isLoggingIn ? 'Entrando...' : 'Entrar') : submitting ? 'Enviando...' : (forgotCode ? 'Resetar Senha' : 'Enviar Código')}
             </motion.button>
           </form>
 
@@ -176,11 +146,6 @@ export default function AdminLoginPage() {
             <button onClick={() => setMode('forgot')} className="inline-flex items-center gap-2 hover:text-primary">
               <KeyRound className="w-4 h-4" />
               Esqueci a senha
-            </button>
-            <span>•</span>
-            <button onClick={() => setMode((m) => (m === 'register' ? 'login' : 'register'))} className="inline-flex items-center gap-2 hover:text-primary">
-              <UserPlus className="w-4 h-4" />
-              {mode === 'register' ? 'Voltar ao login' : 'Criar novo registro'}
             </button>
           </div>
         </div>
