@@ -49,20 +49,34 @@ export async function apiRequest<T = any>(
     // Determine which token to use based on the endpoint
     // Customer endpoints should NEVER use admin_token
     const isAdminEndpoint = endpoint.startsWith('/api/admin/');
-    const isCustomerEndpoint = endpoint.startsWith('/api/customers/') || endpoint.startsWith('/api/favorites');
+    const isCustomerDetailEndpoint = /^\/api\/customers\/\d+/.test(endpoint);
+    const isCustomerSelfEndpoint =
+      endpoint.startsWith('/api/customers/me') ||
+      endpoint.startsWith('/api/customers/addresses') ||
+      endpoint.startsWith('/api/customers/orders') ||
+      endpoint.startsWith('/api/customers/payments') ||
+      endpoint.startsWith('/api/customers/stats') ||
+      endpoint.startsWith('/api/customers/notifications') ||
+      endpoint.startsWith('/api/customers/support');
+    const isCustomerEndpoint = isCustomerSelfEndpoint || endpoint.startsWith('/api/favorites');
     
     let token: string | null = null;
     if (typeof window !== 'undefined') {
+      const adminToken = localStorage.getItem('admin_token');
+      const customerToken = localStorage.getItem('customer_token') || localStorage.getItem('token');
+
       if (isAdminEndpoint) {
         // Admin endpoints: use admin_token only
-        token = localStorage.getItem('admin_token');
+        token = adminToken;
+      } else if (isCustomerDetailEndpoint) {
+        // Admin detail endpoints (e.g., /api/customers/:id) should prefer admin token
+        token = adminToken || customerToken;
       } else if (isCustomerEndpoint) {
-        // Customer endpoints: use customer_token or token, NEVER admin_token
-        // This prevents using admin_token when user is logged in as customer
-        token = localStorage.getItem('customer_token') || localStorage.getItem('token');
+        // Customer self-service endpoints: prefer customer token, fallback to admin if not available
+        token = customerToken || adminToken;
       } else {
         // Other endpoints (auth, products, etc): try all tokens in order
-        token = localStorage.getItem('admin_token') || localStorage.getItem('customer_token') || localStorage.getItem('token');
+        token = adminToken || customerToken;
       }
     }
     
