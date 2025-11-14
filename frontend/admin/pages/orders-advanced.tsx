@@ -25,12 +25,33 @@ type Order = {
   stripe_payment_intent_id?: string | null
   shipping_address_json?: string | null
   billing_address_json?: string | null
+  items?: Array<{
+    id: number
+    product_id: number
+    variant_id?: number | null
+    title: string
+    sku?: string | null
+    quantity: number
+    price_cents: number
+    total_cents: number
+    image_url?: string | null
+  }>
   customer?: {
     id: number
     email: string
-    first_name: string | null
-    last_name: string | null
-    phone: string | null
+    first_name?: string | null
+    last_name?: string | null
+    phone?: string | null
+    addresses?: Array<{
+      id: number
+      address_line1: string
+      address_line2?: string | null
+      city: string
+      postal_code: string
+      state?: string | null
+      country: string
+      is_default: number
+    }>
   }
 }
 
