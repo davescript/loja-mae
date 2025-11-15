@@ -102,7 +102,7 @@ export default function AdminCustomerDetailsPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-6 bg-white">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -226,7 +226,7 @@ export default function AdminCustomerDetailsPage() {
                 {customer.addresses.map((address) => (
                   <div
                     key={address.id}
-                    className="p-3 rounded-lg border bg-muted/50"
+                    className="p-3 rounded-lg border bg-white"
                   >
                     <div className="flex items-start justify-between mb-2">
                       <span className="text-xs font-medium uppercase text-muted-foreground">
@@ -289,7 +289,7 @@ export default function AdminCustomerDetailsPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg border hover:bg-gray-50 transition-colors bg-white"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">

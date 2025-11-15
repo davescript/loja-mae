@@ -67,7 +67,7 @@ export default function AdvancedLayout() {
   const sidebarWidth = sidebarOpen ? "w-64" : "w-20"
 
   return (
-    <div className="min-h-screen flex bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen flex bg-white">
       {/* Desktop Sidebar */}
       <aside
         className={cn(
@@ -241,7 +241,7 @@ export default function AdvancedLayout() {
         )}
       >
         <Topbar />
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto bg-white">
           <Breadcrumbs />
           <Outlet />
         </main>

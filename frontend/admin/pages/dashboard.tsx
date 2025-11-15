@@ -236,7 +236,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-6 bg-white">
       {/* Welcome Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -399,7 +399,7 @@ export default function AdminDashboardPage() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                    className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors bg-white"
                   >
                     <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                       {product.image_url ? (
@@ -459,7 +459,7 @@ export default function AdminDashboardPage() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 transition-colors bg-white"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
@@ -507,7 +507,7 @@ export default function AdminDashboardPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="flex flex-col items-center p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                    className="flex flex-col items-center p-4 rounded-lg border hover:bg-gray-50 transition-colors bg-white"
                   >
                     <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mb-3">
                       <span className="text-2xl font-bold text-primary">
