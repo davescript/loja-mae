@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Heart,
+  Mail,
 } from "lucide-react"
 import { Topbar } from "../components/common/Topbar"
 import { Breadcrumbs } from "../components/common/Breadcrumbs"
@@ -59,6 +60,7 @@ export default function AdvancedLayout() {
       icon: Megaphone,
       label: "Marketing",
     },
+    { path: "/admin/contact-messages", icon: Mail, label: "Mensagens" },
     { path: "/admin/blog", icon: FileText, label: "Blog" },
     { path: "/admin/analytics", icon: BarChart3, label: "Analytics" },
     { path: "/admin/settings", icon: Settings, label: "Configurações" },

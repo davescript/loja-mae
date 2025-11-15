@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { handleCORS } from '../utils/cors';
 import { errorResponse, successResponse } from '../utils/response';
 import { sendEmail } from '../utils/email';
+import { getDb, executeRun } from '../utils/db';
 
 const contactSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
@@ -23,9 +24,14 @@ export async function handleContactRoutes(request: Request, env: Env): Promise<R
   try {
     const body = await request.json();
     const validated = contactSchema.parse(body);
+    const db = getDb(env);
 
     // Email para o administrador
     const adminEmail = 'davecdl@outlook.com';
+    
+    // Obter IP e User-Agent para logs
+    const ipAddress = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || 'unknown';
+    const userAgent = request.headers.get('user-agent') || 'unknown';
     
     // Sanitizar mensagem para evitar problemas com HTML
     const sanitizedMessage = validated.message
@@ -83,31 +89,84 @@ ${validated.message}
 Esta mensagem foi enviada através do formulário de contato do website.
     `.trim();
 
-    // Tentar enviar email para o administrador
-    // Se falhar, ainda retornamos sucesso para não frustrar o usuário
-    // O email pode ser verificado nos logs do Cloudflare
+    // Salvar mensagem no banco de dados PRIMEIRO
+    let messageId: number | null = null;
+    let emailSent = false;
+    let emailError: string | null = null;
+
     try {
-      const emailSent = await sendEmail(env, {
+      const result = await executeRun(
+        db,
+        `INSERT INTO contact_messages (name, email, subject, message, ip_address, user_agent, email_sent, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
+        [
+          validated.name,
+          validated.email,
+          validated.subject,
+          validated.message,
+          ipAddress,
+          userAgent,
+          0, // email_sent = false inicialmente
+        ]
+      );
+
+      if (result.success && result.meta.last_row_id) {
+        messageId = result.meta.last_row_id;
+        console.log('[CONTACT] Message saved to database with ID:', messageId);
+      }
+    } catch (dbError) {
+      console.error('[CONTACT] Database error:', dbError);
+      // Continuar mesmo se falhar ao salvar no banco
+    }
+
+    // Tentar enviar email para o administrador
+    try {
+      emailSent = await sendEmail(env, {
         to: adminEmail,
         subject: `[Contato] ${validated.subject}`,
         html: emailHtml,
         text: emailText,
       });
 
-      if (!emailSent) {
+      if (emailSent) {
+        console.log('[CONTACT] Email sent successfully to admin');
+        // Atualizar status no banco
+        if (messageId) {
+          await executeRun(
+            db,
+            'UPDATE contact_messages SET email_sent = 1, updated_at = datetime("now") WHERE id = ?',
+            [messageId]
+          );
+        }
+      } else {
+        emailError = 'Failed to send email via MailChannels';
         console.error('[CONTACT] Failed to send email to admin:', {
           to: adminEmail,
           subject: validated.subject,
           name: validated.name,
           email: validated.email,
         });
-        // Continuar mesmo se o email falhar - não queremos frustrar o usuário
-      } else {
-        console.log('[CONTACT] Email sent successfully to admin');
+        // Atualizar erro no banco
+        if (messageId) {
+          await executeRun(
+            db,
+            'UPDATE contact_messages SET email_error = ?, updated_at = datetime("now") WHERE id = ?',
+            [emailError, messageId]
+          );
+        }
       }
     } catch (emailError) {
+      const errorMsg = emailError instanceof Error ? emailError.message : String(emailError);
+      emailError = errorMsg;
       console.error('[CONTACT] Email error:', emailError);
-      // Continuar mesmo se o email falhar
+      // Atualizar erro no banco
+      if (messageId) {
+        await executeRun(
+          db,
+          'UPDATE contact_messages SET email_error = ?, updated_at = datetime("now") WHERE id = ?',
+          [errorMsg, messageId]
+        );
+      }
     }
 
     // Tentar enviar confirmação para o cliente (opcional - não bloqueia)

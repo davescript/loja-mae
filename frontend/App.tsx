@@ -56,6 +56,7 @@ import AdminBannersPage from './admin/pages/banners';
 import AdminBlogPage from './admin/pages/blog';
 import AdminAnalyticsPage from './admin/pages/analytics';
 import AdminSettingsPage from './admin/pages/settings-advanced';
+import AdminContactMessagesPage from './admin/pages/contact-messages';
 
 function App() {
   return (
@@ -113,6 +114,7 @@ function App() {
         <Route path="campaigns" element={<AdminCampaignsPage />} />
         <Route path="banners" element={<AdminBannersPage />} />
         <Route path="blog" element={<AdminBlogPage />} />
+        <Route path="contact-messages" element={<AdminContactMessagesPage />} />
         <Route path="analytics" element={<AdminAnalyticsPage />} />
         <Route path="settings" element={<AdminSettingsPage />} />
         <Route index element={<Navigate to="/admin/dashboard" replace />} />
