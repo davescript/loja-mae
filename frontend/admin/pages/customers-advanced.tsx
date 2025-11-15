@@ -2,11 +2,11 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { apiRequest } from "../../utils/api"
 import { DataTable, type Column } from "../components/common/DataTable"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { formatPrice } from "../../utils/format"
-import { Eye, Mail, Phone, MapPin, ShoppingCart, Euro, Edit, Save, X } from "lucide-react"
+import { Eye, Mail, Phone, MapPin, ShoppingCart, Euro, Users, TrendingUp, Activity } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import type { Address } from "@shared/types"
@@ -63,6 +63,15 @@ export default function AdminCustomersPageAdvanced() {
     enabled: !!selectedCustomer,
   })
 
+  const totalCustomers = customersData?.total ?? 0
+  const activeCustomers = customersData?.items?.filter((customer) => customer.is_active !== 0).length ?? 0
+  const totalOrdersOnPage = customersData?.items?.reduce((sum, customer) => sum + (customer.orders_count || 0), 0) ?? 0
+  const lifetimeValueCents = customersData?.items?.reduce(
+    (sum, customer) => sum + (customer.total_spent || 0),
+    0
+  ) ?? 0
+  const averageTicketCents = totalOrdersOnPage > 0 ? Math.round(lifetimeValueCents / totalOrdersOnPage) : 0
+
   const columns: Column<Customer>[] = [
     {
       key: "name",
@@ -93,7 +102,7 @@ export default function AdminCustomersPageAdvanced() {
       key: "total_spent",
       header: "Total Gasto",
       sortable: true,
-      accessor: (customer) => formatPrice(customer.total_spent ? customer.total_spent * 100 : 0),
+      accessor: (customer) => formatPrice(customer.total_spent ?? 0),
     },
     {
       key: "created_at",
@@ -111,6 +120,39 @@ export default function AdminCustomersPageAdvanced() {
           <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
           <p className="text-muted-foreground mt-2">Gerencie seus clientes e histórico</p>
         </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Clientes totais</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{totalCustomers}</div>
+            <p className="text-xs text-muted-foreground">Base completa registrada</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Clientes ativos</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{activeCustomers}</div>
+            <p className="text-xs text-muted-foreground">Com conta verificada e habilitada</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Ticket médio</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{formatPrice(averageTicketCents)}</div>
+            <p className="text-xs text-muted-foreground">Baseado no histórico pago</p>
+          </CardContent>
+        </Card>
       </div>
 
       <DataTable
@@ -195,7 +237,7 @@ export default function AdminCustomersPageAdvanced() {
                       <div>
                         <div className="text-sm font-medium">Total Gasto</div>
                         <div className="text-sm text-muted-foreground">
-                          {formatPrice(customerDetails.total_spent ? customerDetails.total_spent * 100 : 0)}
+                          {formatPrice(customerDetails.total_spent ?? 0)}
                         </div>
                       </div>
                     </div>

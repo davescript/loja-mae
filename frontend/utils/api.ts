@@ -74,8 +74,8 @@ export async function apiRequest<T = any>(
         // Admin detail endpoints (e.g., /api/customers/:id) should prefer admin token
         token = adminToken || customerToken;
       } else if (isCustomerEndpoint) {
-        // Customer self-service endpoints: prefer customer token, fallback to admin if not available
-        token = customerToken || adminToken;
+        // Customer self-service endpoints devem usar somente token do cliente
+        token = customerToken;
       } else {
         // Other endpoints (auth, products, etc)
         // Prefer customer token when available to avoid admin context em checkout
@@ -88,8 +88,15 @@ export async function apiRequest<T = any>(
       ...(options.headers as Record<string, string> || {}),
     };
 
-    // Não enviar Authorization para endpoints de cliente; usar cookies
-    if (isAdminEndpoint && token && !isAuthLoginEndpoint) {
+    const shouldAttachAuthHeader =
+      !!token &&
+      !isAuthLoginEndpoint &&
+      (isAdminEndpoint ||
+        isCustomerDetailEndpoint ||
+        endpoint.startsWith('/api/customers') ||
+        endpoint.startsWith('/api/orders'));
+
+    if (shouldAttachAuthHeader && token) {
       headers['Authorization'] = `Bearer ${token}`;
       if (import.meta.env.DEV) console.log(`[API] Admin request para ${endpoint} com token`);
     }
