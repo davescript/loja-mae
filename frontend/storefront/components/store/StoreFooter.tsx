@@ -35,7 +35,7 @@ export default function StoreFooter() {
                 <Instagram className="w-5 h-5" />
               </a>
               <a
-                href="mailto:contato@lojama.com"
+                href="mailto:davecdl@outlook.com"
                 className="w-10 h-10 rounded-full bg-gray-800 hover:bg-primary flex items-center justify-center transition"
                 aria-label="Email"
               >
@@ -128,8 +128,8 @@ export default function StoreFooter() {
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="w-5 h-5 flex-shrink-0" />
-                <a href="mailto:contato@lojama.com" className="text-sm hover:text-primary transition">
-                  contato@lojama.com
+                <a href="mailto:davecdl@outlook.com" className="text-sm hover:text-primary transition">
+                  davecdl@outlook.com
                 </a>
               </li>
             </ul>

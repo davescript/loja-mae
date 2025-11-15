@@ -169,7 +169,7 @@ export default function PrivacyPage() {
                   pode contactar-nos através de:
                 </p>
                 <div className="space-y-2 text-muted-foreground">
-                  <p><strong className="text-foreground">Email:</strong> privacidade@leiasabores.pt</p>
+                  <p><strong className="text-foreground">Email:</strong> davecdl@outlook.com</p>
                   <p><strong className="text-foreground">Telefone:</strong> +351 969 407 406</p>
                   <p><strong className="text-foreground">Endereço:</strong> Rua Exemplo, 123, Lisboa, Portugal</p>
                 </div>

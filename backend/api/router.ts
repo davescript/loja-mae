@@ -203,6 +203,12 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
           return handleCORS(await handleFavoritesRoutes(request, env), env, request);
         }
 
+        // Contact form route
+        if (path === '/api/contact' && method === 'POST') {
+          const { handleContactRoutes } = await import('./contact');
+          return handleCORS(await handleContactRoutes(request, env), env, request);
+        }
+
     // Health check
     if (path === '/api/health') {
       return successResponse({ status: 'ok', timestamp: new Date().toISOString() });
