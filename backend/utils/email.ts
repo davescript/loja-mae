@@ -14,8 +14,16 @@ interface EmailOptions {
  */
 export async function sendEmail(env: Env, options: EmailOptions): Promise<boolean> {
   try {
-    const fromEmail = options.from || env.FROM_EMAIL || 'noreply@leiasabores.pt';
+    // Usar um email válido do domínio do Cloudflare Workers ou um email genérico
+    // MailChannels requer que o domínio seja verificado ou usar um email válido
+    const fromEmail = options.from || env.FROM_EMAIL || 'noreply@davecdl.workers.dev';
     const fromName = env.FROM_NAME || 'Leiasabores';
+
+    console.log('[EMAIL] Attempting to send email:', {
+      to: options.to,
+      from: fromEmail,
+      subject: options.subject,
+    });
 
     // MailChannels API endpoint
     const response = await fetch('https://api.mailchannels.net/tx/v1/send', {
@@ -53,13 +61,24 @@ export async function sendEmail(env: Env, options: EmailOptions): Promise<boolea
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Email send failed:', response.status, errorText);
+      console.error('[EMAIL] Send failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
+        to: options.to,
+        from: fromEmail,
+      });
       return false;
     }
 
+    console.log('[EMAIL] Email sent successfully to:', options.to);
     return true;
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('[EMAIL] Error sending email:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      to: options.to,
+    });
     return false;
   }
 }
