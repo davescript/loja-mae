@@ -36,18 +36,21 @@ export default function ContactPage() {
   // Auto-fill form when user is logged in
   useEffect(() => {
     if (isAuthenticated && user && !autoFilled) {
-      const fullName = user.first_name && user.last_name 
-        ? `${user.first_name} ${user.last_name}`.trim()
-        : user.first_name || user.last_name || '';
+      let filled = false;
       
-      if (fullName) {
-        setValue('name', fullName);
+      // Fill name if available
+      if (user.name) {
+        setValue('name', user.name);
+        filled = true;
       }
+      
+      // Fill email if available
       if (user.email) {
         setValue('email', user.email);
+        filled = true;
       }
       
-      if (fullName || user.email) {
+      if (filled) {
         setAutoFilled(true);
         toast({
           title: 'Formulário preenchido automaticamente',
@@ -154,7 +157,7 @@ export default function ContactPage() {
             {isAuthenticated && (
               <div className="flex items-center gap-2 text-sm text-primary bg-primary/10 px-3 py-1.5 rounded-lg">
                 <User className="w-4 h-4" />
-                <span>Logado como {user?.first_name || user?.email}</span>
+                <span>Logado como {user?.name || user?.email}</span>
               </div>
             )}
           </div>
