@@ -239,24 +239,12 @@ export default function ShippingPage() {
                 <h3 className="text-lg font-heading font-bold mb-3 text-blue-900">
                   Processamento e Envio
                 </h3>
-                <ul className="space-y-2 text-blue-800">
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>Os pedidos são processados em 1-2 dias úteis após a confirmação do pagamento.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>Em caso de produtos personalizados, o prazo de processamento pode ser estendido.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>Receberá um e-mail de confirmação quando o pedido for enviado.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>Os prazos de entrega começam a contar após o envio, não após a compra.</span>
-                  </li>
-                </ul>
+                <div className="space-y-2 text-blue-800">
+                  <p>Os pedidos são processados em 1-2 dias úteis após a confirmação do pagamento.</p>
+                  <p>Em caso de produtos personalizados, o prazo de processamento pode ser estendido.</p>
+                  <p>Receberá um e-mail de confirmação quando o pedido for enviado.</p>
+                  <p>Os prazos de entrega começam a contar após o envio, não após a compra.</p>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -273,24 +261,12 @@ export default function ShippingPage() {
                 <h3 className="text-lg font-heading font-bold mb-3 text-green-900">
                   Segurança e Proteção
                 </h3>
-                <ul className="space-y-2 text-green-800">
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>Todos os envios incluem seguro contra perda e danos.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>Em caso de produto danificado durante o transporte, substituímos gratuitamente.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>Verifique sempre o estado da embalagem antes de assinar o recibo.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span>•</span>
-                    <span>Se notar algum dano, recuse a entrega e contacte-nos imediatamente.</span>
-                  </li>
-                </ul>
+                <div className="space-y-2 text-green-800">
+                  <p>Todos os envios incluem seguro contra perda e danos.</p>
+                  <p>Em caso de produto danificado durante o transporte, substituímos gratuitamente.</p>
+                  <p>Verifique sempre o estado da embalagem antes de assinar o recibo.</p>
+                  <p>Se notar algum dano, recuse a entrega e contacte-nos imediatamente.</p>
+                </div>
               </div>
             </div>
           </motion.div>

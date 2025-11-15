@@ -138,14 +138,13 @@ export default function PrivacyPage() {
                   </div>
                   <div className="flex-1">
                     <h2 className="text-2xl font-heading font-bold mb-4">{section.title}</h2>
-                    <ul className="space-y-3">
+                    <div className="space-y-3">
                       {section.content.map((item, itemIndex) => (
-                        <li key={itemIndex} className="flex items-start gap-3">
-                          <span className="text-primary mt-1.5">•</span>
-                          <span className="text-muted-foreground leading-relaxed">{item}</span>
-                        </li>
+                        <p key={itemIndex} className="text-muted-foreground leading-relaxed">
+                          {item}
+                        </p>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 </div>
               </motion.div>
