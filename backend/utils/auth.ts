@@ -187,11 +187,12 @@ export function setAuthCookie(
   name: string = 'admin_token',
   maxAge: number = 7 * 24 * 60 * 60 // 7 days
 ): string {
-  return `${name}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
+  // SameSite=None garante que cookies funcionem em chamadas cross-site (admin hospedado em domínio diferente)
+  return `${name}=${token}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${maxAge}`;
 }
 
 export function clearAuthCookie(name: string = 'admin_token'): string {
-  return `${name}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+  return `${name}=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0`;
 }
 
 export function setCookieKV(name: string, value: string, maxAge: number): string {

@@ -60,6 +60,7 @@ export async function apiRequest<T = any>(
       endpoint.startsWith('/api/customers/support');
     const isCheckoutEndpoint = endpoint.startsWith('/api/stripe/create-intent');
     const isAuthLoginEndpoint = endpoint === '/api/auth/admin/login' || endpoint === '/api/auth/login';
+    const isAuthMeEndpoint = endpoint.startsWith('/api/auth/me');
     const isCustomerEndpoint = isCustomerSelfEndpoint || endpoint.startsWith('/api/favorites') || isCheckoutEndpoint;
     
     let token: string | null = null;
@@ -70,6 +71,9 @@ export async function apiRequest<T = any>(
       if (isAdminEndpoint) {
         // Admin endpoints: use admin_token only
         token = adminToken;
+      } else if (isAuthMeEndpoint) {
+        // /api/auth/me precisa identificar admin primeiro
+        token = adminToken || customerToken;
       } else if (isCustomerDetailEndpoint) {
         // Admin detail endpoints (e.g., /api/customers/:id) should prefer admin token
         token = adminToken || customerToken;
@@ -98,7 +102,8 @@ export async function apiRequest<T = any>(
       (isAdminEndpoint ||
         isCustomerDetailEndpoint ||
         endpoint.startsWith('/api/customers') ||
-        endpoint.startsWith('/api/orders'));
+        endpoint.startsWith('/api/orders') ||
+        isAuthMeEndpoint);
 
     if (shouldAttachAuthHeader && token) {
       headers['Authorization'] = `Bearer ${token}`;
