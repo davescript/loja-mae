@@ -5,6 +5,7 @@ import { handleError } from '../../utils/errors'
 import { requireAdmin } from '../../utils/auth'
 import { listPublishedPosts, listAllPosts, getPostBySlug, createPost, updatePost, deletePost } from '../../modules/blog'
 import { createBlogPostSchema, updateBlogPostSchema } from '../../validators/blog'
+import { ValidationError } from '../../utils/errors'
 
 export async function handleBlogRoutes(request: Request, env: Env): Promise<Response> {
   try {
@@ -45,7 +46,12 @@ export async function handleBlogRoutes(request: Request, env: Env): Promise<Resp
     if (method === 'POST' && path === '/api/admin/blog') {
       await requireAdmin(request, env)
       const body = await request.json()
-      const validated = createBlogPostSchema.parse(body)
+      let validated
+      try {
+        validated = createBlogPostSchema.parse(body)
+      } catch (e: any) {
+        throw new ValidationError('Invalid blog post data')
+      }
       const post = await createPost(db, validated)
       return successResponse(post, 'Post created')
     }
@@ -55,7 +61,12 @@ export async function handleBlogRoutes(request: Request, env: Env): Promise<Resp
       await requireAdmin(request, env)
       const id = parseInt(path.split('/').pop() || '0')
       const body = await request.json()
-      const validated = updateBlogPostSchema.parse(body)
+      let validated
+      try {
+        validated = updateBlogPostSchema.parse(body)
+      } catch (e: any) {
+        throw new ValidationError('Invalid blog post data')
+      }
       const post = await updatePost(db, id, validated)
       return successResponse(post, 'Post updated')
     }
