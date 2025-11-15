@@ -76,12 +76,28 @@ export default function BannerDisplay({
           animate={{ opacity: 1, y: 0 }}
         >
           <img
-            src={banner.image_url ? (banner.image_url.startsWith('http') ? banner.image_url : `${API_BASE_URL}${banner.image_url}`) : '/placeholder.png'}
+            src={(() => {
+              if (!banner.image_url) return '/placeholder.png'
+              if (banner.image_url.startsWith('http')) return banner.image_url
+              // Se começa com /api/images, usar API_BASE_URL
+              if (banner.image_url.startsWith('/api/images')) {
+                const fullUrl = `${API_BASE_URL}${banner.image_url}`
+                console.log(`[BANNER_DISPLAY] Construindo URL completa para banner ${banner.id}:`, fullUrl)
+                return fullUrl
+              }
+              // Caso contrário, assumir que é relativo
+              return `${API_BASE_URL}${banner.image_url}`
+            })()}
             alt={banner.title}
             className="w-full h-full object-cover"
             loading="lazy"
             onError={(e) => {
-              console.error(`[BANNER_DISPLAY] Erro ao carregar imagem do banner ${banner.id}:`, banner.image_url)
+              const attemptedUrl = e.currentTarget.src
+              console.error(`[BANNER_DISPLAY] Erro ao carregar imagem do banner ${banner.id}:`, {
+                original_url: banner.image_url,
+                attempted_url: attemptedUrl,
+                api_base: API_BASE_URL
+              })
               e.currentTarget.src = '/placeholder.png'
             }}
           />
@@ -177,12 +193,28 @@ export default function BannerDisplay({
           whileHover={{ scale: 1.005 }}
         >
           <img
-            src={banner.image_url ? (banner.image_url.startsWith('http') ? banner.image_url : `${API_BASE_URL}${banner.image_url}`) : '/placeholder.png'}
+            src={(() => {
+              if (!banner.image_url) return '/placeholder.png'
+              if (banner.image_url.startsWith('http')) return banner.image_url
+              // Se começa com /api/images, usar API_BASE_URL
+              if (banner.image_url.startsWith('/api/images')) {
+                const fullUrl = `${API_BASE_URL}${banner.image_url}`
+                console.log(`[BANNER_DISPLAY] Construindo URL completa para banner ${banner.id}:`, fullUrl)
+                return fullUrl
+              }
+              // Caso contrário, assumir que é relativo
+              return `${API_BASE_URL}${banner.image_url}`
+            })()}
             alt={banner.title}
             className="w-full h-full object-cover"
             loading="lazy"
             onError={(e) => {
-              console.error(`[BANNER_DISPLAY] Erro ao carregar imagem do banner ${banner.id}:`, banner.image_url)
+              const attemptedUrl = e.currentTarget.src
+              console.error(`[BANNER_DISPLAY] Erro ao carregar imagem do banner ${banner.id}:`, {
+                original_url: banner.image_url,
+                attempted_url: attemptedUrl,
+                api_base: API_BASE_URL
+              })
               e.currentTarget.src = '/placeholder.png'
             }}
           />

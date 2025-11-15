@@ -109,7 +109,8 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
 
         // Image serving (R2 proxy)
         if (path.startsWith('/api/images')) {
-          return await handleImageRequest(request, env);
+          const { handleImageRequest } = await import('./images');
+          return handleCORS(await handleImageRequest(request, env), env, request);
         }
 
         // Chat routes

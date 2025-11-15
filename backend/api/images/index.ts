@@ -11,16 +11,21 @@ export async function handleImageRequest(request: Request, env: Env): Promise<Re
     // Extract image key from path: /api/images/products/123-abc.jpg
     const imageKeyMatch = path.match(/^\/api\/images\/(.+)$/);
     if (!imageKeyMatch) {
+      console.error('[IMAGE_API] Invalid image path:', path);
       return errorResponse('Invalid image path', 400);
     }
     
-    const imageKey = imageKeyMatch[1];
+    // Decode URL-encoded characters (handles special characters like "Pão")
+    const imageKey = decodeURIComponent(imageKeyMatch[1]);
+    console.log(`[IMAGE_API] Buscando imagem no R2: ${imageKey}`);
+    
     const r2 = getR2Bucket(env);
     
     // Get image from R2
     const object = await r2.get(imageKey);
     
     if (!object) {
+      console.error(`[IMAGE_API] Imagem não encontrada no R2: ${imageKey}`);
       return errorResponse('Image not found', 404);
     }
     
@@ -28,11 +33,14 @@ export async function handleImageRequest(request: Request, env: Env): Promise<Re
     const contentType = object.httpMetadata?.contentType || 'image/jpeg';
     const cacheControl = object.httpMetadata?.cacheControl || 'public, max-age=31536000';
     
+    console.log(`[IMAGE_API] Imagem encontrada: ${imageKey}, tipo: ${contentType}`);
+    
     // Convert R2 object body to Response
     // object.body is a ReadableStream, which is compatible with Response
     const body = object.body as ReadableStream<Uint8Array> | null;
     
     if (!body) {
+      console.error(`[IMAGE_API] Corpo da imagem não disponível: ${imageKey}`);
       return errorResponse('Image body not available', 500);
     }
     
@@ -44,8 +52,8 @@ export async function handleImageRequest(request: Request, env: Env): Promise<Re
         'Access-Control-Allow-Origin': '*',
       },
     });
-  } catch (error) {
-    console.error('Error serving image:', error);
+  } catch (error: any) {
+    console.error('[IMAGE_API] Erro ao servir imagem:', error?.message || error);
     return errorResponse('Failed to serve image', 500);
   }
 }
