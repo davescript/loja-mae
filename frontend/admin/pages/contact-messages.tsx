@@ -329,9 +329,9 @@ export default function AdminContactMessagesPage() {
                     <div className="flex items-center gap-2 mb-1">
                       <p className="font-semibold text-gray-900">{selectedMessage.name}</p>
                       {selectedMessage.email_sent ? (
-                        <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" title="Email enviado" />
+                        <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
                       ) : (
-                        <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" title="Email não enviado" />
+                        <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
                       )}
                     </div>
                     <a
