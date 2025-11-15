@@ -281,7 +281,7 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
 
     // Criar Payment Intent no Stripe
     // Nota: Para EUR, o valor mínimo é 0.50 EUR (50 centavos)
-    // Para métodos como Klarna, Bancontact, etc., pode haver requisitos adicionais
+    // Habilitar múltiplos métodos de pagamento: Card, MB Way, PayPal, Apple Pay
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalCents,
       currency: 'eur',
@@ -290,18 +290,30 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
         order_number: orderNumber,
         customer_id: customerId?.toString() || 'guest',
       },
-      // Usar apenas card para evitar problemas com métodos que requerem configuração adicional
-      payment_method_types: ['card'],
-      // Manter automatic_payment_methods desabilitado para evitar métodos não configurados
-      // automatic_payment_methods: {
-      //   enabled: true,
-      // },
+      // Habilitar múltiplos métodos de pagamento
+      // MB Way é suportado através do método 'link' quando o país é PT
+      payment_method_types: ['card', 'paypal', 'link'],
+      // Habilitar métodos automáticos incluindo Apple Pay e Google Pay
+      automatic_payment_methods: {
+        enabled: true,
+        allow_redirects: 'always',
+      },
       description: `Pedido ${orderNumber} - Loja Mãe`,
       capture_method: 'automatic',
-      // Adicionar informações de confirmação
       confirmation_method: 'automatic',
-      // IMPORTANTE: Não definir shipping aqui - deixar o PaymentElement coletar
-      // O PaymentElement vai coletar o endereço automaticamente quando configurado
+      // Adicionar shipping address para métodos que requerem
+      shipping: shippingAddressPayload ? {
+        name: `${shippingAddressPayload.first_name} ${shippingAddressPayload.last_name}`,
+        address: {
+          line1: shippingAddressPayload.address_line1,
+          line2: shippingAddressPayload.address_line2 || undefined,
+          city: shippingAddressPayload.city,
+          state: shippingAddressPayload.state || undefined,
+          postal_code: shippingAddressPayload.postal_code,
+          country: shippingAddressPayload.country || 'PT',
+        },
+        phone: shippingAddressPayload.phone || undefined,
+      } : undefined,
     });
 
     if (!paymentIntent.client_secret) {
