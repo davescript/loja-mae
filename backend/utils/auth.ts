@@ -104,7 +104,8 @@ export async function requireAuth(
     // Admin can use either Authorization header or cookie
     token = getTokenFromHeader(authHeader) || getTokenFromCookie(cookieHeader, 'admin_token');
   } else {
-    token = getTokenFromHeader(authHeader) || getTokenFromCookie(cookieHeader, 'customer_token');
+    // Customer uses session_access cookie (set by login) or Authorization header
+    token = getTokenFromHeader(authHeader) || getTokenFromCookie(cookieHeader, 'session_access');
   }
 
   // Log para debug

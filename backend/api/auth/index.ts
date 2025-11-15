@@ -385,10 +385,19 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
         const cookies = cookieHeader.split(';').map(c => c.trim());
         for (const cookie of cookies) {
           const [key, value] = cookie.split('=');
+          // Verificar session_access (cliente) ou admin_token (admin)
           if (key === 'session_access' || key === 'admin_token') {
             token = decodeURIComponent(value);
             break;
           }
+        }
+      }
+      
+      // Se não encontrou token no cookie, tentar Authorization header
+      if (!token) {
+        const authHeader = request.headers.get('Authorization');
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          token = authHeader.substring(7);
         }
       }
 

@@ -44,27 +44,23 @@ export default function CustomerAddressesPage() {
   // Create/Update address mutation
   const saveAddressMutation = useMutation({
     mutationFn: async (data: typeof formData & { id?: number }) => {
-      // Verificar se há token antes de fazer a requisição
-      const token = localStorage.getItem('customer_token') || localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Você precisa estar autenticado para salvar endereços. Por favor, faça login novamente.');
-      }
-
-      console.log('Salvando endereço com token:', token.substring(0, 20) + '...');
+      console.log('[ADDRESSES] Salvando endereço...');
 
       const url = editingAddress 
         ? `/api/customers/addresses/${editingAddress.id}`
         : '/api/customers/addresses';
       
       try {
+        // Usar credentials: 'include' para enviar cookies HttpOnly
         const response = await apiRequest(url, {
           method: editingAddress ? 'PUT' : 'POST',
           body: JSON.stringify(data),
+          credentials: 'include', // Importante: enviar cookies
         });
-        console.log('Endereço salvo com sucesso:', response);
+        console.log('[ADDRESSES] Endereço salvo com sucesso:', response);
         return response;
       } catch (error: any) {
-        console.error('Erro na requisição de salvar endereço:', error);
+        console.error('[ADDRESSES] Erro na requisição de salvar endereço:', error);
         throw error;
       }
     },
