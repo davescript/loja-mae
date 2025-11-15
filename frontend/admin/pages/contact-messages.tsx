@@ -299,144 +299,149 @@ export default function AdminContactMessagesPage() {
 
       {/* Message Details Dialog */}
       <Dialog open={!!selectedMessage} onOpenChange={() => setSelectedMessage(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Detalhes da Mensagem</DialogTitle>
-            <DialogDescription>
-              Mensagem recebida em{' '}
-              {selectedMessage &&
-                format(new Date(selectedMessage.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-            </DialogDescription>
-          </DialogHeader>
-
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0">
           {selectedMessage && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Nome</label>
-                  <p className="text-base font-medium">{selectedMessage.name}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Email</label>
-                  <p className="text-base">
-                    <a href={`mailto:${selectedMessage.email}`} className="text-primary hover:underline">
+            <>
+              {/* Header - Estilo Outlook */}
+              <div className="px-6 py-4 border-b border-gray-200 bg-white">
+                <DialogHeader className="mb-0">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <DialogTitle className="text-xl font-semibold mb-1">
+                        {selectedMessage.subject}
+                      </DialogTitle>
+                      <DialogDescription className="text-sm text-gray-600 mt-1">
+                        {format(new Date(selectedMessage.created_at), "EEEE, dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
+                      </DialogDescription>
+                    </div>
+                    <div className="ml-4">{getStatusBadge(selectedMessage.status)}</div>
+                  </div>
+                </DialogHeader>
+              </div>
+
+              {/* Sender Info - Estilo Outlook */}
+              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white font-semibold text-lg flex-shrink-0">
+                    {selectedMessage.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="font-semibold text-gray-900">{selectedMessage.name}</p>
+                      {selectedMessage.email_sent ? (
+                        <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" title="Email enviado" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" title="Email não enviado" />
+                      )}
+                    </div>
+                    <a
+                      href={`mailto:${selectedMessage.email}`}
+                      className="text-sm text-blue-600 hover:text-blue-800 hover:underline break-all"
+                    >
                       {selectedMessage.email}
                     </a>
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Assunto</label>
-                <p className="text-base font-medium">{selectedMessage.subject}</p>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Mensagem</label>
-                <div className="mt-2 p-4 bg-gray-50 rounded-lg">
-                  <p className="text-base whitespace-pre-wrap">{selectedMessage.message}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Status</label>
-                  <div className="mt-1">{getStatusBadge(selectedMessage.status)}</div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Email Enviado</label>
-                  <div className="mt-1 flex items-center gap-2">
-                    {selectedMessage.email_sent ? (
-                      <>
-                        <CheckCircle2 className="w-4 h-4 text-green-600" />
-                        <span className="text-sm text-green-600">Sim</span>
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="w-4 h-4 text-red-600" />
-                        <span className="text-sm text-red-600">Não</span>
-                      </>
+                    {selectedMessage.ip_address && (
+                      <p className="text-xs text-gray-500 mt-1 font-mono">
+                        IP: {selectedMessage.ip_address}
+                      </p>
                     )}
                   </div>
                 </div>
               </div>
 
+              {/* Message Content - Estilo Outlook */}
+              <div className="flex-1 overflow-y-auto px-6 py-6 bg-white">
+                <div className="prose prose-sm max-w-none">
+                  <div className="whitespace-pre-wrap text-gray-900 leading-relaxed font-normal text-[15px]">
+                    {selectedMessage.message}
+                  </div>
+                </div>
+              </div>
+
+              {/* Error Banner */}
               {selectedMessage.email_error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-800">
-                    <strong>Erro no envio:</strong> {selectedMessage.email_error}
-                  </p>
+                <div className="px-6 py-3 bg-red-50 border-t border-red-200">
+                  <div className="flex items-start gap-2">
+                    <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-red-900">Erro no envio do email</p>
+                      <p className="text-xs text-red-700 mt-0.5">{selectedMessage.email_error}</p>
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {selectedMessage.ip_address && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">IP Address</label>
-                  <p className="text-sm font-mono">{selectedMessage.ip_address}</p>
+              {/* Actions Footer - Estilo Outlook */}
+              <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (selectedMessage.status !== 'read') {
+                        updateStatusMutation.mutate({ id: selectedMessage.id, status: 'read' });
+                        setSelectedMessage({ ...selectedMessage, status: 'read' });
+                      }
+                    }}
+                    disabled={selectedMessage.status === 'read'}
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Marcar como Lida
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      updateStatusMutation.mutate({ id: selectedMessage.id, status: 'replied' });
+                      setSelectedMessage({ ...selectedMessage, status: 'replied' });
+                    }}
+                    disabled={selectedMessage.status === 'replied'}
+                  >
+                    <Reply className="w-4 h-4 mr-2" />
+                    Marcar como Respondida
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      updateStatusMutation.mutate({ id: selectedMessage.id, status: 'archived' });
+                      setSelectedMessage({ ...selectedMessage, status: 'archived' });
+                    }}
+                    disabled={selectedMessage.status === 'archived'}
+                  >
+                    <Archive className="w-4 h-4 mr-2" />
+                    Arquivar
+                  </Button>
                 </div>
-              )}
-
-              <div className="flex gap-2 pt-4 border-t">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    if (selectedMessage.status !== 'read') {
-                      updateStatusMutation.mutate({ id: selectedMessage.id, status: 'read' });
-                      setSelectedMessage({ ...selectedMessage, status: 'read' });
-                    }
-                  }}
-                  disabled={selectedMessage.status === 'read'}
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  Marcar como Lida
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    updateStatusMutation.mutate({ id: selectedMessage.id, status: 'replied' });
-                    setSelectedMessage({ ...selectedMessage, status: 'replied' });
-                  }}
-                  disabled={selectedMessage.status === 'replied'}
-                >
-                  <Reply className="w-4 h-4 mr-2" />
-                  Marcar como Respondida
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    updateStatusMutation.mutate({ id: selectedMessage.id, status: 'archived' });
-                    setSelectedMessage({ ...selectedMessage, status: 'archived' });
-                  }}
-                  disabled={selectedMessage.status === 'archived'}
-                >
-                  <Archive className="w-4 h-4 mr-2" />
-                  Arquivar
-                </Button>
-                {!selectedMessage.email_sent && (
+                <div className="flex gap-2">
+                  {!selectedMessage.email_sent && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => resendEmailMutation.mutate(selectedMessage.id)}
+                      disabled={resendEmailMutation.isPending}
+                    >
+                      {resendEmailMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                      )}
+                      Reenviar Email
+                    </Button>
+                  )}
                   <Button
                     variant="default"
-                    onClick={() => resendEmailMutation.mutate(selectedMessage.id)}
-                    disabled={resendEmailMutation.isPending}
+                    size="sm"
+                    onClick={() => {
+                      window.location.href = `mailto:${selectedMessage.email}?subject=Re: ${encodeURIComponent(selectedMessage.subject)}&body=${encodeURIComponent(`\n\n---\nMensagem original:\n${selectedMessage.message}`)}`;
+                    }}
                   >
-                    {resendEmailMutation.isPending ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                    )}
-                    Reenviar Email
+                    <Mail className="w-4 h-4 mr-2" />
+                    Responder
                   </Button>
-                )}
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    window.location.href = `mailto:${selectedMessage.email}?subject=Re: ${selectedMessage.subject}`;
-                  }}
-                >
-                  <Mail className="w-4 h-4 mr-2" />
-                  Responder
-                </Button>
+                </div>
               </div>
-            </div>
+            </>
           )}
         </DialogContent>
       </Dialog>
