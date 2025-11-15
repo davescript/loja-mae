@@ -37,18 +37,91 @@ export default function AdminBannersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const { toast } = useToast()
+  const [formData, setFormData] = useState({
+    title: '',
+    link_url: '',
+    position: 'home_hero' as Banner['position'],
+    order: 1,
+    is_active: true,
+    start_date: '',
+    end_date: '',
+  })
+  const { toast} = useToast()
   const queryClient = useQueryClient()
 
-  // Mock data - substituir por chamada real à API
+  // Save banner mutation
+  const saveMutation = useMutation({
+    mutationFn: async (data: FormData) => {
+      const { apiFormData } = await import("../../utils/api")
+      const endpoint = editingBanner ? `/api/banners/${editingBanner.id}` : "/api/banners"
+      return apiFormData<Banner>(endpoint, data, {
+        method: editingBanner ? "PUT" : "POST",
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "banners"] })
+      toast({
+        title: "Sucesso",
+        description: `Banner ${editingBanner ? "atualizado" : "criado"} com sucesso!`,
+      })
+      setIsModalOpen(false)
+      setEditingBanner(null)
+      setImagePreview(null)
+      setFormData({
+        title: '',
+        link_url: '',
+        position: 'home_hero',
+        order: 1,
+        is_active: true,
+        start_date: '',
+        end_date: '',
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao salvar banner",
+        variant: "destructive",
+      })
+    },
+  })
+
+  // Delete banner mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const { apiRequest } = await import("../../utils/api")
+      return apiRequest(`/api/banners/${id}`, { method: "DELETE" })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "banners"] })
+      toast({
+        title: "Sucesso",
+        description: "Banner deletado com sucesso!",
+      })
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao deletar banner",
+        variant: "destructive",
+      })
+    },
+  })
+
+  // Fetch banners from API
   const { data: bannersData, isLoading } = useQuery({
     queryKey: ["admin", "banners", page, search],
     queryFn: async () => {
-      return {
-        items: [] as Banner[],
-        total: 0,
-        totalPages: 0,
-      }
+      const params = new URLSearchParams({
+        page: page.toString(),
+        pageSize: "20",
+        ...(search && { search }),
+      })
+      const { apiRequest } = await import("../../utils/api")
+      const response = await apiRequest<{ items: Banner[]; total: number; totalPages: number }>(
+        `/api/banners?${params.toString()}`
+      )
+      return response.data || { items: [], total: 0, totalPages: 0 }
     },
   })
 
@@ -182,6 +255,50 @@ export default function AdminBannersPage() {
     }
   }
 
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    
+    const form = e.currentTarget
+    const formDataObj = new FormData(form)
+    
+    // Adicionar campos ao FormData
+    formDataObj.append('title', (form.elements.namedItem('title') as HTMLInputElement).value)
+    formDataObj.append('link_url', (form.elements.namedItem('link_url') as HTMLInputElement).value)
+    formDataObj.append('position', (form.elements.namedItem('position') as HTMLInputElement).value || 'home_hero')
+    formDataObj.append('order', (form.elements.namedItem('order') as HTMLInputElement).value || '1')
+    formDataObj.append('is_active', (form.elements.namedItem('status') as HTMLInputElement).value === 'active' ? 'true' : 'false')
+    
+    const startDate = (form.elements.namedItem('start_date') as HTMLInputElement).value
+    const endDate = (form.elements.namedItem('end_date') as HTMLInputElement).value
+    
+    if (startDate) formDataObj.append('start_date', new Date(startDate).toISOString())
+    if (endDate) formDataObj.append('end_date', new Date(endDate).toISOString())
+    
+    // Adicionar imagem se houver
+    const imageInput = form.elements.namedItem('image') as HTMLInputElement
+    if (imageInput?.files && imageInput.files[0]) {
+      formDataObj.append('image', imageInput.files[0])
+    }
+    
+    saveMutation.mutate(formDataObj)
+  }
+
+  // Preencher formulário ao editar
+  const handleEdit = (banner: Banner) => {
+    setEditingBanner(banner)
+    setImagePreview(banner.image_url || null)
+    setFormData({
+      title: banner.title,
+      link_url: banner.link_url || '',
+      position: banner.position,
+      order: banner.order,
+      is_active: banner.is_active,
+      start_date: banner.start_date || '',
+      end_date: banner.end_date || '',
+    })
+    setIsModalOpen(true)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -269,16 +386,19 @@ export default function AdminBannersPage() {
               <DropdownMenu.Content className="bg-white rounded-md shadow-lg border p-1 min-w-[150px]">
                 <DropdownMenu.Item
                   className="px-3 py-2 text-sm hover:bg-muted rounded-sm cursor-pointer flex items-center gap-2"
-                  onClick={() => {
-                    setEditingBanner(banner)
-                    setImagePreview(banner.image_url || null)
-                    setIsModalOpen(true)
-                  }}
+                  onClick={() => handleEdit(banner)}
                 >
                   <Edit className="w-4 h-4" />
                   Editar
                 </DropdownMenu.Item>
-                <DropdownMenu.Item className="px-3 py-2 text-sm hover:bg-muted rounded-sm cursor-pointer flex items-center gap-2 text-red-600">
+                <DropdownMenu.Item 
+                  className="px-3 py-2 text-sm hover:bg-muted rounded-sm cursor-pointer flex items-center gap-2 text-red-600"
+                  onClick={() => {
+                    if (confirm(`Tem certeza que deseja deletar o banner "${banner.title}"?`)) {
+                      deleteMutation.mutate(banner.id)
+                    }
+                  }}
+                >
                   <Trash2 className="w-4 h-4" />
                   Deletar
                 </DropdownMenu.Item>
@@ -289,7 +409,22 @@ export default function AdminBannersPage() {
       />
 
       {/* Banner Form Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <Dialog open={isModalOpen} onOpenChange={(open) => {
+        setIsModalOpen(open)
+        if (!open) {
+          setEditingBanner(null)
+          setImagePreview(null)
+          setFormData({
+            title: '',
+            link_url: '',
+            position: 'home_hero',
+            order: 1,
+            is_active: true,
+            start_date: '',
+            end_date: '',
+          })
+        }
+      }}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingBanner ? "Editar Banner" : "Novo Banner"}</DialogTitle>
@@ -298,104 +433,138 @@ export default function AdminBannersPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="banner-title">Título *</Label>
-              <Input id="banner-title" placeholder="Ex: Promoção de Verão" />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="banner-position">Posição</Label>
-              <Select defaultValue="home_hero">
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="home_hero">Hero (Home)</SelectItem>
-                  <SelectItem value="home_top">Topo (Home)</SelectItem>
-                  <SelectItem value="home_bottom">Rodapé (Home)</SelectItem>
-                  <SelectItem value="category">Página de Categoria</SelectItem>
-                  <SelectItem value="product">Página de Produto</SelectItem>
-                  <SelectItem value="sidebar">Sidebar</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="banner-image">Imagem do Banner</Label>
-              <div className="space-y-4">
-                {imagePreview && (
-                  <div className="relative">
-                    <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover rounded-lg border" />
-                    <button
-                      onClick={() => setImagePreview(null)}
-                      className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-                <div className="flex items-center gap-4">
-                  <Input
-                    id="banner-image"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                  <Label
-                    htmlFor="banner-image"
-                    className="flex items-center gap-2 px-4 py-2 border rounded-md cursor-pointer hover:bg-muted"
-                  >
-                    <Upload className="w-4 h-4" />
-                    {imagePreview ? "Alterar Imagem" : "Upload de Imagem"}
-                  </Label>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="banner-link">Link (URL)</Label>
-              <Input id="banner-link" type="url" placeholder="https://exemplo.com/promocao" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="banner-order">Ordem</Label>
-                <Input id="banner-order" type="number" placeholder="1" defaultValue={1} />
+                <Label htmlFor="title">Título *</Label>
+                <Input 
+                  id="title" 
+                  name="title"
+                  placeholder="Ex: Promoção de Verão" 
+                  defaultValue={formData.title}
+                  required
+                />
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="banner-status">Status</Label>
-                <Select defaultValue="active">
+                <Label htmlFor="position">Posição</Label>
+                <Select name="position" defaultValue={formData.position}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Ativo</SelectItem>
-                    <SelectItem value="inactive">Inativo</SelectItem>
+                    <SelectItem value="home_hero">Hero (Home)</SelectItem>
+                    <SelectItem value="home_top">Topo (Home)</SelectItem>
+                    <SelectItem value="home_bottom">Rodapé (Home)</SelectItem>
+                    <SelectItem value="category">Página de Categoria</SelectItem>
+                    <SelectItem value="product">Página de Produto</SelectItem>
+                    <SelectItem value="sidebar">Sidebar</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="image">Imagem do Banner</Label>
+                <div className="space-y-4">
+                  {imagePreview && (
+                    <div className="relative">
+                      <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover rounded-lg border" />
+                      <button
+                        type="button"
+                        onClick={() => setImagePreview(null)}
+                        className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-4">
+                    <Input
+                      id="image"
+                      name="image"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    <Label
+                      htmlFor="image"
+                      className="flex items-center gap-2 px-4 py-2 border rounded-md cursor-pointer hover:bg-muted"
+                    >
+                      <Upload className="w-4 h-4" />
+                      {imagePreview ? "Alterar Imagem" : "Upload de Imagem"}
+                    </Label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="link_url">Link (URL)</Label>
+                <Input 
+                  id="link_url" 
+                  name="link_url"
+                  type="url" 
+                  placeholder="https://exemplo.com/promocao" 
+                  defaultValue={formData.link_url}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="order">Ordem</Label>
+                  <Input 
+                    id="order" 
+                    name="order"
+                    type="number" 
+                    placeholder="1" 
+                    defaultValue={formData.order}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select name="status" defaultValue={formData.is_active ? "active" : "inactive"}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Ativo</SelectItem>
+                      <SelectItem value="inactive">Inativo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="start_date">Data de Início</Label>
+                  <Input 
+                    id="start_date" 
+                    name="start_date"
+                    type="datetime-local" 
+                    defaultValue={formData.start_date}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="end_date">Data de Término</Label>
+                  <Input 
+                    id="end_date" 
+                    name="end_date"
+                    type="datetime-local" 
+                    defaultValue={formData.end_date}
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="banner-start-date">Data de Início</Label>
-                <Input id="banner-start-date" type="datetime-local" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="banner-end-date">Data de Término</Label>
-                <Input id="banner-end-date" type="datetime-local" />
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="mt-6">
-            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button>Salvar Banner</Button>
-          </DialogFooter>
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={saveMutation.isPending}>
+                {saveMutation.isPending ? "Salvando..." : "Salvar Banner"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

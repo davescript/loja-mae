@@ -90,6 +90,11 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
       return handleCORS(await handleMarkAbandoned(request, env), env, request);
     }
 
+    if (path.startsWith('/api/banners')) {
+      const { handleBannersRoutes } = await import('./banners');
+      return handleCORS(await handleBannersRoutes(request, env), env, request);
+    }
+
     if (path.startsWith('/api/auth')) {
       return handleCORS(await handleAuthRoutes(request, env), env, request);
     }
