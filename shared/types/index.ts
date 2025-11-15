@@ -80,6 +80,8 @@ export type Category = {
   parent_id: number | null;
   image_url: string | null;
   is_active: number;
+  meta_title: string | null;
+  meta_description: string | null;
   created_at: string;
   updated_at: string;
   children?: Category[];
@@ -210,9 +212,10 @@ export type Favorite = {
 export type AuthUser = {
   id: number;
   email: string;
-  name?: string;
+  name: string | null; // Changed to allow null
   type: 'customer' | 'admin';
   role?: 'super_admin' | 'admin' | 'editor';
+  is_active: number; // Added is_active
 };
 
 export type LoginRequest = {
