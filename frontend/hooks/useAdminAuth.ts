@@ -25,44 +25,49 @@ export function useAdminAuth() {
   const { data: admin, isLoading, error } = useQuery({
     queryKey: ['admin', 'me'],
     queryFn: async () => {
+      // Verificar se tem token antes de fazer requisição
+      const token = localStorage.getItem('admin_token');
+      if (!token) {
+        console.log('[ADMIN_AUTH] Sem token no localStorage, não autenticado');
+        return null;
+      }
+
       try {
+        console.log('[ADMIN_AUTH] Verificando autenticação...');
         const response = await apiRequest<{ user: AdminUser; type: 'admin' }>('/api/auth/me');
-        if (response.data?.type === 'admin') {
+        
+        if (response.data?.type === 'admin' && response.data?.user) {
+          console.log('[ADMIN_AUTH] Admin autenticado:', response.data.user.email);
           return response.data.user;
         }
-        throw new Error('Not an admin');
-      } catch (error: any) {
-        // Não limpar token automaticamente em caso de erro
-        // O token pode estar válido, mas houve um erro de rede ou temporário
-        // Só limpar token quando realmente necessário (token inválido/expirado)
-        // Isso evita que hard refresh termine a sessão
-        const errorMessage = error?.message || '';
-        const isAuthError = errorMessage.includes('Authentication') || errorMessage.includes('401');
         
-        // Só limpar se for realmente um erro de autenticação E o token não existir mais no servidor
-        // Não limpar em caso de erro de rede ou outros erros temporários
-        if (isAuthError && error?.response?.status === 401) {
-          // Verificar se o token ainda existe no localStorage antes de limpar
-          const token = localStorage.getItem('admin_token');
-          if (token) {
-            // Token existe mas foi rejeitado - pode ser expirado ou inválido
-            // Mas não limpar imediatamente - deixar o usuário tentar novamente
-            // Só limpar se for realmente necessário (ex: token malformado)
-          }
+        console.warn('[ADMIN_AUTH] Resposta não é de admin');
+        return null;
+      } catch (error: any) {
+        console.error('[ADMIN_AUTH] Erro ao verificar autenticação:', error);
+        
+        // Se erro 401, token inválido ou expirado - limpar
+        if (error?.message?.includes('401') || error?.message?.includes('Authentication')) {
+          console.log('[ADMIN_AUTH] Token inválido/expirado, limpando localStorage');
+          localStorage.removeItem('admin_token');
         }
-        // Silently fail if not authenticated - não limpar token
+        
         return null;
       }
     },
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    staleTime: 5 * 60 * 1000, // 5 minutes - manter cache por 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutes - manter no cache mesmo após unmount
+    refetchOnWindowFocus: false, // NÃO refetch no focus (evita re-autenticações desnecessárias)
+    refetchOnMount: true, // Refetch ao montar componente
+    enabled: typeof window !== 'undefined', // Só executar no browser
   });
 
   // Admin login mutation
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
+      console.log('[ADMIN_AUTH] Tentando fazer login com:', credentials.email);
+      
       const response = await apiRequest<{ admin: AdminUser; token?: string }>(
         '/api/auth/admin/login',
         {
@@ -71,20 +76,53 @@ export function useAdminAuth() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(credentials),
+          credentials: 'include', // Importante para cookies
         }
       );
+      
+      console.log('[ADMIN_AUTH] Resposta da API:', response);
       
       if (!response.success) {
         throw new Error(response.error || 'Login failed');
       }
       
+      if (!response.data) {
+        throw new Error('No data returned from login');
+      }
+      
       return response.data;
     },
     onSuccess: (data) => {
-      // Cookies HttpOnly são definidos pela API; não armazenar em localStorage
+      console.log('[ADMIN_AUTH] Login bem-sucedido! Data recebida:', data);
+      
+      // Salvar token no localStorage se fornecido pela API
+      if (data?.token) {
+        localStorage.setItem('admin_token', data.token);
+        console.log('[ADMIN_AUTH] ✅ Token salvo no localStorage:', data.token.substring(0, 20) + '...');
+      } else {
+        console.warn('[ADMIN_AUTH] ⚠️ Nenhum token retornado pela API');
+      }
+      
+      // Limpar tokens de customer para evitar conflitos
+      localStorage.removeItem('customer_token');
+      localStorage.removeItem('token');
+      console.log('[ADMIN_AUTH] Tokens de customer removidos para evitar conflitos');
+      
       // Invalidate and refetch admin data
       queryClient.invalidateQueries({ queryKey: ['admin', 'me'] });
-      navigate('/admin/dashboard');
+      queryClient.setQueryData(['admin', 'me'], data?.admin);
+      
+      toast({
+        title: "Login bem-sucedido!",
+        description: `Bem-vindo de volta, ${data?.admin?.email}`,
+      });
+      
+      console.log('[ADMIN_AUTH] Redirecionando para dashboard...');
+      
+      // Delay mínimo para garantir que o token foi salvo
+      setTimeout(() => {
+        navigate('/admin/dashboard');
+      }, 100);
     },
     onError: (error: Error) => {
       const { message } = handleError(error);
@@ -99,12 +137,24 @@ export function useAdminAuth() {
   // Admin logout mutation
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('/api/auth/logout', {
+      return apiRequest('/api/auth/admin/logout', {
         method: 'POST',
       });
     },
     onSuccess: () => {
+      console.log('[ADMIN_AUTH] Logout bem-sucedido, limpando dados');
       localStorage.removeItem('admin_token');
+      localStorage.removeItem('customer_token');
+      localStorage.removeItem('token');
+      queryClient.clear();
+      navigate('/admin/login');
+    },
+    onError: (error) => {
+      // Mesmo com erro, limpar dados locais
+      console.log('[ADMIN_AUTH] Logout (com erro), limpando dados localmente');
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('customer_token');
+      localStorage.removeItem('token');
       queryClient.clear();
       navigate('/admin/login');
     },
