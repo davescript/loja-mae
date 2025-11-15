@@ -36,17 +36,19 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
         last_name: validated.last_name || null,
       });
 
-      const token = signToken(
-        {
-          id: customer.id,
-          email: customer.email,
-          type: 'customer',
-        },
-        jwtSecret,
-        '90d' // Aumentar duração do token para 90 dias
-      );
+      const access = signToken({ id: customer.id, email: customer.email, type: 'customer' }, jwtSecret, '15m');
+      const refreshRaw = crypto.randomUUID() + '.' + crypto.randomUUID();
+      const { hashPassword: _hp } = await import('../../utils/auth');
+      const refreshHash = await _hp(refreshRaw);
+      await executeRun(db, 'INSERT INTO user_sessions (user_id, refresh_token_hash, user_agent, ip, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)', [
+        customer.id,
+        refreshHash,
+        request.headers.get('User-Agent') || '',
+        request.headers.get('CF-Connecting-IP') || '',
+        new Date().toISOString(),
+        new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+      ]);
 
-      // Build name from first_name and last_name
       const name = customer.first_name && customer.last_name
         ? `${customer.first_name} ${customer.last_name}`
         : customer.first_name || customer.last_name || customer.email.split('@')[0];
@@ -59,14 +61,16 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
             name,
             type: 'customer' as const,
           },
-          token,
         },
         'Registration successful'
       );
-
-      // Set HTTP-only cookie for customer (optional)
-      response.headers.set('Set-Cookie', `customer_token=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${90 * 24 * 60 * 60}`);
-
+      const domain = url.hostname;
+      response.headers.set('Set-Cookie', `session_access=${access}; Path=/; Domain=${domain}; HttpOnly; Secure; SameSite=Lax; Max-Age=${15 * 60}`);
+      response.headers.append('Set-Cookie', `session_refresh=${encodeURIComponent(refreshRaw)}; Path=/; Domain=${domain}; HttpOnly; Secure; SameSite=Lax; Max-Age=${60 * 24 * 60 * 60}`);
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      response.headers.set('Pragma', 'no-cache');
+      response.headers.set('Expires', '0');
+      response.headers.set('Vary', 'Authorization, Cookie');
       return response;
     }
 
@@ -270,6 +274,35 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
       response.headers.set('Expires', '0');
       response.headers.set('Vary', 'Authorization, Cookie');
       return response;
+    }
+
+    // Logout global: POST /api/auth/logout-all
+    if (method === 'POST' && path === '/api/auth/logout-all') {
+      const cookieHeader = request.headers.get('Cookie') || '';
+      const m = cookieHeader.match(/session_access=([^;]+)/);
+      if (!m) {
+        return errorResponse('Not authenticated', 401);
+      }
+      try {
+        const access = decodeURIComponent(m[1]);
+        const { verifyToken } = await import('../../utils/jwt');
+        const payload = verifyToken(access, jwtSecret);
+        if (payload.type !== 'customer') {
+          return errorResponse('Not authenticated', 401);
+        }
+        await executeRun(db, 'UPDATE user_sessions SET revoked_at = datetime("now") WHERE user_id = ?', [payload.id]);
+        const domain = url.hostname;
+        const response = successResponse(null, 'Logout all successful');
+        response.headers.set('Set-Cookie', `session_access=; Path=/; Domain=${domain}; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
+        response.headers.append('Set-Cookie', `session_refresh=; Path=/; Domain=${domain}; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
+        response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        response.headers.set('Pragma', 'no-cache');
+        response.headers.set('Expires', '0');
+        response.headers.set('Vary', 'Authorization, Cookie');
+        return response;
+      } catch {
+        return errorResponse('Not authenticated', 401);
+      }
     }
 
     // Refresh: POST /api/auth/refresh
