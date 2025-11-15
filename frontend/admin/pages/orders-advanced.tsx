@@ -70,6 +70,7 @@ export default function AdminOrdersPageAdvanced() {
   const [search, setSearch] = useState("")
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [notifiedOrderIds, setNotifiedOrderIds] = useState<Set<number>>(new Set())
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
@@ -125,18 +126,32 @@ export default function AdminOrdersPageAdvanced() {
   // Efeito para mostrar toasts quando houver atualizações
   useEffect(() => {
     if (orderUpdates && orderUpdates.orders && orderUpdates.orders.length > 0) {
-      // Mostrar toast para novos pedidos pagos
-      const paidOrders = orderUpdates.orders.filter((o: Order) => o.payment_status === 'paid')
-      paidOrders.forEach((order: Order) => {
-        toast({
-          title: 'Novo pedido pago!',
-          description: `Pedido #${order.order_number} foi pago`,
+      // Mostrar toast APENAS para novos pedidos que ainda não foram notificados
+      const paidOrders = orderUpdates.orders.filter((o: Order) => 
+        o.payment_status === 'paid' && !notifiedOrderIds.has(o.id)
+      )
+      
+      if (paidOrders.length > 0) {
+        paidOrders.forEach((order: Order) => {
+          toast({
+            title: 'Novo pedido pago!',
+            description: `Pedido #${order.order_number} foi pago`,
+            duration: 5000, // Auto-fechar após 5 segundos
+          })
         })
-      })
-      // Invalidar cache para atualizar a lista
-      queryClient.invalidateQueries({ queryKey: ["admin", "orders"] })
+        
+        // Marcar pedidos como notificados
+        setNotifiedOrderIds(prev => {
+          const newSet = new Set(prev)
+          paidOrders.forEach(order => newSet.add(order.id))
+          return newSet
+        })
+        
+        // Invalidar cache para atualizar a lista
+        queryClient.invalidateQueries({ queryKey: ["admin", "orders"] })
+      }
     }
-  }, [orderUpdates, toast, queryClient])
+  }, [orderUpdates]) // Remover toast e queryClient das dependências para evitar re-renders
 
   const syncPaymentMutation = useMutation({
     mutationFn: async ({ orderId, orderNumber, paymentIntentId }: { orderId?: number; orderNumber?: string; paymentIntentId?: string }) => {
