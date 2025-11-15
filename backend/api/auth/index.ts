@@ -124,15 +124,47 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
         },
         'Login successful'
       );
-      const domain = url.hostname;
-      const accessCookie = `session_access=${access}; Path=/; Domain=${domain}; HttpOnly; Secure; SameSite=Lax; Max-Age=${15 * 60}`;
-      const refreshCookie = `session_refresh=${encodeURIComponent(refreshRaw)}; Path=/; Domain=${domain}; HttpOnly; Secure; SameSite=Lax; Max-Age=${60 * 24 * 60 * 60}`;
+      
+      // Configurar cookies para funcionar cross-domain
+      // Se o domínio for leiasabores.pt, usar .leiasabores.pt para compartilhar entre subdomínios
+      // Se for workers.dev, não usar Domain (cookies funcionam apenas no mesmo domínio)
+      const requestHostname = url.hostname;
+      let cookieDomain = '';
+      let sameSite: 'Lax' | 'None' = 'Lax';
+      let secure = true;
+      
+      if (requestHostname.includes('leiasabores.pt')) {
+        // Para leiasabores.pt, usar .leiasabores.pt para compartilhar entre www e api
+        cookieDomain = 'Domain=.leiasabores.pt; ';
+        sameSite = 'Lax';
+      } else if (requestHostname.includes('workers.dev')) {
+        // Para workers.dev, não usar Domain (cookies só funcionam no mesmo domínio)
+        // Mas precisamos usar SameSite=None e Secure para cross-site
+        cookieDomain = '';
+        sameSite = 'None';
+        secure = true;
+      } else {
+        // Fallback: usar o domínio da requisição
+        cookieDomain = `Domain=${requestHostname}; `;
+      }
+      
+      const accessCookie = `session_access=${access}; Path=/; ${cookieDomain}HttpOnly; ${secure ? 'Secure; ' : ''}SameSite=${sameSite}; Max-Age=${15 * 60}`;
+      const refreshCookie = `session_refresh=${encodeURIComponent(refreshRaw)}; Path=/; ${cookieDomain}HttpOnly; ${secure ? 'Secure; ' : ''}SameSite=${sameSite}; Max-Age=${60 * 24 * 60 * 60}`;
+      
       response.headers.set('Set-Cookie', accessCookie);
       response.headers.append('Set-Cookie', refreshCookie);
       response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
       response.headers.set('Pragma', 'no-cache');
       response.headers.set('Expires', '0');
       response.headers.set('Vary', 'Authorization, Cookie');
+      
+      console.log('[AUTH] Login cookies configurados:', {
+        domain: cookieDomain || 'sem domain',
+        sameSite,
+        secure,
+        hostname: requestHostname,
+      });
+      
       return response;
     }
 

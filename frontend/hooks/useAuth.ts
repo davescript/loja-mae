@@ -15,42 +15,40 @@ export function useAuth() {
     queryKey: ['auth', 'me'],
     queryFn: async () => {
       try {
-        const token = localStorage.getItem('customer_token') || localStorage.getItem('token');
-        console.log('[AUTH] Verificando autenticação, token:', token ? token.substring(0, 20) + '...' : 'NENHUM');
+        console.log('[AUTH] Verificando autenticação via cookies...');
         
-        const response = await apiRequest<{ user: AuthUser; type: string }>('/api/auth/me');
+        // Usar credentials: 'include' para enviar cookies
+        const response = await apiRequest<{ user: AuthUser; type: string }>('/api/auth/me', {
+          credentials: 'include',
+        });
+        
         if (response.success && response.data) {
           console.log('[AUTH] Autenticação bem-sucedida:', response.data.user.email);
           setUser(response.data.user);
           return response.data;
         }
-        // NÃO limpar tokens automaticamente - apenas quando o usuário clicar em "Sair"
-        // Preservar sessão mesmo se a resposta não for sucesso
-        console.warn('[AUTH] Resposta não foi sucesso, mas preservando token');
+        
+        console.warn('[AUTH] Resposta não foi sucesso');
         setUser(null);
         return null;
       } catch (error: any) {
-        // NUNCA limpar tokens automaticamente - apenas quando o usuário clicar em "Sair"
-        // Isso preserva a sessão mesmo em caso de erro de rede ou hard refresh
         const errorMessage = error?.message || '';
         console.error('[AUTH] Erro ao verificar autenticação:', errorMessage);
         
-        if (errorMessage.includes('Authentication') || errorMessage.includes('401') || errorMessage.includes('Invalid or expired token')) {
-          // Token pode estar inválido, mas não limpar automaticamente
-          // Deixar o usuário decidir quando fazer logout
-          console.warn('[AUTH] Token pode estar inválido, mas preservando para o usuário decidir');
-        } else {
-          // Não limpar tokens em caso de erro de rede ou outros erros temporários
-          console.warn('[AUTH] Erro temporário, preservando token');
+        // Se for erro 401, usuário não está autenticado
+        if (errorMessage.includes('Authentication') || errorMessage.includes('401') || errorMessage.includes('Not authenticated')) {
+          console.log('[AUTH] Usuário não autenticado');
+          setUser(null);
         }
-        // Não limpar tokens - preservar sessão
+        
         return null;
       }
     },
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: true, // Refetch when window gains focus
-    enabled: typeof window !== 'undefined' && !!hasToken, // Only run if token exists
+    staleTime: 0, // Sempre refetch para verificar cookies atualizados
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    enabled: typeof window !== 'undefined', // Sempre habilitado para verificar cookies
   });
 
   const loginMutation = useMutation({
@@ -58,16 +56,22 @@ export function useAuth() {
       const response = await apiRequest<{ customer: AuthUser }>('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify(credentials),
+        credentials: 'include', // Importante: enviar cookies
       });
       if (response.success && response.data) {
         // Cookies HttpOnly serão definidos pela API; não armazenar tokens
+        // Aguardar um pouco para garantir que cookies foram definidos
+        await new Promise(resolve => setTimeout(resolve, 100));
         setUser(response.data.customer as any);
         return response.data as any;
       }
       throw new Error(response.error || 'Login failed');
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+    onSuccess: async () => {
+      // Invalidar e refetch imediatamente após login
+      await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      // Forçar refetch para verificar autenticação via cookies
+      await queryClient.refetchQueries({ queryKey: ['auth', 'me'] });
       try {
         // Sincronizar favoritos locais com servidor após login
         const { useFavoritesStore } = require('../store/favoritesStore');
