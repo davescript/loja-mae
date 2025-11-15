@@ -1,182 +1,281 @@
-# 🚀 Guia de Deploy - Loja Mãe
+# 🚀 Deploy Guide - Loja Mãe
 
-## ✅ Configuração Concluída
+## Deploy Completo em 10 Minutos
 
-### Secrets Configurados no Cloudflare:
-- ✅ JWT_SECRET
-- ✅ STRIPE_SECRET_KEY  
-- ✅ STRIPE_WEBHOOK_SECRET
-- ✅ ALLOWED_ORIGINS
-
-### Banco de Dados:
-- ✅ D1 Database criado: `loja-mae-db`
-- ✅ Migrations aplicadas (remote)
-- ✅ Database ID: `9815d658-ce3b-4b8a-be98-90563c950182`
-
-### R2 Storage:
-- ⚠️ Verificar se o bucket `loja-mae-images` foi criado
-
-## 📋 Próximos Passos para Deploy
-
-### 1. Verificar/Criar Bucket R2
+### 1️⃣ Pré-requisitos
 
 ```bash
-# Listar buckets existentes
-npx wrangler r2 bucket list
+# Node.js 18+
+node --version
 
-# Se não existir, criar
-npx wrangler r2 bucket create loja-mae-images
+# npm ou pnpm
+npm --version
+
+# Wrangler CLI (Cloudflare)
+npm install -g wrangler
+
+# Login Cloudflare
+wrangler login
 ```
 
-### 2. Atualizar ALLOWED_ORIGINS para Produção
+---
 
-Quando você tiver o domínio do frontend em produção, atualize:
+### 2️⃣ Backend (Cloudflare Workers)
+
+#### Criar D1 Database
 
 ```bash
-# Exemplo com domínio real
-echo "https://loja-mae.com,https://www.loja-mae.com" | npx wrangler secret put ALLOWED_ORIGINS --name loja-mae-api
+# Criar banco
+wrangler d1 create loja-mae-db
+
+# Copiar o ID gerado e atualizar wrangler.toml
 ```
 
-### 3. Configurar Domínio R2 (Opcional)
-
-Para usar URLs públicas do R2:
-
-1. Acesse o dashboard do Cloudflare
-2. Vá em R2 → loja-mae-images → Settings
-3. Configure um domínio customizado público
-4. Atualize `backend/utils/r2.ts` com o domínio correto
-
-### 4. Deploy do Backend
+#### Aplicar Migrations
 
 ```bash
-# Build e deploy
-npm run deploy:backend
-
-# Ou apenas deploy
-npx wrangler deploy
+# Executar todas as migrations
+wrangler d1 execute loja-mae-db --remote --file=migrations/0001_init.sql
+wrangler d1 execute loja-mae-db --remote --file=migrations/0002_favorites.sql
+wrangler d1 execute loja-mae-db --remote --file=migrations/0003_banners.sql
+wrangler d1 execute loja-mae-db --remote --file=migrations/0004_analytics.sql
+wrangler d1 execute loja-mae-db --remote --file=migrations/0005_notifications.sql
+wrangler d1 execute loja-mae-db --remote --file=migrations/0006_add_shipping_address_id.sql
+wrangler d1 execute loja-mae-db --remote --file=migrations/0007_order_tracking.sql
+wrangler d1 execute loja-mae-db --remote --file=migrations/0008_product_reviews.sql
+wrangler d1 execute loja-mae-db --remote --file=migrations/0009_customer_segments.sql
+wrangler d1 execute loja-mae-db --remote --file=migrations/0010_inventory_alerts.sql
 ```
 
-### 5. Deploy do Frontend
-
-O frontend pode ser deployado em:
-- **Vercel** (recomendado)
-- **Netlify**
-- **Cloudflare Pages**
-- **Outro serviço de hospedagem estática**
-
-#### Exemplo com Vercel:
+#### Criar R2 Bucket (Imagens)
 
 ```bash
-# Instalar Vercel CLI
-npm i -g vercel
+# Criar bucket para imagens
+wrangler r2 bucket create loja-mae-images
 
-# Deploy
-vercel --prod
+# Atualizar wrangler.toml com o bucket
 ```
 
-#### Configurar Variáveis de Ambiente no Frontend:
-
-```env
-VITE_API_BASE_URL=https://loja-mae-api.workers.dev
-# ou seu domínio customizado
-VITE_STRIPE_PUBLISHABLE_KEY=pk_live_51SKDYtLHRh8zOCQC9z7aWBjfLqzsTNws7mYBcyocHjRQudfuL398pnPAcNK1BaHt839nz399XDccL0wfsglJeSEY00dmBs2VkR
-```
-
-### 6. Configurar Webhook do Stripe
-
-1. Acesse o dashboard do Stripe
-2. Vá em Developers → Webhooks
-3. Adicione endpoint: `https://loja-mae-api.workers.dev/api/stripe/webhook`
-4. Selecione eventos:
-   - `payment_intent.succeeded`
-   - `payment_intent.payment_failed`
-   - `charge.refunded`
-5. Copie o webhook secret e atualize se necessário:
-   ```bash
-   echo "whsec_..." | npx wrangler secret put STRIPE_WEBHOOK_SECRET --name loja-mae-api
-   ```
-
-### 7. Criar Admin Inicial
-
-Execute o seed para criar um admin:
+#### Configurar Secrets
 
 ```bash
-npm run d1:seed
+# JWT Secret (gerar aleatório)
+wrangler secret put JWT_SECRET
+# Cole uma string aleatória forte
+
+# Stripe Keys
+wrangler secret put STRIPE_SECRET_KEY
+wrangler secret put STRIPE_WEBHOOK_SECRET
+
+# Email (opcional)
+wrangler secret put FROM_EMAIL
+wrangler secret put FROM_NAME
 ```
 
-Ou crie manualmente via SQL:
+#### Deploy Worker
 
-```sql
-INSERT INTO admins (email, password_hash, name, role, is_active)
+```bash
+cd backend
+npm run build
+wrangler deploy
+# Anote a URL gerada: https://loja-mae-api.SEU-USUARIO.workers.dev
+```
+
+---
+
+### 3️⃣ Frontend (Cloudflare Pages)
+
+#### Configurar Variáveis de Ambiente
+
+Crie `.env.production`:
+
+```bash
+VITE_API_BASE_URL=https://loja-mae-api.SEU-USUARIO.workers.dev
+VITE_STRIPE_PUBLISHABLE_KEY=pk_live_...
+```
+
+#### Build e Deploy
+
+```bash
+cd frontend
+npm run build
+
+# Deploy via Wrangler Pages
+npx wrangler pages deploy dist --project-name=loja-mae
+
+# OU via GitHub (recomendado)
+# 1. Push para GitHub
+# 2. Conectar repo no Cloudflare Pages dashboard
+# 3. Configurar build:
+#    - Build command: npm run build
+#    - Build output: dist
+#    - Environment variables: VITE_API_BASE_URL, etc
+```
+
+---
+
+### 4️⃣ Configurações Pós-Deploy
+
+#### CORS no Worker
+
+Atualize `backend/api/router.ts`:
+
+```typescript
+const ALLOWED_ORIGINS = [
+  'https://loja-mae.pages.dev',
+  'https://seu-dominio.com',
+];
+```
+
+#### Domínio Customizado
+
+**Cloudflare Pages:**
+1. Dashboard → Pages → loja-mae → Custom domains
+2. Adicionar `www.seu-dominio.com`
+3. Configurar DNS (CNAME)
+
+**Cloudflare Workers:**
+1. Dashboard → Workers → loja-mae-api → Settings → Triggers
+2. Adicionar route: `api.seu-dominio.com/*`
+3. Configurar DNS (CNAME ou A record)
+
+---
+
+### 5️⃣ Criar Admin Inicial
+
+```bash
+# Via Wrangler console
+wrangler d1 execute loja-mae-db --remote --command="
+INSERT INTO admins (email, password_hash, role, is_active)
 VALUES (
-  'admin@loja-mae.com',
-  '$2a$10$...', -- Hash bcrypt da senha
-  'Admin',
+  'admin@seu-dominio.com',
+  '\$2a\$10\$HASH_BCRYPT_AQUI',
   'super_admin',
   1
 );
+"
+
+# Gerar hash bcrypt em: https://bcrypt-generator.com/
+# Use 10 rounds
 ```
 
-### 8. Testar Produção
+---
 
-1. Acesse a URL do frontend em produção
-2. Teste criar uma conta
-3. Teste fazer login
-4. Teste criar um produto (admin)
-5. Teste checkout com Stripe (modo teste primeiro)
+### 6️⃣ Stripe Webhook
 
-## 🔧 Comandos Úteis
+1. Dashboard Stripe → Webhooks → Add endpoint
+2. URL: `https://loja-mae-api.SEU-USUARIO.workers.dev/api/stripe/webhook`
+3. Events: `payment_intent.succeeded`, `payment_intent.payment_failed`
+4. Copiar Signing Secret e atualizar:
 
-### Ver logs do Worker:
 ```bash
-npx wrangler tail
+wrangler secret put STRIPE_WEBHOOK_SECRET
 ```
 
-### Executar SQL no banco:
+---
+
+### 7️⃣ Monitoramento
+
+#### Logs em Tempo Real
+
 ```bash
-npx wrangler d1 execute loja-mae-db --remote --command="SELECT * FROM products;"
+# Worker logs
+wrangler tail
+
+# Pages logs
+npx wrangler pages deployment tail
 ```
 
-### Ver informações do Worker:
+#### Analytics
+
+- Cloudflare Dashboard → Workers → Analytics
+- Cloudflare Dashboard → Pages → Analytics
+
+---
+
+### 8️⃣ Backup e Restore
+
+#### Backup Database
+
 ```bash
-npx wrangler whoami
-npx wrangler deployments list
+# Export completo
+wrangler d1 export loja-mae-db --remote --output=backup-$(date +%Y%m%d).sql
 ```
 
-## ⚠️ Importante
+#### Restore
 
-1. **ALLOWED_ORIGINS**: Atualize com os domínios reais de produção
-2. **Stripe Keys**: Você está usando chaves LIVE (rk_live_ e pk_live_). Certifique-se que são as corretas
-3. **JWT_SECRET**: Mantenha seguro, não compartilhe
-4. **R2 Public URL**: Configure um domínio público para as imagens
-5. **Backup**: Configure backups regulares do banco D1
+```bash
+wrangler d1 execute loja-mae-db --remote --file=backup-20250115.sql
+```
 
-## 📝 Checklist de Deploy
+---
 
-- [ ] Bucket R2 criado
-- [ ] ALLOWED_ORIGINS atualizado com domínio de produção
-- [ ] Backend deployado
-- [ ] Frontend deployado
-- [ ] Variáveis de ambiente do frontend configuradas
-- [ ] Webhook Stripe configurado
-- [ ] Admin criado no banco
-- [ ] Testes realizados
-- [ ] Logs verificados
-- [ ] Backup configurado
+### 9️⃣ Troubleshooting
 
-## 🆘 Troubleshooting
+#### Worker não responde
+```bash
+# Verificar logs
+wrangler tail
 
-### Erro 401 ao acessar API
-- Verifique ALLOWED_ORIGINS
-- Verifique CORS no código
+# Redeployar
+wrangler deploy --force
+```
 
-### Erro ao fazer upload de imagem
-- Verifique se o bucket R2 existe
-- Verifique permissões do Worker no R2
-- Configure domínio público do R2
+#### CORS error
+- Verificar ALLOWED_ORIGINS no router.ts
+- Verificar se frontend está usando URL correta
 
-### Erro no webhook Stripe
-- Verifique se o endpoint está correto
-- Verifique se o secret está correto
-- Verifique logs: `npx wrangler tail`
+#### Database error
+```bash
+# Verificar conexão
+wrangler d1 execute loja-mae-db --remote --command="SELECT 1"
 
+# Listar tabelas
+wrangler d1 execute loja-mae-db --remote --command="SELECT name FROM sqlite_master WHERE type='table'"
+```
+
+#### Stripe webhook falha
+- Verificar Signing Secret
+- Verificar logs: `wrangler tail`
+- Testar via Stripe CLI: `stripe listen --forward-to localhost:8787/api/stripe/webhook`
+
+---
+
+### 🔟 Performance Tips
+
+#### Enable Cache
+
+```typescript
+// Em router.ts, adicionar headers:
+'Cache-Control': 'public, max-age=3600' // 1 hora
+```
+
+#### Optimize Images
+
+- Usar Cloudflare Images ou Image Resizing
+- Converter para WebP
+- Lazy loading
+
+#### Enable HTTP/3
+
+Cloudflare Dashboard → Speed → Optimization → HTTP/3: ON
+
+---
+
+## 🎉 Deploy Completo!
+
+Seu ecommerce está rodando em:
+- **Frontend**: https://loja-mae.pages.dev
+- **API**: https://loja-mae-api.SEU-USUARIO.workers.dev
+- **Admin**: https://loja-mae.pages.dev/admin
+
+### Próximos Passos
+
+1. Adicionar produtos via admin
+2. Configurar Stripe em produção
+3. Testar fluxo completo de compra
+4. Configurar domínio customizado
+5. Ativar analytics
+6. Monitorar logs
+
+**Sistema pronto para receber pedidos! 🚀**
