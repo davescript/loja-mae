@@ -50,7 +50,6 @@ export default function TermsPage() {
       icon: RotateCcw,
       title: '5. Direito de Devolução e Reembolso',
       content: [
-        'Tem direito a devolver produtos no prazo de 14 dias após a receção, sem necessidade de justificação.',
         'Os produtos devem ser devolvidos nas mesmas condições em que foram recebidos, com etiquetas e embalagens originais.',
         'Os custos de devolução são da responsabilidade do cliente, exceto em caso de produto defeituoso ou incorreto.',
         'O reembolso será processado no prazo de 14 dias após receção e verificação do produto devolvido.',
