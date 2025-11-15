@@ -265,6 +265,7 @@ export type BlogPost = {
   slug: string;
   content: string;
   excerpt: string | null;
+  cover_image_url?: string | null;
   status: 'draft' | 'published' | 'scheduled';
   published_at: string | null;
   created_at: string;
