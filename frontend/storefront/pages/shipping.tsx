@@ -24,7 +24,7 @@ export default function ShippingPage() {
       icon: Clock,
       price: '€14,90',
       time: 'No mesmo dia',
-      description: 'Disponível apenas para Lisboa e Porto. Pedidos até às 14h.',
+      description: 'Disponível apenas no Algarve. Pedidos até 13h.',
       features: ['Entrega no mesmo dia', 'Rastreamento em tempo real', 'Seguro completo', 'Notificações SMS'],
     },
   ];
