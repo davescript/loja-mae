@@ -76,6 +76,10 @@ export async function apiRequest<T = any>(
       } else if (isCustomerEndpoint) {
         // Customer self-service endpoints devem usar somente token do cliente
         token = customerToken;
+      } else if (endpoint.startsWith('/api/orders')) {
+        // Orders endpoints: use admin token when available (for admin panel)
+        // Use customer token only for customer self-service
+        token = adminToken || customerToken;
       } else {
         // Other endpoints (auth, products, etc)
         // Prefer customer token when available to avoid admin context em checkout
