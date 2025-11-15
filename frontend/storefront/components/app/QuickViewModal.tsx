@@ -212,7 +212,7 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
                   {/* Main Image */}
                   <div 
                     ref={imageContainerRef}
-                    className="relative aspect-square overflow-hidden rounded-xl bg-gray-100 flex items-center justify-center cursor-move"
+                    className="relative aspect-square overflow-hidden rounded-xl bg-white flex items-center justify-center cursor-move"
                     onMouseDown={handleMouseDown}
                     onMouseMove={handleMouseMove}
                     onMouseUp={handleMouseUp}
@@ -333,7 +333,7 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
                         </button>
                       ))}
                       {images.length > 7 && (
-                        <div className="aspect-square rounded-lg border-2 border-gray-200 bg-gray-100 flex items-center justify-center text-xs text-muted-foreground">
+                        <div className="aspect-square rounded-lg border-2 border-gray-200 bg-white flex items-center justify-center text-xs text-muted-foreground">
                           +{images.length - 7}
                         </div>
                       )}

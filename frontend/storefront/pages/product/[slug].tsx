@@ -181,7 +181,7 @@ export default function ProductPage() {
           <div className="rounded-xl overflow-hidden shadow-lg bg-card">
             {images.length > 0 ? (
               <div className="relative">
-                <div className="group relative aspect-square bg-secondary">
+                <div className="group relative aspect-square bg-white">
                   <img
                     src={images[activeImage]?.image_url}
                     alt={images[activeImage]?.alt_text || product.title}
@@ -225,7 +225,7 @@ export default function ProductPage() {
                 )}
               </div>
             ) : (
-              <div className="aspect-square bg-secondary flex items-center justify-center">
+              <div className="aspect-square bg-white flex items-center justify-center">
                 <div className="text-center">
                   <span className="text-6xl text-muted-foreground block mb-2">📦</span>
                   <p className="text-muted-foreground">Sem imagem disponível</p>

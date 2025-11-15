@@ -119,7 +119,7 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
       <div className="card overflow-hidden h-full flex flex-col bg-white">
         {/* Image Container */}
         <div 
-          className="relative aspect-square overflow-hidden bg-muted flex items-center justify-center cursor-pointer"
+          className="relative aspect-square overflow-hidden bg-white flex items-center justify-center cursor-pointer"
           onClick={() => onQuickView?.(product)}
         >
           {imageUrl ? (
