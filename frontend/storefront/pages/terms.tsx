@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { FileText, ShoppingCart, CreditCard, RotateCcw, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { FileText, ShoppingCart, CreditCard, RotateCcw, CheckCircle } from 'lucide-react';
 
 export default function TermsPage() {
   const sections = [
@@ -59,29 +59,8 @@ export default function TermsPage() {
       ],
     },
     {
-      icon: AlertCircle,
-      title: '6. Garantias e Responsabilidade',
-      content: [
-        'Todos os produtos são comercializados com garantia legal de conformidade de 2 anos, conforme legislação portuguesa.',
-        'A garantia cobre defeitos de fabrico e não conformidade do produto com a descrição.',
-        'A garantia não cobre desgaste normal, uso inadequado ou danos causados pelo cliente.',
-        'Em caso de produto defeituoso, contacte-nos imediatamente para resolução do problema.',
-        'A nossa responsabilidade está limitada ao valor do produto adquirido.',
-      ],
-    },
-    {
-      icon: XCircle,
-      title: '7. Propriedade Intelectual',
-      content: [
-        'Todo o conteúdo do website, incluindo textos, imagens, logótipos e design, é propriedade da Leiasabores.',
-        'É proibida a reprodução, distribuição ou utilização comercial do conteúdo sem autorização prévia.',
-        'Os produtos podem estar protegidos por direitos de autor ou outras propriedades intelectuais de terceiros.',
-        'O uso indevido do conteúdo pode resultar em ações legais.',
-      ],
-    },
-    {
       icon: FileText,
-      title: '8. Contas de Utilizador',
+      title: '6. Contas de Utilizador',
       content: [
         'É responsável por manter a confidencialidade das suas credenciais de acesso.',
         'Deve notificar-nos imediatamente em caso de uso não autorizado da sua conta.',
@@ -165,33 +144,6 @@ export default function TermsPage() {
               </motion.div>
             );
           })}
-
-          {/* Final Note */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 1.0 }}
-            className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl border border-primary/20 p-8 md:p-10"
-          >
-            <h2 className="text-2xl font-heading font-bold mb-4">
-              9. Contacto e Resolução de Conflitos
-            </h2>
-            <p className="text-muted-foreground mb-4 leading-relaxed">
-              Para questões relacionadas com estes termos ou para apresentar reclamações, pode contactar-nos através de:
-            </p>
-            <div className="space-y-2 text-muted-foreground mb-6">
-              <p><strong className="text-foreground">Email:</strong> suporte@leiasabores.pt</p>
-              <p><strong className="text-foreground">Telefone:</strong> +351 969 407 406</p>
-              <p><strong className="text-foreground">Endereço:</strong> Rua Exemplo, 123, Lisboa, Portugal</p>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              <strong className="text-foreground">Resolução de Conflitos:</strong> Em caso de litígio, o cliente pode recorrer 
-              à plataforma de resolução alternativa de litígios online da União Europeia: 
-              <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline ml-1">
-                https://ec.europa.eu/consumers/odr
-              </a>
-            </p>
-          </motion.div>
         </div>
       </section>
     </div>
