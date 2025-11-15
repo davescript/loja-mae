@@ -187,10 +187,13 @@ export function setAuthCookie(
   name: string = 'admin_token',
   maxAge: number = 7 * 24 * 60 * 60 // 7 days
 ): string {
-  return `${name}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}`;
+  return `${name}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
 }
 
 export function clearAuthCookie(name: string = 'admin_token'): string {
-  return `${name}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0`;
+  return `${name}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 }
 
+export function setCookieKV(name: string, value: string, maxAge: number): string {
+  return `${name}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
+}

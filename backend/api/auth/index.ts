@@ -70,7 +70,7 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
       return response;
     }
 
-    // Login: POST /api/auth/login
+    // Login: POST /api/auth/login (cookies: session_access + session_refresh)
     if (method === 'POST' && path === '/api/auth/login') {
       const body = await request.json();
       const validated = loginSchema.parse(body);
@@ -82,20 +82,29 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
       );
 
       if (!customer) {
-        return errorResponse('Invalid email or password', 401);
+        const res = errorResponse('Invalid email or password', 401);
+        res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        res.headers.set('Pragma', 'no-cache');
+        res.headers.set('Expires', '0');
+        res.headers.set('Vary', 'Authorization, Cookie');
+        return res;
       }
 
-      const token = signToken(
-        {
-          id: customer.id,
-          email: customer.email,
-          type: 'customer',
-        },
-        jwtSecret,
-        '90d' // Aumentar duração do token para 90 dias
-      );
+      const access = signToken({ id: customer.id, email: customer.email, type: 'customer' }, jwtSecret, '15m');
+      const refreshRaw = crypto.randomUUID() + '.' + crypto.randomUUID();
+      const { hashPassword: _hp } = await import('../../utils/auth');
+      const refreshHash = await _hp(refreshRaw); // reuse bcrypt hash for strong storage
+      const now = new Date().toISOString();
+      const exp = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
+      await executeRun(db, 'INSERT INTO user_sessions (user_id, refresh_token_hash, user_agent, ip, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)', [
+        customer.id,
+        refreshHash,
+        request.headers.get('User-Agent') || '',
+        request.headers.get('CF-Connecting-IP') || '',
+        now,
+        exp,
+      ]);
 
-      // Build name from first_name and last_name
       const name = customer.first_name && customer.last_name
         ? `${customer.first_name} ${customer.last_name}`
         : customer.first_name || customer.last_name || customer.email.split('@')[0];
@@ -108,13 +117,18 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
             name,
             type: 'customer' as const,
           },
-          token,
         },
         'Login successful'
       );
-
-      response.headers.set('Set-Cookie', `customer_token=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${90 * 24 * 60 * 60}`);
-
+      const domain = url.hostname;
+      const accessCookie = `session_access=${access}; Path=/; Domain=${domain}; HttpOnly; Secure; SameSite=Lax; Max-Age=${15 * 60}`;
+      const refreshCookie = `session_refresh=${encodeURIComponent(refreshRaw)}; Path=/; Domain=${domain}; HttpOnly; Secure; SameSite=Lax; Max-Age=${60 * 24 * 60 * 60}`;
+      response.headers.set('Set-Cookie', accessCookie);
+      response.headers.append('Set-Cookie', refreshCookie);
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      response.headers.set('Pragma', 'no-cache');
+      response.headers.set('Expires', '0');
+      response.headers.set('Vary', 'Authorization, Cookie');
       return response;
     }
 
@@ -238,25 +252,75 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
 
     // Logout: POST /api/auth/logout
     if (method === 'POST' && path === '/api/auth/logout') {
+      const cookieHeader = request.headers.get('Cookie') || '';
+      const m = cookieHeader.match(/session_refresh=([^;]+)/);
+      if (m) {
+        const raw = decodeURIComponent(m[1]);
+        const { hashPassword: _hp } = await import('../../utils/auth');
+        const h = await _hp(raw);
+        await executeRun(db, 'UPDATE user_sessions SET revoked_at = datetime("now") WHERE refresh_token_hash = ?', [h]);
+      }
       const response = successResponse(null, 'Logout successful');
-      response.headers.set('Set-Cookie', clearAuthCookie('customer_token'));
+      const domain = url.hostname;
+      response.headers.set('Set-Cookie', `session_access=; Path=/; Domain=${domain}; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
+      response.headers.append('Set-Cookie', `session_refresh=; Path=/; Domain=${domain}; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
       response.headers.append('Set-Cookie', clearAuthCookie('admin_token'));
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      response.headers.set('Pragma', 'no-cache');
+      response.headers.set('Expires', '0');
+      response.headers.set('Vary', 'Authorization, Cookie');
       return response;
+    }
+
+    // Refresh: POST /api/auth/refresh
+    if (method === 'POST' && path === '/api/auth/refresh') {
+      const cookieHeader = request.headers.get('Cookie') || '';
+      const m = cookieHeader.match(/session_refresh=([^;]+)/);
+      if (!m) {
+        const r = errorResponse('Unauthorized', 401);
+        r.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        r.headers.set('Pragma', 'no-cache');
+        r.headers.set('Expires', '0');
+        r.headers.set('Vary', 'Authorization, Cookie');
+        return r;
+      }
+      const raw = decodeURIComponent(m[1]);
+      const { hashPassword: _hp } = await import('../../utils/auth');
+      const h = await _hp(raw);
+      const session = await executeOne<{ id: number; user_id: number; expires_at: string; revoked_at: string | null }>(db, 'SELECT id, user_id, expires_at, revoked_at FROM user_sessions WHERE refresh_token_hash = ?', [h]);
+      if (!session || session.revoked_at || new Date(session.expires_at).getTime() < Date.now()) {
+        const r = errorResponse('Unauthorized', 401);
+        r.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        r.headers.set('Pragma', 'no-cache');
+        r.headers.set('Expires', '0');
+        r.headers.set('Vary', 'Authorization, Cookie');
+        return r;
+      }
+      const cust = await executeOne<{ email: string }>(db, 'SELECT email FROM customers WHERE id = ?', [session.user_id]);
+      const access = signToken({ id: session.user_id, email: cust?.email || '', type: 'customer' }, jwtSecret, '15m');
+      const rotate = crypto.randomUUID() + '.' + crypto.randomUUID();
+      const rotateHash = await _hp(rotate);
+      await executeRun(db, 'UPDATE user_sessions SET refresh_token_hash = ?, updated_at = datetime("now") WHERE id = ?', [rotateHash, session.id]);
+      const domain = url.hostname;
+      const res = successResponse({ refreshed: true });
+      res.headers.set('Set-Cookie', `session_access=${access}; Path=/; Domain=${domain}; HttpOnly; Secure; SameSite=Lax; Max-Age=${15 * 60}`);
+      res.headers.append('Set-Cookie', `session_refresh=${encodeURIComponent(rotate)}; Path=/; Domain=${domain}; HttpOnly; Secure; SameSite=Lax; Max-Age=${60 * 24 * 60 * 60}`);
+      res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      res.headers.set('Pragma', 'no-cache');
+      res.headers.set('Expires', '0');
+      res.headers.set('Vary', 'Authorization, Cookie');
+      return res;
     }
 
     // Me: GET /api/auth/me
     if (method === 'GET' && path === '/api/auth/me') {
-      const authHeader = request.headers.get('Authorization');
       const cookieHeader = request.headers.get('Cookie');
-
       let token: string | null = null;
-      if (authHeader?.startsWith('Bearer ')) {
-        token = authHeader.substring(7);
-      } else if (cookieHeader) {
+      if (cookieHeader) {
         const cookies = cookieHeader.split(';').map(c => c.trim());
         for (const cookie of cookies) {
           const [key, value] = cookie.split('=');
-          if (key === 'customer_token' || key === 'admin_token') {
+          if (key === 'session_access' || key === 'admin_token') {
             token = decodeURIComponent(value);
             break;
           }
@@ -292,7 +356,7 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
             ? `${customer.first_name} ${customer.last_name}`
             : customer.first_name || customer.last_name || customer.email.split('@')[0];
 
-          return successResponse({ 
+          const res = successResponse({ 
             user: {
               id: customer.id,
               email: customer.email,
@@ -301,6 +365,11 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
             }, 
             type: 'customer' 
           });
+          res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+          res.headers.set('Pragma', 'no-cache');
+          res.headers.set('Expires', '0');
+          res.headers.set('Vary', 'Authorization, Cookie');
+          return res;
         } else if (payload.type === 'admin') {
           const admin = await executeOne<{
             id: number;
@@ -314,10 +383,20 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
             return errorResponse('Invalid token', 401);
           }
 
-          return successResponse({ user: admin, type: 'admin' });
+          const res = successResponse({ user: admin, type: 'admin' });
+          res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+          res.headers.set('Pragma', 'no-cache');
+          res.headers.set('Expires', '0');
+          res.headers.set('Vary', 'Authorization, Cookie');
+          return res;
         }
       } catch (error) {
-        return errorResponse('Invalid token', 401);
+        const res = errorResponse('Invalid token', 401);
+        res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        res.headers.set('Pragma', 'no-cache');
+        res.headers.set('Expires', '0');
+        res.headers.set('Vary', 'Authorization, Cookie');
+        return res;
       }
     }
 

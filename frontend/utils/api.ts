@@ -88,12 +88,10 @@ export async function apiRequest<T = any>(
       ...(options.headers as Record<string, string> || {}),
     };
 
-    if (token && !isAuthLoginEndpoint) {
+    // Não enviar Authorization para endpoints de cliente; usar cookies
+    if (isAdminEndpoint && token && !isAuthLoginEndpoint) {
       headers['Authorization'] = `Bearer ${token}`;
-      // Log para debug
-      console.log(`[API] Request para ${endpoint} com token: ${token.substring(0, 20)}...`);
-    } else {
-      console.warn(`[API] Request para ${endpoint} SEM TOKEN`);
+      if (import.meta.env.DEV) console.log(`[API] Admin request para ${endpoint} com token`);
     }
 
     const url = `${API_BASE_URL}${endpoint}`;
@@ -102,7 +100,7 @@ export async function apiRequest<T = any>(
       console.log('API Request:', url, { hasToken: !!token });
     }
 
-    const response = await fetch(url, {
+    let response = await fetch(url, {
       ...options,
       headers,
       credentials: 'include',
@@ -113,16 +111,17 @@ export async function apiRequest<T = any>(
       
       // Handle specific status codes
       if (response.status === 401) {
-        // NÃO limpar tokens automaticamente em erros 401
-        // Apenas limpar quando o usuário explicitamente clicar em "Sair"
-        // Isso preserva a sessão mesmo em caso de erro temporário ou hard refresh
-        // O token pode estar válido, mas houve um erro temporário
-        if (typeof window !== 'undefined') {
-          // Não limpar tokens - deixar o usuário decidir quando fazer logout
-          // Apenas logar o erro para debug
-          console.warn('Erro 401 recebido, mas preservando token:', data.error);
+        // Tentar refresh uma vez
+        const refreshResp = await fetch(`${API_BASE_URL}/api/auth/refresh`, { method: 'POST', credentials: 'include', headers: { 'Cache-Control': 'no-store' } })
+        if (refreshResp.ok) {
+          response = await fetch(url, { ...options, headers, credentials: 'include' })
+          if (!response.ok) {
+            const d2 = await response.json().catch(() => ({})) as ApiResponse<T>
+            throw new AuthenticationError(d2.error || 'Não autenticado')
+          }
+        } else {
+          throw new AuthenticationError(data.error || 'Não autenticado')
         }
-        throw new AuthenticationError(data.error || 'Não autenticado');
       }
       
       if (response.status === 403) {

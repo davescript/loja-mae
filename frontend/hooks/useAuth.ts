@@ -55,16 +55,14 @@ export function useAuth() {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
-      const response = await apiRequest<{ customer: AuthUser; token: string }>('/api/auth/login', {
+      const response = await apiRequest<{ customer: AuthUser }>('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify(credentials),
       });
       if (response.success && response.data) {
-        // Save token for customer
-        localStorage.setItem('customer_token', response.data.token);
-        localStorage.setItem('token', response.data.token); // Also save as token for compatibility
-        setUser(response.data.customer);
-        return response.data;
+        // Cookies HttpOnly serão definidos pela API; não armazenar tokens
+        setUser(response.data.customer as any);
+        return response.data as any;
       }
       throw new Error(response.error || 'Login failed');
     },
@@ -82,16 +80,13 @@ export function useAuth() {
 
   const registerMutation = useMutation({
     mutationFn: async (data: { email: string; password: string; first_name?: string; last_name?: string }) => {
-      const response = await apiRequest<{ customer: AuthUser; token: string }>('/api/auth/register', {
+      const response = await apiRequest<{ customer: AuthUser }>('/api/auth/register', {
         method: 'POST',
         body: JSON.stringify(data),
       });
       if (response.success && response.data) {
-        // Save token for customer
-        localStorage.setItem('customer_token', response.data.token);
-        localStorage.setItem('token', response.data.token); // Also save as token for compatibility
-        setUser(response.data.customer);
-        return response.data;
+        setUser(response.data.customer as any);
+        return response.data as any;
       }
       throw new Error(response.error || 'Registration failed');
     },
