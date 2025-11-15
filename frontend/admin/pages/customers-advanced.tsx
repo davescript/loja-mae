@@ -292,7 +292,7 @@ export default function AdminCustomersPageAdvanced() {
                                 <span className="font-medium">
                                   {address.first_name} {address.last_name}
                                 </span>
-                                <span className="text-xs bg-muted px-2 py-1 rounded">
+                                <span className="text-xs bg-gray-50 px-2 py-1 rounded">
                                   {address.type === 'shipping' ? 'Entrega' : address.type === 'billing' ? 'Cobrança' : 'Ambos'}
                                 </span>
                                 {address.is_default ? (

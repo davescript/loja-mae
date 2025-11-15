@@ -441,7 +441,7 @@ export default function AdminProductsPageAdvanced() {
             <DropdownMenu.Portal>
               <DropdownMenu.Content className="bg-white rounded-md shadow-lg border p-1 min-w-[150px]">
                 <DropdownMenu.Item
-                  className="px-3 py-2 text-sm hover:bg-muted rounded-sm cursor-pointer flex items-center gap-2"
+                  className="px-3 py-2 text-sm hover:bg-gray-50 rounded-sm cursor-pointer flex items-center gap-2"
                   onClick={() => {
                     try {
                       handleEdit(product)

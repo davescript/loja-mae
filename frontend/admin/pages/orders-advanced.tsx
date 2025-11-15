@@ -501,7 +501,7 @@ export default function AdminOrdersPageAdvanced() {
                         <span className="text-sm font-medium block mb-2">Endereços Cadastrados:</span>
                         <div className="space-y-2">
                           {orderDetails.customer.addresses.map((addr) => (
-                            <div key={addr.id} className="text-xs text-muted-foreground bg-muted p-2 rounded">
+                            <div key={addr.id} className="text-xs text-muted-foreground bg-gray-50 p-2 rounded">
                               {addr.is_default === 1 && <span className="font-semibold text-primary">[Padrão] </span>}
                               {addr.address_line1}, {addr.postal_code} {addr.city}
                               {addr.country && `, ${addr.country}`}
