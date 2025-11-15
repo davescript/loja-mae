@@ -26,12 +26,6 @@ export function useAdminAuth() {
     queryKey: ['admin', 'me'],
     queryFn: async () => {
       try {
-        // Verificar se há token antes de fazer a requisição
-        const token = localStorage.getItem('admin_token');
-        if (!token) {
-          return null;
-        }
-
         const response = await apiRequest<{ user: AdminUser; type: 'admin' }>('/api/auth/me');
         if (response.data?.type === 'admin') {
           return response.data.user;
@@ -62,14 +56,14 @@ export function useAdminAuth() {
     },
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: true, // Refetch when window gains focus
-    refetchOnMount: true, // Always refetch on mount (including hard refresh)
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   // Admin login mutation
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginCredentials) => {
-      const response = await apiRequest<{ admin: AdminUser; token: string }>(
+      const response = await apiRequest<{ admin: AdminUser; token?: string }>(
         '/api/auth/admin/login',
         {
           method: 'POST',
@@ -87,10 +81,7 @@ export function useAdminAuth() {
       return response.data;
     },
     onSuccess: (data) => {
-      // Store token in localStorage for API requests
-      if (data?.token) {
-        localStorage.setItem('admin_token', data.token);
-      }
+      // Cookies HttpOnly são definidos pela API; não armazenar em localStorage
       // Invalidate and refetch admin data
       queryClient.invalidateQueries({ queryKey: ['admin', 'me'] });
       navigate('/admin/dashboard');
@@ -138,4 +129,3 @@ export function useAdminAuth() {
     loginError: loginMutation.error,
   };
 }
-
