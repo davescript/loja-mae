@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '../../utils/api';
 import { useToast } from '../../admin/hooks/useToast';
-import { Mail, Phone, Clock, Send, Loader2 } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import { Mail, Phone, Clock, Send, Loader2, User } from 'lucide-react';
 
 const contactSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
@@ -18,16 +19,43 @@ type ContactFormData = z.infer<typeof contactSchema>;
 
 export default function ContactPage() {
   const { toast } = useToast();
+  const { user, isAuthenticated, isLoading: isLoadingAuth } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [autoFilled, setAutoFilled] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
   } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
   });
+
+  // Auto-fill form when user is logged in
+  useEffect(() => {
+    if (isAuthenticated && user && !autoFilled) {
+      const fullName = user.first_name && user.last_name 
+        ? `${user.first_name} ${user.last_name}`.trim()
+        : user.first_name || user.last_name || '';
+      
+      if (fullName) {
+        setValue('name', fullName);
+      }
+      if (user.email) {
+        setValue('email', user.email);
+      }
+      
+      if (fullName || user.email) {
+        setAutoFilled(true);
+        toast({
+          title: 'Formulário preenchido automaticamente',
+          description: 'Seus dados foram preenchidos automaticamente. Você pode editá-los se necessário.',
+        });
+      }
+    }
+  }, [isAuthenticated, user, setValue, autoFilled, toast]);
 
   const contactMutation = useMutation({
     mutationFn: async (data: ContactFormData) => {
@@ -121,7 +149,15 @@ export default function ContactPage() {
           onSubmit={handleSubmit(onSubmit)}
           className="rounded-2xl bg-white border border-border/50 p-6 md:p-8 shadow-sm"
         >
-          <h2 className="text-2xl font-heading font-bold mb-6">Envie-nos uma Mensagem</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-heading font-bold">Envie-nos uma Mensagem</h2>
+            {isAuthenticated && (
+              <div className="flex items-center gap-2 text-sm text-primary bg-primary/10 px-3 py-1.5 rounded-lg">
+                <User className="w-4 h-4" />
+                <span>Logado como {user?.first_name || user?.email}</span>
+              </div>
+            )}
+          </div>
           
           <div className="space-y-4">
             {/* Name Field */}
