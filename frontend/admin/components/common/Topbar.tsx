@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Search, Bell, User, Moon, Sun, Settings, LogOut } from "lucide-react"
 import { useAdminAuth } from "../../../hooks/useAdminAuth"
 import { Button } from "../ui/button"
@@ -7,11 +8,16 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 
 export function Topbar() {
   const { admin, logout } = useAdminAuth()
+  const navigate = useNavigate()
   const [darkMode, setDarkMode] = useState(false)
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode)
     document.documentElement.classList.toggle("dark")
+  }
+
+  const handleProfileClick = () => {
+    navigate('/admin/settings')
   }
 
   return (
@@ -64,11 +70,17 @@ export function Topbar() {
                 className="min-w-[200px] bg-white rounded-md shadow-lg border p-1 z-50"
                 align="end"
               >
-                <DropdownMenu.Item className="px-3 py-2 text-sm hover:bg-muted rounded-sm cursor-pointer flex items-center gap-2">
+                <DropdownMenu.Item 
+                  className="px-3 py-2 text-sm hover:bg-muted rounded-sm cursor-pointer flex items-center gap-2"
+                  onClick={handleProfileClick}
+                >
                   <User className="w-4 h-4" />
                   Perfil
                 </DropdownMenu.Item>
-                <DropdownMenu.Item className="px-3 py-2 text-sm hover:bg-muted rounded-sm cursor-pointer flex items-center gap-2">
+                <DropdownMenu.Item 
+                  className="px-3 py-2 text-sm hover:bg-muted rounded-sm cursor-pointer flex items-center gap-2"
+                  onClick={handleProfileClick}
+                >
                   <Settings className="w-4 h-4" />
                   Configurações
                 </DropdownMenu.Item>
