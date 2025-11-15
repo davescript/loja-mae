@@ -423,10 +423,9 @@ function ProductModal({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        {/* Backdrop */}
+        {/* Backdrop (não fecha ao clicar fora) */}
         <div
           className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
-          onClick={onClose}
         />
 
         {/* Modal */}
@@ -449,13 +448,7 @@ function ProductModal({
               <h2 className="text-2xl font-bold text-gray-900">
                 {product ? 'Editar Produto' : 'Novo Produto'}
               </h2>
-              <button
-                type="button"
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-6 h-6" />
-              </button>
+              {/* Removido botão de fechar para exigir uso de Cancelar */}
             </div>
 
             {/* Tabs */}

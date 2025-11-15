@@ -161,7 +161,11 @@ export default function AdminBlogPage() {
 
       {/* Blog Post Form Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent
+          className="max-w-4xl max-h-[90vh] overflow-y-auto"
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>{editingPost ? "Editar Post" : "Novo Post"}</DialogTitle>
             <DialogDescription>
