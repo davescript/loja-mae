@@ -187,14 +187,13 @@ export default function ShippingPage() {
                     <div className="space-y-3">
                       <div>
                         <p className="text-sm font-medium mb-1">Métodos disponíveis:</p>
-                        <ul className="space-y-1">
+                        <div className="space-y-1">
                           {zone.methods.map((method, methodIndex) => (
-                            <li key={methodIndex} className="text-sm text-muted-foreground flex items-center gap-2">
-                              <span className="text-primary">•</span>
+                            <p key={methodIndex} className="text-sm text-muted-foreground">
                               {method}
-                            </li>
+                            </p>
                           ))}
-                        </ul>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Clock className="w-4 h-4 text-muted-foreground" />
