@@ -74,7 +74,15 @@ export const useFavoritesStore = create<FavoritesStore>()(
 
       removeFavorite: async (productId: number) => {
         const { favorites } = get()
+        console.log('💔 removeFavorite chamado para produto:', productId, 'Favoritos atuais:', favorites)
+        
+        if (!favorites.includes(productId)) {
+          console.log('💔 Produto não está nos favoritos, ignorando')
+          return
+        }
+
         const updatedFavorites = favorites.filter((id) => id !== productId)
+        console.log('💔 Atualizando favoritos localmente:', updatedFavorites)
 
         // Atualizar localmente primeiro (otimistic update)
         set({ favorites: updatedFavorites })
@@ -83,15 +91,24 @@ export const useFavoritesStore = create<FavoritesStore>()(
         const token = localStorage.getItem('customer_token') || localStorage.getItem('token')
         if (token) {
           try {
-            await apiRequest(`/api/favorites/${productId}`, {
+            console.log('💔 Removendo do servidor...')
+            const response = await apiRequest(`/api/favorites/${productId}`, {
               method: 'DELETE',
             })
-            console.log('✅ Favorito removido do servidor')
-          } catch (error) {
+            console.log('✅ Resposta do servidor:', response)
+            console.log('✅ Favorito removido do servidor com sucesso')
+          } catch (error: any) {
             console.error('❌ Erro ao remover favorito do servidor:', error)
+            console.error('❌ Detalhes do erro:', error.message)
+            if (error.response) {
+              console.error('❌ Resposta do servidor:', error.response)
+            }
             // Reverter se falhar
+            console.log('💔 Revertendo favoritos para estado anterior:', favorites)
             set({ favorites })
           }
+        } else {
+          console.log('💔 Usuário não autenticado, favorito removido apenas do localStorage')
         }
       },
 
