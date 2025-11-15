@@ -70,6 +70,13 @@ export function useAuth() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      try {
+        // Sincronizar favoritos locais com servidor após login
+        const { useFavoritesStore } = require('../store/favoritesStore');
+        const store = useFavoritesStore.getState();
+        // Carregar do servidor e fazer merge
+        store.syncWithServer();
+      } catch {}
     },
   });
 
@@ -90,6 +97,10 @@ export function useAuth() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      try {
+        const { useFavoritesStore } = require('../store/favoritesStore');
+        useFavoritesStore.getState().syncWithServer();
+      } catch {}
     },
   });
 
@@ -145,4 +156,3 @@ export function useAuth() {
     isRegistering: registerMutation.isPending,
   };
 }
-

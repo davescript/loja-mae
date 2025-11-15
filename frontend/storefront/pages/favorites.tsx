@@ -3,15 +3,25 @@ import { apiRequest } from '../../utils/api';
 import type { Product } from '@shared/types';
 import ProductCard from '../components/app/ProductCard';
 import QuickViewModal from '../components/app/QuickViewModal';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Heart, Package } from 'lucide-react';
 import { useFavoritesStore } from '../../store/favoritesStore';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function FavoritesPage() {
-  const { favorites } = useFavoritesStore(); // Usar favorites diretamente
+  const { favorites, loadFromServer, syncWithServer } = useFavoritesStore();
   const [quickOpen, setQuickOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | undefined>();
+  const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    // Ao entrar na página, tentar carregar favoritos do servidor
+    loadFromServer().then(() => {
+      if (isAuthenticated) syncWithServer();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
   // Fetch favorite products
   const { data: products, isLoading } = useQuery({
