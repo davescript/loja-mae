@@ -9,6 +9,7 @@ import AIChat from '../components/store/AIChat';
 import { useCartStore } from '../../store/cartStore';
 import { useFavoritesStore } from '../../store/favoritesStore';
 import { Toaster } from '../../admin/components/common/Toaster';
+import ScrollToTop from '../../components/ScrollToTop';
 
 export default function StorefrontLayout() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -44,6 +45,7 @@ export default function StorefrontLayout() {
 
   return (
     <div className="min-h-screen bg-background">
+      <ScrollToTop />
       <StoreHeader />
       <main className="pt-16">
         <div className="max-w-7xl mx-auto px-4 lg:px-6">
