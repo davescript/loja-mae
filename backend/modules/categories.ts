@@ -76,9 +76,16 @@ export async function getCategory(
   id: number,
   includeChildren: boolean = false
 ): Promise<Category | null> {
-  const category = await executeOne<Category>(
+  // Include product count in the query
+  const category = await executeOne<Category & { product_count: number }>(
     db,
-    'SELECT * FROM categories WHERE id = ?',
+    `SELECT 
+      c.*,
+      COUNT(DISTINCT p.id) as product_count
+    FROM categories c
+    LEFT JOIN products p ON p.category_id = c.id AND p.status = 'active'
+    WHERE c.id = ?
+    GROUP BY c.id`,
     [id]
   );
 
@@ -86,16 +93,17 @@ export async function getCategory(
     return null;
   }
 
+  const categoryWithCount = {
+    ...category,
+    product_count: Number(category.product_count) || 0,
+  } as Category;
+
   if (includeChildren) {
-    const children = await executeQuery<Category>(
-      db,
-      'SELECT * FROM categories WHERE parent_id = ? ORDER BY name ASC',
-      [id]
-    );
-    return { ...category, children: children || [] };
+    const children = await listCategories(db, { parent_id: id });
+    return { ...categoryWithCount, children: children || [] };
   }
 
-  return category;
+  return categoryWithCount;
 }
 
 export async function getCategoryBySlug(
@@ -121,25 +129,37 @@ export async function listCategories(
 
   if (filters.parent_id !== undefined) {
     if (filters.parent_id === null) {
-      whereClause += ' AND parent_id IS NULL';
+      whereClause += ' AND c.parent_id IS NULL';
     } else {
-      whereClause += ' AND parent_id = ?';
+      whereClause += ' AND c.parent_id = ?';
       params.push(filters.parent_id);
     }
   }
 
   if (filters.is_active !== undefined) {
-    whereClause += ' AND is_active = ?';
+    whereClause += ' AND c.is_active = ?';
     params.push(filters.is_active);
   }
 
-  const categories = await executeQuery<Category>(
+  // Use LEFT JOIN to count products per category
+  const categories = await executeQuery<Category & { product_count: number }>(
     db,
-    `SELECT * FROM categories WHERE ${whereClause} ORDER BY name ASC`,
+    `SELECT 
+      c.*,
+      COUNT(DISTINCT p.id) as product_count
+    FROM categories c
+    LEFT JOIN products p ON p.category_id = c.id AND p.status = 'active'
+    WHERE ${whereClause}
+    GROUP BY c.id
+    ORDER BY c.name ASC`,
     params
   );
 
-  return categories || [];
+  // Map to Category type, converting product_count to number
+  return (categories || []).map(cat => ({
+    ...cat,
+    product_count: Number(cat.product_count) || 0,
+  })) as Category[];
 }
 
 export async function updateCategory(

@@ -86,6 +86,7 @@ export type Category = {
   updated_at: string;
   children?: Category[];
   parent?: Category;
+  product_count?: number; // Number of active products in this category
 };
 
 // Customer types
