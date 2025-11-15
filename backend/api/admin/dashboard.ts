@@ -196,7 +196,7 @@ export async function handleGetDashboardStats(request: Request, env: Env): Promi
 
 /**
  * GET /api/admin/dashboard/sales-chart
- * Get sales data for chart (last 7 days)
+ * Get sales data for chart (last 7 days) with orders and revenue
  */
 export async function handleGetSalesChart(request: Request, env: Env): Promise<Response> {
   try {
@@ -204,8 +204,7 @@ export async function handleGetSalesChart(request: Request, env: Env): Promise<R
     const db = getDb(env);
 
     // Get last 7 days
-    const days: Array<{ date: string; label: string }> = [];
-    const salesData: Array<{ date: string; sales: number }> = [];
+    const salesData: Array<{ date: string; orders: number; revenue: number }> = [];
 
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
@@ -217,18 +216,29 @@ export async function handleGetSalesChart(request: Request, env: Env): Promise<R
       const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
       const dayLabel = dayLabels[date.getDay()];
 
-      const result = await executeOne<{ total_cents: number }>(
-        db,
-        `SELECT COALESCE(SUM(total_cents), 0) as total_cents 
-         FROM orders 
-         WHERE payment_status = 'paid' 
-           AND created_at >= ? AND created_at < ?`,
-        [dayStart, dayEnd]
-      );
+      const [revenueResult, ordersResult] = await Promise.all([
+        executeOne<{ total_cents: number }>(
+          db,
+          `SELECT COALESCE(SUM(total_cents), 0) as total_cents 
+           FROM orders 
+           WHERE payment_status = 'paid' 
+             AND created_at >= ? AND created_at < ?`,
+          [dayStart, dayEnd]
+        ),
+        executeOne<{ count: number }>(
+          db,
+          `SELECT COUNT(*) as count 
+           FROM orders 
+           WHERE payment_status = 'paid' 
+             AND created_at >= ? AND created_at < ?`,
+          [dayStart, dayEnd]
+        ),
+      ]);
 
       salesData.push({
         date: dayLabel,
-        sales: (result?.total_cents || 0) / 100, // Convert to euros
+        orders: ordersResult?.count || 0,
+        revenue: (revenueResult?.total_cents || 0) / 100, // Convert to euros
       });
     }
 
@@ -241,7 +251,7 @@ export async function handleGetSalesChart(request: Request, env: Env): Promise<R
 
 /**
  * GET /api/admin/dashboard/top-products
- * Get top 5 best selling products
+ * Get top 5 best selling products with images
  */
 export async function handleGetTopProducts(request: Request, env: Env): Promise<Response> {
   try {
@@ -251,26 +261,87 @@ export async function handleGetTopProducts(request: Request, env: Env): Promise<
     const topProducts = await executeQuery<{
       product_id: number;
       title: string;
+      sku: string | null;
       total_quantity: number;
+      image_url: string | null;
     }>(
       db,
       `SELECT 
         oi.product_id,
         p.title,
-        SUM(oi.quantity) as total_quantity
+        p.sku,
+        SUM(oi.quantity) as total_quantity,
+        (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as image_url
        FROM order_items oi
        INNER JOIN orders o ON oi.order_id = o.id
        LEFT JOIN products p ON oi.product_id = p.id
        WHERE o.payment_status = 'paid'
          AND o.created_at >= datetime('now', '-30 days')
-       GROUP BY oi.product_id, p.title
+       GROUP BY oi.product_id, p.title, p.sku
        ORDER BY total_quantity DESC
        LIMIT 5`
     );
 
     const formatted = (topProducts || []).map((p) => ({
+      id: p.product_id,
       name: p.title || `Produto #${p.product_id}`,
+      sku: p.sku || `#${p.product_id}`,
       sales: p.total_quantity || 0,
+      image_url: p.image_url || null,
+    }));
+
+    return successResponse(formatted);
+  } catch (error) {
+    const { message, status } = handleError(error);
+    return errorResponse(message, status);
+  }
+}
+
+/**
+ * GET /api/admin/dashboard/top-customers
+ * Get top customers by order count (last 7 days)
+ */
+export async function handleGetTopCustomers(request: Request, env: Env): Promise<Response> {
+  try {
+    await requireAdmin(request, env);
+    const db = getDb(env);
+
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - 7);
+    weekStart.setHours(0, 0, 0, 0);
+
+    const topCustomers = await executeQuery<{
+      customer_id: number;
+      email: string;
+      first_name: string | null;
+      last_name: string | null;
+      order_count: number;
+    }>(
+      db,
+      `SELECT 
+        o.customer_id,
+        c.email,
+        c.first_name,
+        c.last_name,
+        COUNT(DISTINCT o.id) as order_count
+       FROM orders o
+       LEFT JOIN customers c ON o.customer_id = c.id
+       WHERE o.payment_status = 'paid'
+         AND o.created_at >= ?
+       GROUP BY o.customer_id, c.email, c.first_name, c.last_name
+       HAVING order_count > 0
+       ORDER BY order_count DESC
+       LIMIT 5`,
+      [weekStart.toISOString()]
+    );
+
+    const formatted = (topCustomers || []).map((c) => ({
+      id: c.customer_id,
+      email: c.email || 'Cliente',
+      name: c.first_name && c.last_name 
+        ? `${c.first_name} ${c.last_name}`
+        : c.first_name || c.last_name || c.email?.split('@')[0] || 'Cliente',
+      orders: c.order_count || 0,
     }));
 
     return successResponse(formatted);

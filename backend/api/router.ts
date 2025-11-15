@@ -130,6 +130,10 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
           if (path === '/api/admin/dashboard/top-products') {
             return handleCORS(await handleGetTopProducts(request, env), env, request);
           }
+          if (path === '/api/admin/dashboard/top-customers') {
+            const { handleGetTopCustomers } = await import('./admin/dashboard');
+            return handleCORS(await handleGetTopCustomers(request, env), env, request);
+          }
         }
 
         // Admin Analytics routes

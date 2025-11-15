@@ -56,12 +56,12 @@ export function Topbar() {
           {/* User Menu */}
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
-                  {admin?.name?.charAt(0).toUpperCase() || "A"}
+              <Button variant="ghost" className="flex items-center gap-2 hover:bg-muted/50">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground flex items-center justify-center text-sm font-bold shadow-md ring-2 ring-primary/20">
+                  {admin?.name?.charAt(0).toUpperCase() || admin?.email?.charAt(0).toUpperCase() || "A"}
                 </div>
-                <span className="hidden md:block text-sm font-medium">
-                  {admin?.name || "Admin"}
+                <span className="hidden md:block text-sm font-semibold">
+                  {admin?.name || admin?.email?.split('@')[0] || "Admin"}
                 </span>
               </Button>
             </DropdownMenu.Trigger>

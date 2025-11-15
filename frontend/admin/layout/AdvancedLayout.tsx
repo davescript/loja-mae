@@ -78,18 +78,28 @@ export default function AdvancedLayout() {
         <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
           {/* Logo */}
           <div className="flex items-center justify-between px-4 mb-8">
-            {sidebarOpen && (
-              <motion.h1
+            {sidebarOpen ? (
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-2xl font-bold"
+                className="flex items-center gap-3"
               >
-                Admin
-              </motion.h1>
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
+                  <span className="text-white font-bold text-lg">LM</span>
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold">Leiasabores</h1>
+                  <p className="text-xs text-gray-400">Admin Panel</p>
+                </div>
+              </motion.div>
+            ) : (
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg mx-auto">
+                <span className="text-white font-bold text-lg">LM</span>
+              </div>
             )}
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 rounded-md hover:bg-gray-800 transition-colors"
+              className="p-2 rounded-md hover:bg-gray-800 transition-colors ml-auto"
             >
               {sidebarOpen ? (
                 <ChevronLeft className="w-5 h-5" />
@@ -134,11 +144,16 @@ export default function AdvancedLayout() {
           {/* User Section */}
           <div className="flex-shrink-0 flex border-t border-gray-700 p-4">
             <div className="flex-shrink-0 w-full group block">
-              <div className="flex items-center">
-                <div className={cn("flex-1 min-w-0", !sidebarOpen && "hidden")}>
-                  <p className="text-sm font-medium text-white truncate">{admin?.name}</p>
-                  <p className="text-xs text-gray-400 truncate">{admin?.email}</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white font-bold text-sm shadow-md ring-2 ring-primary/20 flex-shrink-0">
+                  {admin?.name?.charAt(0).toUpperCase() || admin?.email?.charAt(0).toUpperCase() || "A"}
                 </div>
+                {sidebarOpen && (
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">{admin?.name || admin?.email?.split('@')[0]}</p>
+                    <p className="text-xs text-gray-400 truncate">{admin?.email}</p>
+                  </div>
+                )}
                 <button
                   onClick={logout}
                   className={cn(
