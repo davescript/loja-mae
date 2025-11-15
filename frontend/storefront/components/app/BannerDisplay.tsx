@@ -29,17 +29,25 @@ export default function BannerDisplay({
   className,
 }: BannerDisplayProps) {
   const finalVariant = variant || variantMap[position] || 'full'
-  const { data: banners = [], isLoading } = useBanners(position, limit)
+  const { data: banners = [], isLoading, error } = useBanners(position, limit)
 
   useEffect(() => {
-    if (banners.length === 0) return
+    if (banners.length === 0) {
+      console.log(`[BANNER_DISPLAY] Nenhum banner encontrado para posição "${position}"`)
+      return
+    }
+    console.log(`[BANNER_DISPLAY] Renderizando ${banners.length} banner(s) para "${position}"`)
     banners.forEach((banner) => {
       fetch(`${API_BASE_URL}/api/banners/${banner.id}/impression`, {
         method: 'POST',
         keepalive: true,
       }).catch(() => {})
     })
-  }, [banners])
+  }, [banners, position])
+
+  if (error) {
+    console.error(`[BANNER_DISPLAY] Erro ao carregar banners para "${position}":`, error)
+  }
 
   if (isLoading) {
     return (
@@ -68,10 +76,14 @@ export default function BannerDisplay({
           animate={{ opacity: 1, y: 0 }}
         >
           <img
-            src={banner.image_url || '/placeholder.png'}
+            src={banner.image_url ? (banner.image_url.startsWith('http') ? banner.image_url : `${API_BASE_URL}${banner.image_url}`) : '/placeholder.png'}
             alt={banner.title}
             className="w-full h-full object-cover"
             loading="lazy"
+            onError={(e) => {
+              console.error(`[BANNER_DISPLAY] Erro ao carregar imagem do banner ${banner.id}:`, banner.image_url)
+              e.currentTarget.src = '/placeholder.png'
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
           <div className="absolute bottom-0 left-0 p-8 md:p-12 text-white max-w-3xl">
@@ -165,10 +177,14 @@ export default function BannerDisplay({
           whileHover={{ scale: 1.005 }}
         >
           <img
-            src={banner.image_url || '/placeholder.png'}
+            src={banner.image_url ? (banner.image_url.startsWith('http') ? banner.image_url : `${API_BASE_URL}${banner.image_url}`) : '/placeholder.png'}
             alt={banner.title}
             className="w-full h-full object-cover"
             loading="lazy"
+            onError={(e) => {
+              console.error(`[BANNER_DISPLAY] Erro ao carregar imagem do banner ${banner.id}:`, banner.image_url)
+              e.currentTarget.src = '/placeholder.png'
+            }}
           />
           {banner.link_url && (
             <Link

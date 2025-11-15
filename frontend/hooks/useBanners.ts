@@ -48,13 +48,19 @@ export function useBanners(
         is_active: 'true',
       })
 
-      const response = await apiRequest<{ items: Banner[] }>(
-        `/api/banners?${params.toString()}`
-      )
-
-      return response.data?.items || []
+      const url = `/api/banners?${params.toString()}`
+      console.log(`[BANNERS] Buscando banners para posição "${position}":`, url)
+      
+      const response = await apiRequest<{ items: Banner[] }>(url)
+      
+      const banners = response.data?.items || []
+      console.log(`[BANNERS] Encontrados ${banners.length} banner(s) para "${position}":`, banners.map(b => ({ id: b.id, title: b.title, image_url: b.image_url })))
+      
+      return banners
     },
-    staleTime: 1000 * 60, // 1 minuto
+    staleTime: 1000 * 30, // 30 segundos (reduzido para atualizar mais rápido)
+    refetchOnMount: true, // Sempre buscar ao montar componente
+    refetchOnWindowFocus: true, // Refetch quando janela ganha foco
     ...options,
   })
 }

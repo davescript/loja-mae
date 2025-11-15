@@ -53,6 +53,10 @@ export async function handleBannersRoutes(request: Request, env: Env): Promise<R
 
       const offset = (page - 1) * pageSize;
 
+      console.log(`[BANNERS_API] Buscando banners: position=${position}, is_active=${isActive}, now=${now}`);
+      console.log(`[BANNERS_API] SQL: SELECT * FROM banners WHERE ${whereClause} ORDER BY \`order\` ASC, created_at DESC LIMIT ? OFFSET ?`);
+      console.log(`[BANNERS_API] Params:`, params);
+
       const [items, totalResult] = await Promise.all([
         executeQuery(
           db,
@@ -65,6 +69,11 @@ export async function handleBannersRoutes(request: Request, env: Env): Promise<R
           params
         ),
       ]);
+
+      console.log(`[BANNERS_API] Encontrados ${items?.length || 0} banner(s) de ${totalResult?.count || 0} total`);
+      if (items && items.length > 0) {
+        console.log(`[BANNERS_API] Banners:`, items.map((b: any) => ({ id: b.id, title: b.title, position: b.position, is_active: b.is_active, start_date: b.start_date, end_date: b.end_date, image_url: b.image_url })));
+      }
 
       return successResponse({
         items: items || [],
