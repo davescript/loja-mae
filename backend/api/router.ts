@@ -12,6 +12,7 @@ import { handleCustomersRoutes } from './customers';
 import { handleCouponsRoutes } from './coupons';
 import { handleAuthRoutes } from './auth';
 import { handleStripeRoutes } from './stripe';
+import { handleBlogRoutes } from './blog';
 import { handleImageRequest } from './images';
 import { handleChatRoutes } from './chat';
 import { handleCartRoutes } from './cart';
@@ -95,6 +96,10 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
 
     if (path.startsWith('/api/stripe')) {
       return handleCORS(await handleStripeRoutes(request, env), env, request);
+    }
+
+    if (path.startsWith('/api/blog') || path.startsWith('/api/admin/blog')) {
+      return handleCORS(await handleBlogRoutes(request, env), env, request);
     }
 
         // Image serving (R2 proxy)
@@ -191,4 +196,3 @@ async function handleFavoritesRoutes(request: Request, env: Env): Promise<Respon
   const { handleFavoritesRoutes } = await import('./favorites');
   return handleFavoritesRoutes(request, env);
 }
-

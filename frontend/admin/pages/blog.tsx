@@ -9,20 +9,12 @@ import { Label } from "../components/ui/label"
 import { Textarea } from "../components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
 import { useToast } from "../hooks/useToast"
-import { Plus, Edit, Trash2, Eye } from "lucide-react"
+import { Plus, Edit, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { apiRequest } from "../../utils/api"
+import type { BlogPost, ApiResponse } from "@shared/types"
 
-type BlogPost = {
-  id: number
-  title: string
-  slug: string
-  content: string
-  excerpt?: string
-  status: "draft" | "published" | "scheduled"
-  published_at?: string
-  created_at: string
-}
 
 export default function AdminBlogPage() {
   const [page, setPage] = useState(1)
@@ -32,15 +24,52 @@ export default function AdminBlogPage() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
-  // Mock data - substituir por chamada real à API
   const { data: postsData, isLoading } = useQuery({
     queryKey: ["admin", "blog", page, search],
     queryFn: async () => {
-      return {
-        items: [] as BlogPost[],
-        total: 0,
-        totalPages: 0,
-      }
+      const params = new URLSearchParams({ page: String(page), pageSize: "20" })
+      if (search) params.set("search", search)
+      const res = await apiRequest<{ items: BlogPost[]; total: number; totalPages: number }>(`/api/admin/blog?${params.toString()}`)
+      return res.data || { items: [], total: 0, totalPages: 0 }
+    },
+  })
+
+  const createMutation = useMutation({
+    mutationFn: async (payload: Partial<BlogPost>) => {
+      const res = await apiRequest<BlogPost>("/api/admin/blog", { method: "POST", body: JSON.stringify(payload) })
+      if (!res.success) throw new Error(res.error || "Falha ao criar post")
+      return res.data as BlogPost
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "blog"] })
+      toast({ title: "Post criado", description: "Seu post foi publicado/gravado." })
+      setIsModalOpen(false)
+      setEditingPost(null)
+    },
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, payload }: { id: number; payload: Partial<BlogPost> }) => {
+      const res = await apiRequest<BlogPost>(`/api/admin/blog/${id}`, { method: "PUT", body: JSON.stringify(payload) })
+      if (!res.success) throw new Error(res.error || "Falha ao atualizar post")
+      return res.data as BlogPost
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "blog"] })
+      toast({ title: "Post atualizado" })
+      setIsModalOpen(false)
+      setEditingPost(null)
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await apiRequest(`/api/admin/blog/${id}`, { method: "DELETE" })
+      if (!res.success) throw new Error(res.error || "Falha ao excluir post")
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "blog"] })
+      toast({ title: "Post removido" })
     },
   })
 
@@ -86,6 +115,16 @@ export default function AdminBlogPage() {
       header: "Criado em",
       accessor: (post) => format(new Date(post.created_at), "dd/MM/yyyy", { locale: ptBR }),
     },
+    {
+      key: "actions",
+      header: "Ações",
+      accessor: (post) => (
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => { setEditingPost(post); setIsModalOpen(true) }}>Editar</Button>
+          <Button size="sm" variant="destructive" onClick={() => deleteMutation.mutate(post.id)}>Excluir</Button>
+        </div>
+      ),
+    },
   ]
 
   return (
@@ -130,51 +169,61 @@ export default function AdminBlogPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault()
+              const title = (document.getElementById("post-title") as HTMLInputElement).value
+              const slug = (document.getElementById("post-slug") as HTMLInputElement).value
+              const excerpt = (document.getElementById("post-excerpt") as HTMLTextAreaElement).value
+              const content = (document.getElementById("post-content") as HTMLTextAreaElement).value
+              const status = ((document.getElementById("post-status") as HTMLInputElement)?.value || "draft") as BlogPost['status']
+              if (editingPost) {
+                updateMutation.mutate({ id: editingPost.id, payload: { title, slug, excerpt, content, status } })
+              } else {
+                createMutation.mutate({ title, slug, excerpt, content, status, published_at: status === 'published' ? new Date().toISOString() : null })
+              }
+            }}
+          >
             <div className="space-y-2">
               <Label htmlFor="post-title">Título</Label>
-              <Input id="post-title" placeholder="Título do post" />
+              <Input id="post-title" placeholder="Título do post" defaultValue={editingPost?.title} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="post-slug">Slug</Label>
-              <Input id="post-slug" placeholder="url-amigavel" />
+              <Input id="post-slug" placeholder="url-amigavel" defaultValue={editingPost?.slug} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="post-excerpt">Resumo</Label>
-              <Textarea id="post-excerpt" placeholder="Resumo do post" rows={3} />
+              <Textarea id="post-excerpt" placeholder="Resumo do post" rows={3} defaultValue={editingPost?.excerpt || ''} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="post-content">Conteúdo</Label>
-              <Textarea id="post-content" placeholder="Conteúdo do post" rows={10} />
+              <Textarea id="post-content" placeholder="Conteúdo do post" rows={10} defaultValue={editingPost?.content} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="post-status">Status</Label>
-              <Select defaultValue="draft">
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Rascunho</SelectItem>
-                  <SelectItem value="published">Publicado</SelectItem>
-                  <SelectItem value="scheduled">Agendado</SelectItem>
-                </SelectContent>
-              </Select>
+              <select id="post-status" className="input" defaultValue={editingPost?.status || 'draft'}>
+                <option value="draft">Rascunho</option>
+                <option value="published">Publicado</option>
+                <option value="scheduled">Agendado</option>
+              </select>
             </div>
-          </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit">Salvar</Button>
+            </DialogFooter>
+          </form>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button>Salvar</Button>
-          </DialogFooter>
+          
         </DialogContent>
       </Dialog>
     </div>
   )
 }
-

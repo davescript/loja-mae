@@ -309,6 +309,7 @@ export default function StoreHeader() {
               { to: '/products', label: 'Produtos' },
               { to: '/categories', label: 'Categorias' },
               { to: '/collections', label: 'Coleções' },
+              { to: '/blog', label: 'Blog' },
               { to: '/about', label: 'Sobre' },
               { to: '/contact', label: 'Contato' },
             ].map((item) => (

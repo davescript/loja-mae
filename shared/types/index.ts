@@ -255,3 +255,15 @@ export type StripeWebhookEvent = {
   };
 };
 
+// Blog types
+export type BlogPost = {
+  id: number;
+  title: string;
+  slug: string;
+  content: string;
+  excerpt: string | null;
+  status: 'draft' | 'published' | 'scheduled';
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+};

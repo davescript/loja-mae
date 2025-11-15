@@ -9,6 +9,8 @@ import ProductsPage from './storefront/pages/products';
 import CollectionsPage from './storefront/pages/collections';
 import CategoriesPage from './storefront/pages/categories';
 import AboutPage from './storefront/pages/about';
+import BlogListPage from './storefront/pages/blog';
+import BlogPostPage from './storefront/pages/blog/[slug]';
 import ContactPage from './storefront/pages/contact';
 import ProductPage from './storefront/pages/product/[slug]';
 import CartPage from './storefront/pages/cart';
@@ -62,6 +64,8 @@ function App() {
         <Route path="products" element={<ProductsPage />} />
         <Route path="product/:slug" element={<ProductPage />} />
         <Route path="about" element={<AboutPage />} />
+        <Route path="blog" element={<BlogListPage />} />
+        <Route path="blog/:slug" element={<BlogPostPage />} />
         <Route path="contact" element={<ContactPage />} />
         <Route path="cart" element={<CartPage />} />
         <Route path="checkout" element={<CheckoutPage />} />
