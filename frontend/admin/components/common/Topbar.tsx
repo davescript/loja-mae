@@ -21,7 +21,7 @@ export function Topbar() {
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-40 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
       <div className="container flex h-16 items-center justify-between px-4">
         {/* Search */}
         <div className="flex-1 max-w-md">
@@ -30,7 +30,7 @@ export function Topbar() {
             <input
               type="search"
               placeholder="Pesquisar produtos, pedidos, clientes..."
-              className="w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+              className="w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-white"
             />
           </div>
         </div>
@@ -56,7 +56,7 @@ export function Topbar() {
           {/* User Menu */}
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 hover:bg-muted/50">
+              <Button variant="ghost" className="flex items-center gap-2 hover:bg-gray-50">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground flex items-center justify-center text-sm font-bold shadow-md ring-2 ring-primary/20">
                   {admin?.name?.charAt(0).toUpperCase() || admin?.email?.charAt(0).toUpperCase() || "A"}
                 </div>
@@ -71,22 +71,22 @@ export function Topbar() {
                 align="end"
               >
                 <DropdownMenu.Item 
-                  className="px-3 py-2 text-sm hover:bg-muted rounded-sm cursor-pointer flex items-center gap-2"
+                  className="px-3 py-2 text-sm hover:bg-gray-50 rounded-sm cursor-pointer flex items-center gap-2"
                   onClick={handleProfileClick}
                 >
                   <User className="w-4 h-4" />
                   Perfil
                 </DropdownMenu.Item>
                 <DropdownMenu.Item 
-                  className="px-3 py-2 text-sm hover:bg-muted rounded-sm cursor-pointer flex items-center gap-2"
+                  className="px-3 py-2 text-sm hover:bg-gray-50 rounded-sm cursor-pointer flex items-center gap-2"
                   onClick={handleProfileClick}
                 >
                   <Settings className="w-4 h-4" />
                   Configurações
                 </DropdownMenu.Item>
-                <DropdownMenu.Separator className="h-px bg-border my-1" />
+                <DropdownMenu.Separator className="h-px bg-gray-200 my-1" />
                 <DropdownMenu.Item
-                  className="px-3 py-2 text-sm hover:bg-muted rounded-sm cursor-pointer flex items-center gap-2 text-red-600"
+                  className="px-3 py-2 text-sm hover:bg-gray-50 rounded-sm cursor-pointer flex items-center gap-2 text-red-600"
                   onClick={logout}
                 >
                   <LogOut className="w-4 h-4" />
