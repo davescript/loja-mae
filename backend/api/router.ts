@@ -146,6 +146,42 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
           return handleCORS(await handleGetOrderUpdates(request, env), env, request);
         }
 
+        // Admin orders tracking endpoints
+        if (path.match(/^\/api\/admin\/orders\/\d+\/tracking$/)) {
+          const orderId = path.split('/')[4];
+          const { handleUpdateTracking, handleGetTrackingEvents } = await import('./admin/orders/tracking');
+          if (method === 'PUT') {
+            return handleCORS(await handleUpdateTracking(request, env, orderId), env, request);
+          }
+          if (method === 'GET') {
+            return handleCORS(await handleGetTrackingEvents(request, env, orderId), env, request);
+          }
+        }
+
+        if (path.match(/^\/api\/admin\/orders\/\d+\/ship$/)) {
+          const orderId = path.split('/')[4];
+          const { handleMarkAsShipped } = await import('./admin/orders/tracking');
+          if (method === 'POST') {
+            return handleCORS(await handleMarkAsShipped(request, env, orderId), env, request);
+          }
+        }
+
+        if (path.match(/^\/api\/admin\/orders\/\d+\/deliver$/)) {
+          const orderId = path.split('/')[4];
+          const { handleMarkAsDelivered } = await import('./admin/orders/tracking');
+          if (method === 'POST') {
+            return handleCORS(await handleMarkAsDelivered(request, env, orderId), env, request);
+          }
+        }
+
+        if (path.match(/^\/api\/admin\/orders\/\d+\/tracking-event$/)) {
+          const orderId = path.split('/')[4];
+          const { handleAddTrackingEvent } = await import('./admin/orders/tracking');
+          if (method === 'POST') {
+            return handleCORS(await handleAddTrackingEvent(request, env, orderId), env, request);
+          }
+        }
+
         // Admin favorites routes
         if (path.startsWith('/api/admin/favorites')) {
           const { handleAdminFavoritesRoutes } = await import('./admin/favorites');

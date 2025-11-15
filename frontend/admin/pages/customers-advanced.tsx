@@ -17,6 +17,7 @@ type Customer = {
   first_name?: string
   last_name?: string
   phone?: string
+  is_active?: number
   created_at: string
   total_spent?: number
   orders_count?: number
