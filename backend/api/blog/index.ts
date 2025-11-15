@@ -6,6 +6,8 @@ import { requireAdmin } from '../../utils/auth'
 import { listPublishedPosts, listAllPosts, getPostBySlug, createPost, updatePost, deletePost } from '../../modules/blog'
 import { createBlogPostSchema, updateBlogPostSchema } from '../../validators/blog'
 import { ValidationError } from '../../utils/errors'
+import { generateSlug } from '../../utils/db'
+import { executeOne } from '../../utils/db'
 
 export async function handleBlogRoutes(request: Request, env: Env): Promise<Response> {
   try {
@@ -46,13 +48,19 @@ export async function handleBlogRoutes(request: Request, env: Env): Promise<Resp
     if (method === 'POST' && path === '/api/admin/blog') {
       await requireAdmin(request, env)
       const body = await request.json()
-      let validated
+      let validated: any
       try {
         validated = createBlogPostSchema.parse(body)
       } catch (e: any) {
         throw new ValidationError('Invalid blog post data')
       }
-      const post = await createPost(db, validated)
+      const slug = (validated.slug && validated.slug.trim().length > 0) ? validated.slug.trim() : generateSlug(validated.title)
+      // enforce unique slug
+      const exists = await executeOne<{ id: number }>(db, 'SELECT id FROM blog_posts WHERE slug = ?', [slug])
+      if (exists) {
+        throw new ValidationError('Slug já existe. Escolha outro.')
+      }
+      const post = await createPost(db, { ...validated, slug })
       return successResponse(post, 'Post created')
     }
 
