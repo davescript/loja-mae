@@ -12,6 +12,9 @@ import AboutPage from './storefront/pages/about';
 import BlogListPage from './storefront/pages/blog';
 import BlogPostPage from './storefront/pages/blog/[slug]';
 import ContactPage from './storefront/pages/contact';
+import PrivacyPage from './storefront/pages/privacy';
+import TermsPage from './storefront/pages/terms';
+import ShippingPage from './storefront/pages/shipping';
 import ProductPage from './storefront/pages/product/[slug]';
 import CartPage from './storefront/pages/cart';
 import CheckoutPage from './storefront/pages/checkout';
@@ -68,6 +71,9 @@ function App() {
         <Route path="blog" element={<BlogListPage />} />
         <Route path="blog/:slug" element={<BlogPostPage />} />
         <Route path="contact" element={<ContactPage />} />
+        <Route path="privacy" element={<PrivacyPage />} />
+        <Route path="terms" element={<TermsPage />} />
+        <Route path="shipping" element={<ShippingPage />} />
         <Route path="cart" element={<CartPage />} />
         <Route path="checkout" element={<CheckoutPage />} />
         <Route path="checkout/success" element={<CheckoutSuccessPage />} />
