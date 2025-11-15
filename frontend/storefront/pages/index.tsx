@@ -7,10 +7,12 @@ import CategoriesModal from '../components/app/CategoriesModal';
 import QuickViewModal from '../components/app/QuickViewModal';
 import KpiWidgets from '../components/app/KpiWidgets';
 import HeroSlider from '../components/store/HeroSlider';
+import BannerDisplay from '../components/app/BannerDisplay';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Package, Star, Truck, Shield } from 'lucide-react';
+import { useBanners } from '../../hooks/useBanners';
 
 export default function HomePage() {
   const [categoriesOpen, setCategoriesOpen] = useState(false);
@@ -49,6 +51,9 @@ export default function HomePage() {
     retry: 1,
   });
 
+  const { data: heroBanners } = useBanners('home_hero', 1);
+  const hasHeroBanner = heroBanners && heroBanners.length > 0;
+
   const features = [
     {
       icon: Package,
@@ -74,8 +79,15 @@ export default function HomePage() {
 
   return (
     <div className="space-y-20 md:space-y-32 pb-20">
-      {/* Hero Slider */}
-      <HeroSlider />
+      {/* Hero Banner / Slider */}
+      {hasHeroBanner ? (
+        <BannerDisplay position="home_hero" className="mb-12" />
+      ) : (
+        <HeroSlider />
+      )}
+
+      {/* Top Banners */}
+      <BannerDisplay position="home_top" className="mt-4" variant="grid" limit={3} />
 
       {/* Features Bar - Moderno */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
@@ -342,6 +354,9 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* Bottom Banners */}
+      <BannerDisplay position="home_bottom" className="mt-4" variant="grid" limit={3} />
 
       {/* Newsletter CTA - Moderno */}
       <section className="relative overflow-hidden rounded-3xl">

@@ -17,6 +17,7 @@ import { Badge } from '../../admin/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '../../utils/api';
 import { useState } from 'react';
+import BannerDisplay from '../components/app/BannerDisplay';
 
 export default function CustomerPortalLayout() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -153,6 +154,9 @@ export default function CustomerPortalLayout() {
                 );
               })}
             </nav>
+            <div className="mt-8">
+              <BannerDisplay position="sidebar" variant="sidebar" />
+            </div>
           </aside>
 
           {/* Main Content */}

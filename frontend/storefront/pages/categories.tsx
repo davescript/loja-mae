@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Search, Grid, List, ChevronRight, Package, X } from 'lucide-react';
 import { useState } from 'react';
 import type { Category } from '@shared/types';
+import BannerDisplay from '../components/app/BannerDisplay';
 
 export default function CategoriesPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -94,6 +95,10 @@ export default function CategoriesPage() {
           </motion.div>
         </div>
       </section>
+
+      <div className="container mx-auto px-4 mb-8">
+        <BannerDisplay position="category" variant="full" />
+      </div>
 
       {/* Controls Bar */}
       <div className="container mx-auto px-4 mb-6">

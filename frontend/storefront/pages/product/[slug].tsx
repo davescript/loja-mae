@@ -10,6 +10,7 @@ import { sanitizeHtml } from '../../../utils/sanitize';
 import { useCartStore } from '../../../store/cartStore';
 import { useFavoritesStore } from '../../../store/favoritesStore';
 import { useToast } from '../../../admin/hooks/useToast';
+import BannerDisplay from '../../components/app/BannerDisplay';
 
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -164,6 +165,10 @@ export default function ProductPage() {
         <span className="mx-2">/</span>
         <span className="text-foreground">{product.title}</span>
       </nav>
+
+      <div className="mb-8">
+        <BannerDisplay position="product" variant="full" />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
         {/* Galeria de Imagens */}

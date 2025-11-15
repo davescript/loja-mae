@@ -7,6 +7,7 @@ import ProductCard from '../components/app/ProductCard';
 import QuickViewModal from '../components/app/QuickViewModal';
 import { motion } from 'framer-motion';
 import { Search, Filter, Grid, List, SlidersHorizontal, X, ChevronDown } from 'lucide-react';
+import BannerDisplay from '../components/app/BannerDisplay';
 
 export default function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -133,6 +134,10 @@ export default function ProductsPage() {
           </motion.div>
         </div>
       </section>
+
+      <div className="container mx-auto px-4 mb-8">
+        <BannerDisplay position="category" variant="full" />
+      </div>
 
       {/* Controls Bar */}
       <div className="container mx-auto px-4 mb-6">
