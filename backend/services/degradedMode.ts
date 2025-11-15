@@ -60,7 +60,7 @@ export class DegradedModeManager {
       this.status = {
         active: true,
         triggers,
-        disabledFeatures: LIMITS.DEGRADED_MODE.DISABLE_FEATURES,
+        disabledFeatures: [...LIMITS.DEGRADED_MODE.DISABLE_FEATURES],
         timestamp: Date.now(),
       };
       
@@ -98,7 +98,7 @@ export class DegradedModeManager {
     }
 
     // Verificar se está na lista de críticos (sempre ativo)
-    if (LIMITS.DEGRADED_MODE.CRITICAL_FEATURES.includes(feature)) {
+    if ((LIMITS.DEGRADED_MODE.CRITICAL_FEATURES as readonly string[]).includes(feature)) {
       return true;
     }
 
@@ -121,7 +121,7 @@ export class DegradedModeManager {
       this.status = {
         active: true,
         triggers: [reason],
-        disabledFeatures: LIMITS.DEGRADED_MODE.DISABLE_FEATURES,
+        disabledFeatures: [...LIMITS.DEGRADED_MODE.DISABLE_FEATURES],
         timestamp: Date.now(),
       };
       console.warn('[DEGRADED_MODE] Manually activated:', reason);

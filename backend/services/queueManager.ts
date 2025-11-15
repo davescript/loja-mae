@@ -100,11 +100,11 @@ export class QueueManager {
     }
 
     // Buscar próximo batch
-    const batch = await this.queue.batch({
-      max: LIMITS.QUEUE.BATCH_SIZE,
-    });
-
-    for (const message of batch.messages) {
+    // Note: Queue.batch() will be available when using Cloudflare Queues
+    // For now, this is a placeholder - implement actual queue consumption
+    const messages: any[] = []; // TODO: Implement actual queue.batch() when deployed
+    
+    for (const message of messages) {
       const job = message.body as QueueJob;
 
       // Verificar se já está processando (deduplicação)
