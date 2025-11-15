@@ -44,6 +44,7 @@ import AdminCollectionsPage from './admin/pages/collections';
 import AdminOrdersPage from './admin/pages/orders-advanced';
 import AdminAbandonedCartsPage from './admin/pages/abandoned-carts';
 import AdminCustomersPage from './admin/pages/customers-advanced';
+import AdminCustomerDetailsPage from './admin/pages/customers/[id]';
 import AdminFavoritesPage from './admin/pages/favorites';
 import AdminMarketingPage from './admin/pages/marketing';
 import AdminCouponsPage from './admin/pages/coupons-advanced';
@@ -99,6 +100,7 @@ function App() {
         <Route path="orders" element={<AdminOrdersPage />} />
         <Route path="abandoned-carts" element={<AdminAbandonedCartsPage />} />
         <Route path="customers" element={<AdminCustomersPage />} />
+        <Route path="customers/:id" element={<AdminCustomerDetailsPage />} />
         <Route path="favorites" element={<AdminFavoritesPage />} />
         <Route path="marketing" element={<AdminMarketingPage />} />
         <Route path="coupons" element={<AdminCouponsPage />} />
