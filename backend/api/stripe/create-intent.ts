@@ -281,7 +281,6 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
 
     // Criar Payment Intent no Stripe
     // Nota: Para EUR, o valor mínimo é 0.50 EUR (50 centavos)
-    // Habilitar múltiplos métodos de pagamento: Card, MB Way, PayPal, Apple Pay
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalCents,
       currency: 'eur',
@@ -290,9 +289,6 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
         order_number: orderNumber,
         customer_id: customerId?.toString() || 'guest',
       },
-      // Habilitar múltiplos métodos de pagamento
-      // MB Way é suportado através do método 'link' quando o país é PT
-      payment_method_types: ['card', 'paypal', 'link'],
       // Habilitar métodos automáticos incluindo Apple Pay e Google Pay
       automatic_payment_methods: {
         enabled: true,
