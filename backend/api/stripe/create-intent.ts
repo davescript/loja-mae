@@ -299,8 +299,6 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
         allow_redirects: 'always',
       },
       description: `Pedido ${orderNumber} - Loja Mãe`,
-      capture_method: 'automatic',
-      confirmation_method: 'automatic',
       // Adicionar shipping address para métodos que requerem
       shipping: shippingAddressPayload ? {
         name: `${shippingAddressPayload.first_name} ${shippingAddressPayload.last_name}`,
