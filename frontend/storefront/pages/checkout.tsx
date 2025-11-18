@@ -325,6 +325,7 @@ export default function CheckoutPage() {
   const [loadingCart, setLoadingCart] = useState(false)
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null)
   const [isAddressDialogOpen, setIsAddressDialogOpen] = useState(false)
+  const [hasAutoOpenedAddressDialog, setHasAutoOpenedAddressDialog] = useState(false)
   const addressInitialState = {
     first_name: '',
     last_name: '',
@@ -403,9 +404,19 @@ export default function CheckoutPage() {
       return
     }
 
-    // Se autenticado e sem endereços, abrir diálogo automaticamente
-    if (isAuthenticated && !addressesLoading && addresses.length === 0 && !isAddressDialogOpen) {
+    // Se autenticado e sem endereços, abrir diálogo automaticamente apenas uma vez
+    if (
+      isAuthenticated &&
+      !addressesLoading &&
+      addresses.length === 0 &&
+      !hasAutoOpenedAddressDialog
+    ) {
       setIsAddressDialogOpen(true)
+      setHasAutoOpenedAddressDialog(true)
+    }
+
+    if (addresses.length > 0 && hasAutoOpenedAddressDialog) {
+      setHasAutoOpenedAddressDialog(false)
     }
 
     // Se autenticado, gerenciar endereços salvos
@@ -421,7 +432,15 @@ export default function CheckoutPage() {
 
     const defaultAddress = addresses.find((addr) => addr.is_default === 1) || addresses[0]
     setSelectedAddressId(defaultAddress?.id || null)
-  }, [addresses, isAuthenticated, selectedAddressId, authLoading, navigate])
+  }, [
+    addresses,
+    addresses.length,
+    isAuthenticated,
+    selectedAddressId,
+    authLoading,
+    navigate,
+    hasAutoOpenedAddressDialog,
+  ])
 
   // Carregar carrinho abandonado se cart_id estiver na URL
   useEffect(() => {
