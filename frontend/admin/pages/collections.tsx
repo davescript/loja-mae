@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiRequest } from "../../utils/api"
 import { DataTable, type Column } from "../components/common/DataTable"
@@ -11,9 +11,12 @@ import { Label } from "../components/ui/label"
 import { Textarea } from "../components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
-import { Plus, Edit, Trash2, MoreVertical, Package, Filter, Sparkles } from "lucide-react"
+import { Badge } from "../components/ui/badge"
+import { Checkbox } from "../components/ui/checkbox"
+import { Plus, Edit, Trash2, MoreVertical, Package, Filter, Sparkles, Search, X, Loader2 } from "lucide-react"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
-import { motion } from "framer-motion"
+import type { Product, Category } from "@shared/types"
+import { formatPrice } from "../../utils/format"
 
 type Collection = {
   id: number
@@ -22,15 +25,17 @@ type Collection = {
   description?: string
   type: "manual" | "automatic"
   rules?: CollectionRule[]
+  products?: Product[]
   product_count?: number
   is_active: boolean
   created_at: string
 }
 
 type CollectionRule = {
+  id?: number
   field: "category" | "tag" | "price" | "stock" | "featured"
   operator: "equals" | "contains" | "greater_than" | "less_than" | "in"
-  value: string | number
+  value: string
 }
 
 export default function AdminCollectionsPage() {
@@ -48,6 +53,7 @@ export default function AdminCollectionsPage() {
   })
   const [selectedProducts, setSelectedProducts] = useState<number[]>([])
   const [rules, setRules] = useState<CollectionRule[]>([])
+  const [productSearch, setProductSearch] = useState("")
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
@@ -67,20 +73,101 @@ export default function AdminCollectionsPage() {
   })
 
   // Fetch products for manual selection
-  const { data: productsData } = useQuery({
-    queryKey: ["admin", "products", "all"],
+  const { data: productsData, isLoading: productsLoading } = useQuery({
+    queryKey: ["admin", "products", "all", productSearch],
     queryFn: async () => {
-      const response = await apiRequest<{ items: any[] }>('/api/products?page=1&pageSize=1000');
+      const params = new URLSearchParams({
+        page: '1',
+        pageSize: '100',
+        ...(productSearch && { search: productSearch }),
+      });
+      const response = await apiRequest<{ items: Product[] }>(`/api/products?${params.toString()}`);
+      return response.data?.items || [];
+    },
+    enabled: isModalOpen && collectionType === 'manual',
+  })
+
+  // Fetch categories for rules
+  const { data: categories } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const response = await apiRequest<{ items: Category[] } | Category[]>("/api/categories");
+      if (Array.isArray(response.data)) {
+        return response.data;
+      }
       return response.data?.items || [];
     },
   })
 
+  // Load collection data when editing
+  useEffect(() => {
+    if (editingCollection) {
+      setFormData({
+        name: editingCollection.name || '',
+        slug: editingCollection.slug || '',
+        description: editingCollection.description || '',
+        type: editingCollection.type || 'manual',
+        is_active: editingCollection.is_active ?? true,
+      });
+      setCollectionType(editingCollection.type || 'manual');
+      setRules(editingCollection.rules || []);
+      if (editingCollection.products) {
+        setSelectedProducts(editingCollection.products.map(p => p.id));
+      }
+    } else {
+      resetForm();
+    }
+  }, [editingCollection]);
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      slug: '',
+      description: '',
+      type: 'manual',
+      is_active: true,
+    });
+    setCollectionType('manual');
+    setSelectedProducts([]);
+    setRules([]);
+    setProductSearch('');
+  }
+
+  // Generate slug from name
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  }
+
   // Create/Update collection mutation
   const saveCollectionMutation = useMutation({
-    mutationFn: async (data: Partial<Collection> & { id?: number; product_ids?: number[]; rules?: CollectionRule[] }) => {
-      const url = data.id ? `/api/admin/collections/${data.id}` : '/api/admin/collections';
-      const method = data.id ? 'PUT' : 'POST';
-      const { id, ...payload } = data;
+    mutationFn: async () => {
+      if (!formData.name.trim()) {
+        throw new Error('Nome é obrigatório');
+      }
+
+      const slug = formData.slug || generateSlug(formData.name);
+      const payload: any = {
+        name: formData.name,
+        slug,
+        description: formData.description || undefined,
+        type: collectionType,
+        is_active: formData.is_active,
+      };
+
+      if (collectionType === 'automatic' && rules.length > 0) {
+        payload.rules = rules;
+      } else if (collectionType === 'manual' && selectedProducts.length > 0) {
+        payload.product_ids = selectedProducts;
+      }
+
+      const url = editingCollection ? `/api/admin/collections/${editingCollection.id}` : '/api/admin/collections';
+      const method = editingCollection ? 'PUT' : 'POST';
+      
       return apiRequest(url, {
         method,
         body: JSON.stringify(payload),
@@ -94,6 +181,7 @@ export default function AdminCollectionsPage() {
       queryClient.invalidateQueries({ queryKey: ["admin", "collections"] });
       setIsModalOpen(false);
       setEditingCollection(null);
+      resetForm();
     },
     onError: (error: any) => {
       toast({
@@ -126,6 +214,32 @@ export default function AdminCollectionsPage() {
       });
     },
   });
+
+  // Add rule
+  const addRule = () => {
+    setRules([...rules, { field: 'category', operator: 'equals', value: '' }]);
+  };
+
+  // Remove rule
+  const removeRule = (index: number) => {
+    setRules(rules.filter((_, i) => i !== index));
+  };
+
+  // Update rule
+  const updateRule = (index: number, field: keyof CollectionRule, value: any) => {
+    const newRules = [...rules];
+    newRules[index] = { ...newRules[index], [field]: value };
+    setRules(newRules);
+  };
+
+  // Toggle product selection
+  const toggleProduct = (productId: number) => {
+    setSelectedProducts(prev => 
+      prev.includes(productId) 
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
 
   const columns: Column<Collection>[] = [
     {
@@ -179,6 +293,10 @@ export default function AdminCollectionsPage() {
     },
   ]
 
+  const filteredProducts = productsData?.filter(product => 
+    product.title.toLowerCase().includes(productSearch.toLowerCase())
+  ) || [];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -186,7 +304,11 @@ export default function AdminCollectionsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Coleções</h1>
           <p className="text-muted-foreground mt-2">Crie e gerencie coleções de produtos</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)}>
+        <Button onClick={() => {
+          setEditingCollection(null);
+          resetForm();
+          setIsModalOpen(true);
+        }}>
           <Plus className="w-4 h-4 mr-2" />
           Nova Coleção
         </Button>
@@ -221,8 +343,8 @@ export default function AdminCollectionsPage() {
                 <DropdownMenu.Item
                   className="px-3 py-2 text-sm hover:bg-muted rounded-sm cursor-pointer flex items-center gap-2"
                   onClick={() => {
-                    setEditingCollection(collection)
-                    setIsModalOpen(true)
+                    setEditingCollection(collection);
+                    setIsModalOpen(true);
                   }}
                 >
                   <Edit className="w-4 h-4" />
@@ -246,8 +368,14 @@ export default function AdminCollectionsPage() {
       />
 
       {/* Collection Form Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <Dialog open={isModalOpen} onOpenChange={(open) => {
+        setIsModalOpen(open);
+        if (!open) {
+          setEditingCollection(null);
+          resetForm();
+        }
+      }}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingCollection ? "Editar Coleção" : "Nova Coleção"}</DialogTitle>
             <DialogDescription>
@@ -257,170 +385,339 @@ export default function AdminCollectionsPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs defaultValue="geral" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="geral">Geral</TabsTrigger>
-              <TabsTrigger value="regras">Regras</TabsTrigger>
-              <TabsTrigger value="produtos">Produtos</TabsTrigger>
-            </TabsList>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            saveCollectionMutation.mutate();
+          }}>
+            <Tabs defaultValue="geral" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="geral">Geral</TabsTrigger>
+                <TabsTrigger value="regras" disabled={collectionType === 'manual'}>Regras</TabsTrigger>
+                <TabsTrigger value="produtos" disabled={collectionType === 'automatic'}>Produtos</TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="geral" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="collection-name">Nome *</Label>
-                <Input id="collection-name" placeholder="Ex: Promoções de Verão" />
-              </div>
+              <TabsContent value="geral" className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="collection-name">Nome *</Label>
+                  <Input 
+                    id="collection-name" 
+                    placeholder="Ex: Promoções de Verão"
+                    value={formData.name}
+                    onChange={(e) => {
+                      setFormData({ ...formData, name: e.target.value });
+                      if (!formData.slug || formData.slug === generateSlug(formData.name)) {
+                        setFormData(prev => ({ ...prev, slug: generateSlug(e.target.value) }));
+                      }
+                    }}
+                    required
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="collection-slug">Slug</Label>
-                <Input id="collection-slug" placeholder="promocoes-verao" />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="collection-slug">Slug</Label>
+                  <Input 
+                    id="collection-slug" 
+                    placeholder="promocoes-verao"
+                    value={formData.slug}
+                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    URL amigável. Se deixado vazio, será gerado automaticamente do nome.
+                  </p>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="collection-description">Descrição</Label>
-                <Textarea id="collection-description" placeholder="Descrição da coleção" rows={4} />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="collection-description">Descrição</Label>
+                  <Textarea 
+                    id="collection-description" 
+                    placeholder="Descrição da coleção" 
+                    rows={4}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="collection-type">Tipo de Coleção</Label>
-                <Select value={collectionType} onValueChange={(value) => setCollectionType(value as "manual" | "automatic")}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="manual">Manual</SelectItem>
-                    <SelectItem value="automatic">Automática (com regras)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-muted-foreground">
-                  {collectionType === "automatic"
-                    ? "Produtos serão adicionados automaticamente baseado em regras"
-                    : "Você seleciona manualmente os produtos"}
-                </p>
-              </div>
-            </TabsContent>
+                <div className="space-y-2">
+                  <Label htmlFor="collection-type">Tipo de Coleção</Label>
+                  <Select 
+                    value={collectionType} 
+                    onValueChange={(value) => {
+                      setCollectionType(value as "manual" | "automatic");
+                      setFormData({ ...formData, type: value as "manual" | "automatic" });
+                      if (value === 'automatic') {
+                        setSelectedProducts([]);
+                      } else {
+                        setRules([]);
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="manual">Manual</SelectItem>
+                      <SelectItem value="automatic">Automática (com regras)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">
+                    {collectionType === "automatic"
+                      ? "Produtos serão adicionados automaticamente baseado em regras"
+                      : "Você seleciona manualmente os produtos"}
+                  </p>
+                </div>
 
-            <TabsContent value="regras" className="space-y-4 mt-4">
-              {collectionType === "automatic" ? (
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="is_active"
+                    checked={formData.is_active}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked as boolean })}
+                  />
+                  <Label htmlFor="is_active" className="cursor-pointer">
+                    Coleção ativa
+                  </Label>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="regras" className="space-y-4 mt-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Filter className="w-5 h-5" />
-                      Regras Automáticas
-                    </CardTitle>
-                    <CardDescription>
-                      Defina regras para adicionar produtos automaticamente à coleção
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="p-4 border rounded-lg">
-                        <div className="flex items-center justify-between mb-4">
-                          <div>
-                            <h4 className="font-medium">Regra 1</h4>
-                            <p className="text-sm text-muted-foreground">Produtos com preço maior que €50</p>
-                          </div>
-                          <Button variant="ghost" size="icon">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        <div className="grid grid-cols-3 gap-4">
-                          <div>
-                            <Label>Campo</Label>
-                            <Select defaultValue="price">
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="price">Preço</SelectItem>
-                                <SelectItem value="category">Categoria</SelectItem>
-                                <SelectItem value="tag">Tag</SelectItem>
-                                <SelectItem value="stock">Estoque</SelectItem>
-                                <SelectItem value="featured">Destaque</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label>Operador</Label>
-                            <Select defaultValue="greater_than">
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="equals">Igual a</SelectItem>
-                                <SelectItem value="contains">Contém</SelectItem>
-                                <SelectItem value="greater_than">Maior que</SelectItem>
-                                <SelectItem value="less_than">Menor que</SelectItem>
-                                <SelectItem value="in">Está em</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label>Valor</Label>
-                            <Input type="number" placeholder="50" />
-                          </div>
-                        </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Filter className="w-5 h-5" />
+                          Regras Automáticas
+                        </CardTitle>
+                        <CardDescription>
+                          Defina regras para adicionar produtos automaticamente à coleção
+                        </CardDescription>
                       </div>
-                      <Button variant="outline" className="w-full">
+                      <Button type="button" variant="outline" onClick={addRule}>
                         <Plus className="w-4 h-4 mr-2" />
                         Adicionar Regra
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card>
-                  <CardContent className="pt-6">
-                    <p className="text-sm text-muted-foreground text-center py-8">
-                      Coleções manuais não usam regras. Selecione os produtos na aba "Produtos".
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-
-            <TabsContent value="produtos" className="space-y-4 mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Package className="w-5 h-5" />
-                    Produtos da Coleção
-                  </CardTitle>
-                  <CardDescription>
-                    {collectionType === "automatic"
-                      ? "Produtos serão adicionados automaticamente baseado nas regras"
-                      : "Selecione os produtos para esta coleção"}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {collectionType === "manual" ? (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <Input placeholder="Buscar produtos..." className="max-w-md" />
-                        <Button>
-                          <Plus className="w-4 h-4 mr-2" />
-                          Adicionar Produtos
-                        </Button>
+                  </CardHeader>
+                  <CardContent>
+                    {rules.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Filter className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>Nenhuma regra definida. Adicione uma regra para começar.</p>
                       </div>
-                      <p className="text-sm text-muted-foreground text-center py-8">
-                        Nenhum produto adicionado ainda
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-8">
-                      Produtos serão atualizados automaticamente quando as regras forem aplicadas
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                    ) : (
+                      <div className="space-y-4">
+                        {rules.map((rule, index) => (
+                          <Card key={index}>
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between mb-4">
+                                <h4 className="font-medium">Regra {index + 1}</h4>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeRule(index)}
+                                >
+                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                </Button>
+                              </div>
+                              <div className="grid grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                  <Label>Campo</Label>
+                                  <Select
+                                    value={rule.field}
+                                    onValueChange={(value) => updateRule(index, 'field', value)}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="category">Categoria</SelectItem>
+                                      <SelectItem value="price">Preço</SelectItem>
+                                      <SelectItem value="stock">Estoque</SelectItem>
+                                      <SelectItem value="featured">Destaque</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Operador</Label>
+                                  <Select
+                                    value={rule.operator}
+                                    onValueChange={(value) => updateRule(index, 'operator', value)}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {rule.field === 'category' && (
+                                        <>
+                                          <SelectItem value="equals">Igual a</SelectItem>
+                                          <SelectItem value="in">Está em</SelectItem>
+                                        </>
+                                      )}
+                                      {rule.field === 'price' && (
+                                        <>
+                                          <SelectItem value="greater_than">Maior que</SelectItem>
+                                          <SelectItem value="less_than">Menor que</SelectItem>
+                                        </>
+                                      )}
+                                      {rule.field === 'stock' && (
+                                        <>
+                                          <SelectItem value="greater_than">Maior que</SelectItem>
+                                          <SelectItem value="less_than">Menor que</SelectItem>
+                                        </>
+                                      )}
+                                      {rule.field === 'featured' && (
+                                        <SelectItem value="equals">Igual a</SelectItem>
+                                      )}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Valor</Label>
+                                  {rule.field === 'category' ? (
+                                    <Select
+                                      value={rule.value}
+                                      onValueChange={(value) => updateRule(index, 'value', value)}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Selecione categoria" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {categories?.map(cat => (
+                                          <SelectItem key={cat.id} value={cat.id.toString()}>
+                                            {cat.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  ) : rule.field === 'featured' ? (
+                                    <Select
+                                      value={rule.value}
+                                      onValueChange={(value) => updateRule(index, 'value', value)}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="true">Sim</SelectItem>
+                                        <SelectItem value="false">Não</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  ) : (
+                                    <Input
+                                      type={rule.field === 'price' ? 'number' : 'number'}
+                                      step={rule.field === 'price' ? '0.01' : '1'}
+                                      placeholder={rule.field === 'price' ? '0.00' : '0'}
+                                      value={rule.value}
+                                      onChange={(e) => updateRule(index, 'value', e.target.value)}
+                                    />
+                                  )}
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-          <DialogFooter className="mt-6">
-            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button>Salvar Coleção</Button>
-          </DialogFooter>
+              <TabsContent value="produtos" className="space-y-4 mt-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Package className="w-5 h-5" />
+                      Produtos da Coleção
+                    </CardTitle>
+                    <CardDescription>
+                      Selecione os produtos para esta coleção manual
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Buscar produtos..."
+                            value={productSearch}
+                            onChange={(e) => setProductSearch(e.target.value)}
+                            className="pl-10"
+                          />
+                        </div>
+                        <Badge variant="secondary">
+                          {selectedProducts.length} selecionado{selectedProducts.length !== 1 ? 's' : ''}
+                        </Badge>
+                      </div>
+
+                      {productsLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : filteredProducts.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                          <p>Nenhum produto encontrado</p>
+                        </div>
+                      ) : (
+                        <div className="border rounded-lg max-h-96 overflow-y-auto">
+                          <div className="divide-y">
+                            {filteredProducts.map((product) => (
+                              <div
+                                key={product.id}
+                                className="flex items-center justify-between p-3 hover:bg-gray-50 cursor-pointer"
+                                onClick={() => toggleProduct(product.id)}
+                              >
+                                <div className="flex items-center gap-3 flex-1">
+                                  <Checkbox
+                                    checked={selectedProducts.includes(product.id)}
+                                    onCheckedChange={() => toggleProduct(product.id)}
+                                  />
+                                  <div className="flex-1">
+                                    <div className="font-medium">{product.title}</div>
+                                    <div className="text-sm text-muted-foreground">
+                                      {formatPrice(product.price_cents)}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+
+            <DialogFooter className="mt-6">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setEditingCollection(null);
+                  resetForm();
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={saveCollectionMutation.isPending || !formData.name.trim()}
+              >
+                {saveCollectionMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  'Salvar Coleção'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

@@ -373,6 +373,14 @@ export default function AdminCampaignsPage() {
 
           <form onSubmit={(e) => {
             e.preventDefault();
+            if (!formData.name.trim()) {
+              toast({
+                title: 'Erro',
+                description: 'Nome da campanha é obrigatório.',
+                variant: 'destructive',
+              });
+              return;
+            }
             const payload: any = {
               ...formData,
               budget: formData.budget ? parseFloat(formData.budget) : undefined,
