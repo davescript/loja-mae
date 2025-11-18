@@ -5,16 +5,21 @@ Apenas 2 métodos de pagamento estão aparecendo no checkout (Cartão e Klarna),
 
 ## Solução
 
-### 1. Habilitar Métodos no Painel do Stripe
+### 1. Habilitar Métodos no Painel do Stripe ⚠️ **CRÍTICO**
+
+**IMPORTANTE**: Se o método Link (MB Way) sumiu, verifique se ele ainda está habilitado no painel do Stripe!
 
 1. Acesse o [Painel do Stripe](https://dashboard.stripe.com/)
 2. Vá em **Configurações** > **Métodos de Pagamento**
-3. Ative os seguintes métodos:
+3. **VERIFIQUE SE O LINK ESTÁ HABILITADO** - Se não estiver, ative-o
+4. Ative os seguintes métodos:
    - ✅ **Cartão** (já ativo)
-   - ✅ **Link** (para MB Way) - Ative este método
+   - ✅ **Link** (para MB Way) - ⚠️ **VERIFICAR SE ESTÁ HABILITADO**
    - ✅ **Klarna** (já ativo)
    - ✅ **Apple Pay** - Ative e configure verificação de domínio
    - ✅ **Google Pay** - Ative
+
+**Nota**: O código agora usa `automatic_payment_methods` que mostra todos os métodos habilitados no painel. Se o Link não aparecer, é porque não está habilitado no painel do Stripe.
 
 ### 2. Verificar Configuração do Link (MB Way)
 

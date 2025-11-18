@@ -302,8 +302,13 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
         order_number: orderNumber,
         customer_id: customerId?.toString() || 'guest',
       },
-      // Métodos de pagamento específicos: Cartão, MB Way (link), Klarna
-      payment_method_types: ['card', 'link', 'klarna'],
+      // Usar automatic_payment_methods para habilitar Link (MB Way) corretamente
+      // O Link aparece automaticamente quando o país é PT e está habilitado no painel
+      // Nota: Não podemos usar payment_method_types junto com automatic_payment_methods
+      automatic_payment_methods: {
+        enabled: true,
+        allow_redirects: 'always',
+      },
       description: `Pedido ${orderNumber} - Loja Mãe`,
       // Adicionar shipping address para métodos que requerem (importante para MB Way detectar país PT)
       shipping: shippingAddressPayload ? {
