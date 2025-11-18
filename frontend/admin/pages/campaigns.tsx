@@ -10,6 +10,7 @@ import { Textarea } from "../components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { useToast } from "../hooks/useToast"
+import { apiRequest } from "../../utils/api"
 import { Plus, Edit, Trash2, MoreVertical, Megaphone, Calendar, Target, TrendingUp } from "lucide-react"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import { format } from "date-fns"
@@ -28,6 +29,7 @@ type Campaign = {
   impressions?: number
   clicks?: number
   conversions?: number
+  content?: string
   created_at: string
 }
 
@@ -36,20 +38,85 @@ export default function AdminCampaignsPage() {
   const [search, setSearch] = useState("")
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null)
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    type: 'discount' as 'discount' | 'banner' | 'email' | 'social',
+    status: 'draft' as 'draft' | 'scheduled' | 'active' | 'paused' | 'completed',
+    start_date: '',
+    end_date: '',
+    budget: '',
+    content: '',
+  })
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
-  // Mock data - substituir por chamada real à API
+  // Fetch campaigns from API
   const { data: campaignsData, isLoading } = useQuery({
     queryKey: ["admin", "campaigns", page, search],
     queryFn: async () => {
-      return {
-        items: [] as Campaign[],
-        total: 0,
-        totalPages: 0,
-      }
+      const response = await apiRequest<{
+        items: Campaign[];
+        total: number;
+        page: number;
+        pageSize: number;
+        totalPages: number;
+      }>(`/api/admin/campaigns?page=${page}&pageSize=20${search ? `&search=${encodeURIComponent(search)}` : ''}`);
+      return response.data || { items: [], total: 0, page: 1, pageSize: 20, totalPages: 0 };
     },
   })
+
+  // Create/Update campaign mutation
+  const saveCampaignMutation = useMutation({
+    mutationFn: async (data: Partial<Campaign> & { id?: number }) => {
+      const url = data.id ? `/api/admin/campaigns/${data.id}` : '/api/admin/campaigns';
+      const method = data.id ? 'PUT' : 'POST';
+      const { id, ...payload } = data;
+      return apiRequest(url, {
+        method,
+        body: JSON.stringify(payload),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: editingCampaign ? 'Campanha atualizada' : 'Campanha criada',
+        description: 'A campanha foi salva com sucesso.',
+      });
+      queryClient.invalidateQueries({ queryKey: ["admin", "campaigns"] });
+      setIsModalOpen(false);
+      setEditingCampaign(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Erro ao salvar campanha.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Delete campaign mutation
+  const deleteCampaignMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest(`/api/admin/campaigns/${id}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Campanha deletada',
+        description: 'A campanha foi removida com sucesso.',
+      });
+      queryClient.invalidateQueries({ queryKey: ["admin", "campaigns"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Erro ao deletar campanha.',
+        variant: 'destructive',
+      });
+    },
+  });
 
   const statusConfig: Record<string, { label: string; color: string }> = {
     draft: { label: "Rascunho", color: "bg-gray-100 text-gray-800" },
@@ -251,7 +318,14 @@ export default function AdminCampaignsPage() {
                   <Edit className="w-4 h-4" />
                   Editar
                 </DropdownMenu.Item>
-                <DropdownMenu.Item className="px-3 py-2 text-sm hover:bg-muted rounded-sm cursor-pointer flex items-center gap-2 text-red-600">
+                <DropdownMenu.Item 
+                  className="px-3 py-2 text-sm hover:bg-muted rounded-sm cursor-pointer flex items-center gap-2 text-red-600"
+                  onClick={() => {
+                    if (confirm('Tem certeza que deseja deletar esta campanha?')) {
+                      deleteCampaignMutation.mutate(campaign.id);
+                    }
+                  }}
+                >
                   <Trash2 className="w-4 h-4" />
                   Deletar
                 </DropdownMenu.Item>
@@ -262,7 +336,33 @@ export default function AdminCampaignsPage() {
       />
 
       {/* Campaign Form Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <Dialog open={isModalOpen} onOpenChange={(open) => {
+        setIsModalOpen(open);
+        if (!open) {
+          setEditingCampaign(null);
+          setFormData({
+            name: '',
+            description: '',
+            type: 'discount',
+            status: 'draft',
+            start_date: '',
+            end_date: '',
+            budget: '',
+            content: '',
+          });
+        } else if (editingCampaign) {
+          setFormData({
+            name: editingCampaign.name || '',
+            description: editingCampaign.description || '',
+            type: editingCampaign.type || 'discount',
+            status: editingCampaign.status || 'draft',
+            start_date: editingCampaign.start_date ? new Date(editingCampaign.start_date).toISOString().slice(0, 16) : '',
+            end_date: editingCampaign.end_date ? new Date(editingCampaign.end_date).toISOString().slice(0, 16) : '',
+            budget: editingCampaign.budget?.toString() || '',
+            content: editingCampaign.content || '',
+          });
+        }
+      }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingCampaign ? "Editar Campanha" : "Nova Campanha"}</DialogTitle>
@@ -271,94 +371,148 @@ export default function AdminCampaignsPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs defaultValue="geral" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="geral">Geral</TabsTrigger>
-              <TabsTrigger value="periodo">Período</TabsTrigger>
-              <TabsTrigger value="orçamento">Orçamento</TabsTrigger>
-              <TabsTrigger value="conteudo">Conteúdo</TabsTrigger>
-            </TabsList>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const payload: any = {
+              ...formData,
+              budget: formData.budget ? parseFloat(formData.budget) : undefined,
+              start_date: formData.start_date || undefined,
+              end_date: formData.end_date || undefined,
+            };
+            if (editingCampaign) payload.id = editingCampaign.id;
+            saveCampaignMutation.mutate(payload);
+          }}>
+            <Tabs defaultValue="geral" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="geral">Geral</TabsTrigger>
+                <TabsTrigger value="periodo">Período</TabsTrigger>
+                <TabsTrigger value="orçamento">Orçamento</TabsTrigger>
+                <TabsTrigger value="conteudo">Conteúdo</TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="geral" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="campaign-name">Nome da Campanha *</Label>
-                <Input id="campaign-name" placeholder="Ex: Promoção de Verão 2024" />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="campaign-type">Tipo de Campanha</Label>
-                <Select defaultValue="discount">
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="discount">Desconto</SelectItem>
-                    <SelectItem value="banner">Banner</SelectItem>
-                    <SelectItem value="email">E-mail</SelectItem>
-                    <SelectItem value="social">Social Media</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="campaign-description">Descrição</Label>
-                <Textarea id="campaign-description" placeholder="Descrição da campanha" rows={4} />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="campaign-status">Status</Label>
-                <Select defaultValue="draft">
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Rascunho</SelectItem>
-                    <SelectItem value="scheduled">Agendada</SelectItem>
-                    <SelectItem value="active">Ativa</SelectItem>
-                    <SelectItem value="paused">Pausada</SelectItem>
-                    <SelectItem value="completed">Concluída</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="periodo" className="space-y-4 mt-4">
-              <div className="grid grid-cols-2 gap-4">
+              <TabsContent value="geral" className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="start-date">Data de Início</Label>
-                  <Input id="start-date" type="datetime-local" />
+                  <Label htmlFor="campaign-name">Nome da Campanha *</Label>
+                  <Input 
+                    id="campaign-name" 
+                    placeholder="Ex: Promoção de Verão 2024"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="end-date">Data de Término</Label>
-                  <Input id="end-date" type="datetime-local" />
+                  <Label htmlFor="campaign-type">Tipo de Campanha</Label>
+                  <Select 
+                    value={formData.type}
+                    onValueChange={(value) => setFormData({ ...formData, type: value as any })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="discount">Desconto</SelectItem>
+                      <SelectItem value="banner">Banner</SelectItem>
+                      <SelectItem value="email">E-mail</SelectItem>
+                      <SelectItem value="social">Social Media</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
-            </TabsContent>
 
-            <TabsContent value="orçamento" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="campaign-budget">Orçamento (€)</Label>
-                <Input id="campaign-budget" type="number" placeholder="1000" />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Defina um orçamento máximo para esta campanha. O sistema irá pausar automaticamente quando o limite for atingido.
-              </p>
-            </TabsContent>
+                <div className="space-y-2">
+                  <Label htmlFor="campaign-description">Descrição</Label>
+                  <Textarea 
+                    id="campaign-description" 
+                    placeholder="Descrição da campanha" 
+                    rows={4}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  />
+                </div>
 
-            <TabsContent value="conteudo" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="campaign-content">Conteúdo da Campanha</Label>
-                <Textarea id="campaign-content" placeholder="Conteúdo da campanha..." rows={8} />
-              </div>
-            </TabsContent>
-          </Tabs>
+                <div className="space-y-2">
+                  <Label htmlFor="campaign-status">Status</Label>
+                  <Select 
+                    value={formData.status}
+                    onValueChange={(value) => setFormData({ ...formData, status: value as any })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Rascunho</SelectItem>
+                      <SelectItem value="scheduled">Agendada</SelectItem>
+                      <SelectItem value="active">Ativa</SelectItem>
+                      <SelectItem value="paused">Pausada</SelectItem>
+                      <SelectItem value="completed">Concluída</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </TabsContent>
 
-          <DialogFooter className="mt-6">
-            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button>Salvar Campanha</Button>
-          </DialogFooter>
+              <TabsContent value="periodo" className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="start-date">Data de Início</Label>
+                    <Input 
+                      id="start-date" 
+                      type="datetime-local"
+                      value={formData.start_date}
+                      onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="end-date">Data de Término</Label>
+                    <Input 
+                      id="end-date" 
+                      type="datetime-local"
+                      value={formData.end_date}
+                      onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="orçamento" className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="campaign-budget">Orçamento (€)</Label>
+                  <Input 
+                    id="campaign-budget" 
+                    type="number" 
+                    placeholder="1000"
+                    value={formData.budget}
+                    onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Defina um orçamento máximo para esta campanha. O sistema irá pausar automaticamente quando o limite for atingido.
+                </p>
+              </TabsContent>
+
+              <TabsContent value="conteudo" className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="campaign-content">Conteúdo da Campanha</Label>
+                  <Textarea 
+                    id="campaign-content" 
+                    placeholder="Conteúdo da campanha..." 
+                    rows={8}
+                    value={formData.content}
+                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={saveCampaignMutation.isPending}>
+                {saveCampaignMutation.isPending ? 'Salvando...' : 'Salvar Campanha'}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiRequest } from "../../utils/api"
 import { DataTable, type Column } from "../components/common/DataTable"
+import { useToast } from "../hooks/useToast"
 import { Button } from "../components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog"
@@ -10,7 +11,6 @@ import { Label } from "../components/ui/label"
 import { Textarea } from "../components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
-import { useToast } from "../hooks/useToast"
 import { Plus, Edit, Trash2, MoreVertical, Package, Filter, Sparkles } from "lucide-react"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import { motion } from "framer-motion"
@@ -39,20 +39,93 @@ export default function AdminCollectionsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingCollection, setEditingCollection] = useState<Collection | null>(null)
   const [collectionType, setCollectionType] = useState<"manual" | "automatic">("manual")
+  const [formData, setFormData] = useState({
+    name: '',
+    slug: '',
+    description: '',
+    type: 'manual' as 'manual' | 'automatic',
+    is_active: true,
+  })
+  const [selectedProducts, setSelectedProducts] = useState<number[]>([])
+  const [rules, setRules] = useState<CollectionRule[]>([])
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
-  // Mock data - substituir por chamada real à API
+  // Fetch collections from API
   const { data: collectionsData, isLoading } = useQuery({
     queryKey: ["admin", "collections", page, search],
     queryFn: async () => {
-      return {
-        items: [] as Collection[],
-        total: 0,
-        totalPages: 0,
-      }
+      const response = await apiRequest<{
+        items: Collection[];
+        total: number;
+        page: number;
+        pageSize: number;
+        totalPages: number;
+      }>(`/api/admin/collections?page=${page}&pageSize=20${search ? `&search=${encodeURIComponent(search)}` : ''}`);
+      return response.data || { items: [], total: 0, page: 1, pageSize: 20, totalPages: 0 };
     },
   })
+
+  // Fetch products for manual selection
+  const { data: productsData } = useQuery({
+    queryKey: ["admin", "products", "all"],
+    queryFn: async () => {
+      const response = await apiRequest<{ items: any[] }>('/api/products?page=1&pageSize=1000');
+      return response.data?.items || [];
+    },
+  })
+
+  // Create/Update collection mutation
+  const saveCollectionMutation = useMutation({
+    mutationFn: async (data: Partial<Collection> & { id?: number; product_ids?: number[]; rules?: CollectionRule[] }) => {
+      const url = data.id ? `/api/admin/collections/${data.id}` : '/api/admin/collections';
+      const method = data.id ? 'PUT' : 'POST';
+      const { id, ...payload } = data;
+      return apiRequest(url, {
+        method,
+        body: JSON.stringify(payload),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: editingCollection ? 'Coleção atualizada' : 'Coleção criada',
+        description: 'A coleção foi salva com sucesso.',
+      });
+      queryClient.invalidateQueries({ queryKey: ["admin", "collections"] });
+      setIsModalOpen(false);
+      setEditingCollection(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Erro ao salvar coleção.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Delete collection mutation
+  const deleteCollectionMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest(`/api/admin/collections/${id}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Coleção deletada',
+        description: 'A coleção foi removida com sucesso.',
+      });
+      queryClient.invalidateQueries({ queryKey: ["admin", "collections"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Erro ao deletar coleção.',
+        variant: 'destructive',
+      });
+    },
+  });
 
   const columns: Column<Collection>[] = [
     {
@@ -157,6 +230,11 @@ export default function AdminCollectionsPage() {
                 </DropdownMenu.Item>
                 <DropdownMenu.Item
                   className="px-3 py-2 text-sm hover:bg-muted rounded-sm cursor-pointer flex items-center gap-2 text-red-600"
+                  onClick={() => {
+                    if (confirm('Tem certeza que deseja deletar esta coleção?')) {
+                      deleteCollectionMutation.mutate(collection.id);
+                    }
+                  }}
                 >
                   <Trash2 className="w-4 h-4" />
                   Deletar

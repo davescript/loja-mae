@@ -215,6 +215,24 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
           return handleCORS(await handleContactMessagesRoutes(request, env), env, request);
         }
 
+        // Admin campaigns routes
+        if (path.startsWith('/api/admin/campaigns')) {
+          const { handleCampaignsRoutes } = await import('./admin/campaigns');
+          return handleCORS(await handleCampaignsRoutes(request, env), env, request);
+        }
+
+        // Admin collections routes
+        if (path.startsWith('/api/admin/collections')) {
+          const { handleAdminCollectionsRoutes } = await import('./admin/collections');
+          return handleCORS(await handleAdminCollectionsRoutes(request, env), env, request);
+        }
+
+        // Collections routes (public)
+        if (path.startsWith('/api/collections')) {
+          const { handleCollectionsRoutes } = await import('./collections');
+          return handleCORS(await handleCollectionsRoutes(request, env), env, request);
+        }
+
     // Health check
     if (path === '/api/health') {
       return successResponse({ status: 'ok', timestamp: new Date().toISOString() });
