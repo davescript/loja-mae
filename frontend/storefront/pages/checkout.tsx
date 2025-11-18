@@ -260,7 +260,7 @@ function CheckoutForm({
       <div className="space-y-2">
         <h3 className="text-lg font-semibold">Método de Pagamento</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Escolha entre Cartão, MB Way, PayPal ou Apple Pay
+          Escolha entre Cartão, MB Way, Klarna, Apple Pay ou Google Pay
         </p>
         <PaymentElement 
           options={{
@@ -277,9 +277,8 @@ function CheckoutForm({
               applePay: 'auto',
               googlePay: 'auto',
             },
-            // Os métodos de pagamento (Card, PayPal, MB Way) são controlados pelo Payment Intent no backend
-            // MB Way é detectado automaticamente através do método 'link' quando o país é PT
-            // Apple Pay e Google Pay são habilitados através de automatic_payment_methods
+            // Métodos disponíveis: Cartão, MB Way (link), Klarna
+            // Apple Pay e Google Pay aparecem automaticamente quando disponíveis no dispositivo
           }}
         />
       </div>

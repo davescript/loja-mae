@@ -281,6 +281,8 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
 
     // Criar Payment Intent no Stripe
     // Nota: Para EUR, o valor mínimo é 0.50 EUR (50 centavos)
+    // Métodos permitidos: Cartão, MB Way (via link), Klarna
+    // Apple Pay e Google Pay aparecem automaticamente quando card está habilitado
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalCents,
       currency: 'eur',
@@ -289,11 +291,8 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
         order_number: orderNumber,
         customer_id: customerId?.toString() || 'guest',
       },
-      // Habilitar métodos automáticos incluindo Apple Pay e Google Pay
-      automatic_payment_methods: {
-        enabled: true,
-        allow_redirects: 'always',
-      },
+      // Métodos de pagamento específicos: Cartão, MB Way (link), Klarna
+      payment_method_types: ['card', 'link', 'klarna'],
       description: `Pedido ${orderNumber} - Loja Mãe`,
       // Adicionar shipping address para métodos que requerem
       shipping: shippingAddressPayload ? {
