@@ -19,7 +19,7 @@ Apenas 2 métodos de pagamento estão aparecendo no checkout (Cartão e Klarna),
    - ✅ **Apple Pay** - Ative e configure verificação de domínio
    - ✅ **Google Pay** - Ative
 
-**Nota**: O código agora usa `automatic_payment_methods` que mostra todos os métodos habilitados no painel. Se o Link não aparecer, é porque não está habilitado no painel do Stripe.
+**Nota**: O código agora usa `payment_method_types: ['card', 'link', 'klarna']` para garantir que apenas esses métodos apareçam. Todos os três métodos (Cartão, Link/MB Way, Klarna) devem estar habilitados no painel do Stripe para funcionarem. Apple Pay e Google Pay aparecem automaticamente quando `card` está na lista.
 
 ### 2. Verificar Configuração do Link (MB Way)
 
