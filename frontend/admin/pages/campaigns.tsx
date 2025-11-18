@@ -52,17 +52,27 @@ export default function AdminCampaignsPage() {
   const queryClient = useQueryClient()
 
   // Fetch campaigns from API
-  const { data: campaignsData, isLoading } = useQuery({
+  const { data: campaignsData, isLoading, error: campaignsError } = useQuery({
     queryKey: ["admin", "campaigns", page, search],
     queryFn: async () => {
-      const response = await apiRequest<{
-        items: Campaign[];
-        total: number;
-        page: number;
-        pageSize: number;
-        totalPages: number;
-      }>(`/api/admin/campaigns?page=${page}&pageSize=20${search ? `&search=${encodeURIComponent(search)}` : ''}`);
-      return response.data || { items: [], total: 0, page: 1, pageSize: 20, totalPages: 0 };
+      try {
+        const response = await apiRequest<{
+          items: Campaign[];
+          total: number;
+          page: number;
+          pageSize: number;
+          totalPages: number;
+        }>(`/api/admin/campaigns?page=${page}&pageSize=20${search ? `&search=${encodeURIComponent(search)}` : ''}`);
+        return response.data || { items: [], total: 0, page: 1, pageSize: 20, totalPages: 0 };
+      } catch (error: any) {
+        console.error('Erro ao carregar campanhas:', error);
+        toast({
+          title: 'Erro',
+          description: 'Não foi possível carregar as campanhas.',
+          variant: 'destructive',
+        });
+        return { items: [], total: 0, page: 1, pageSize: 20, totalPages: 0 };
+      }
     },
   })
 

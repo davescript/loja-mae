@@ -46,6 +46,13 @@ export default function AdminBlogPage() {
       setIsModalOpen(false)
       setEditingPost(null)
     },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao criar post",
+        variant: "destructive",
+      })
+    },
   })
 
   const updateMutation = useMutation({
@@ -60,6 +67,13 @@ export default function AdminBlogPage() {
       setIsModalOpen(false)
       setEditingPost(null)
     },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao atualizar post",
+        variant: "destructive",
+      })
+    },
   })
 
   const deleteMutation = useMutation({
@@ -70,6 +84,13 @@ export default function AdminBlogPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "blog"] })
       toast({ title: "Post removido" })
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao excluir post",
+        variant: "destructive",
+      })
     },
   })
 

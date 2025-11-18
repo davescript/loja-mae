@@ -215,6 +215,12 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
           return handleCORS(await handleContactMessagesRoutes(request, env), env, request);
         }
 
+        // Admin users routes
+        if (path.startsWith('/api/admin/users')) {
+          const { handleAdminUsersRoutes } = await import('./admin/users');
+          return handleCORS(await handleAdminUsersRoutes(request, env), env, request);
+        }
+
         // Admin campaigns routes
         if (path.startsWith('/api/admin/campaigns')) {
           const { handleCampaignsRoutes } = await import('./admin/campaigns');

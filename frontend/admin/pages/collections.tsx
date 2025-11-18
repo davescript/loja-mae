@@ -58,17 +58,27 @@ export default function AdminCollectionsPage() {
   const queryClient = useQueryClient()
 
   // Fetch collections from API
-  const { data: collectionsData, isLoading } = useQuery({
+  const { data: collectionsData, isLoading, error: collectionsError } = useQuery({
     queryKey: ["admin", "collections", page, search],
     queryFn: async () => {
-      const response = await apiRequest<{
-        items: Collection[];
-        total: number;
-        page: number;
-        pageSize: number;
-        totalPages: number;
-      }>(`/api/admin/collections?page=${page}&pageSize=20${search ? `&search=${encodeURIComponent(search)}` : ''}`);
-      return response.data || { items: [], total: 0, page: 1, pageSize: 20, totalPages: 0 };
+      try {
+        const response = await apiRequest<{
+          items: Collection[];
+          total: number;
+          page: number;
+          pageSize: number;
+          totalPages: number;
+        }>(`/api/admin/collections?page=${page}&pageSize=20${search ? `&search=${encodeURIComponent(search)}` : ''}`);
+        return response.data || { items: [], total: 0, page: 1, pageSize: 20, totalPages: 0 };
+      } catch (error: any) {
+        console.error('Erro ao carregar coleções:', error);
+        toast({
+          title: 'Erro',
+          description: 'Não foi possível carregar as coleções.',
+          variant: 'destructive',
+        });
+        return { items: [], total: 0, page: 1, pageSize: 20, totalPages: 0 };
+      }
     },
   })
 

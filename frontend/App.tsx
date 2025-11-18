@@ -7,6 +7,7 @@ import StorefrontLayout from './storefront/layout/Layout';
 import HomePage from './storefront/pages/index';
 import ProductsPage from './storefront/pages/products';
 import CollectionsPage from './storefront/pages/collections';
+import CollectionPage from './storefront/pages/collections/[slug]';
 import CategoriesPage from './storefront/pages/categories';
 import AboutPage from './storefront/pages/about';
 import BlogListPage from './storefront/pages/blog';
@@ -66,6 +67,7 @@ function App() {
         <Route index element={<HomePage />} />
         <Route path="categories" element={<CategoriesPage />} />
         <Route path="collections" element={<CollectionsPage />} />
+        <Route path="collections/:slug" element={<CollectionPage />} />
         <Route path="products" element={<ProductsPage />} />
         <Route path="product/:slug" element={<ProductPage />} />
         <Route path="about" element={<AboutPage />} />

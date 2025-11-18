@@ -42,11 +42,23 @@ export default function AdminUsersPage() {
   const { toast } = useToast();
 
   // Fetch admin users
-  const { data: adminUsers, isLoading } = useQuery({
+  const { data: adminUsers, isLoading, error } = useQuery({
     queryKey: ['admin', 'users'],
     queryFn: async () => {
-      const response = await apiRequest<{ items: AdminUser[] }>('/api/admin/users');
-      return response.data?.items || [];
+      try {
+        const response = await apiRequest<{ items: AdminUser[] }>('/api/admin/users');
+        return response.data?.items || [];
+      } catch (error: any) {
+        console.error('Erro ao carregar usuários admin:', error);
+        if (error?.message?.includes('403') || error?.message?.includes('Forbidden')) {
+          toast({
+            title: 'Acesso negado',
+            description: 'Apenas super admins podem gerenciar usuários.',
+            variant: 'destructive',
+          });
+        }
+        return [];
+      }
     },
   });
 
