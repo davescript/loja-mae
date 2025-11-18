@@ -392,7 +392,13 @@ export default function CheckoutPage() {
   })
 
   const total = getTotal()
-  const selectedAddress = selectedAddressId
+  
+  // Estado para endereço temporário (guest checkout)
+  const [tempAddress, setTempAddress] = useState<Address | null>(null)
+  
+  const selectedAddress = selectedAddressId === -1 && tempAddress
+    ? tempAddress
+    : selectedAddressId && selectedAddressId !== -1
     ? addresses.find((addr) => addr.id === selectedAddressId) || null
     : null
 
@@ -402,24 +408,33 @@ export default function CheckoutPage() {
       setIsAddressDialogOpen(true)
     }
 
+    // Se não estiver autenticado, não limpar endereço temporário
     if (!isAuthenticated) {
-      setSelectedAddressId(null)
+      // Manter endereço temporário se existir
+      if (tempAddress && selectedAddressId === -1) {
+        return
+      }
+      // Se não tem endereço temporário, limpar seleção
+      if (!tempAddress) {
+        setSelectedAddressId(null)
+      }
       return
     }
 
+    // Se autenticado, gerenciar endereços salvos
     if (!addresses || addresses.length === 0) {
       setSelectedAddressId(null)
       return
     }
 
-    const alreadySelected = selectedAddressId && addresses.some((addr) => addr.id === selectedAddressId)
+    const alreadySelected = selectedAddressId && selectedAddressId !== -1 && addresses.some((addr) => addr.id === selectedAddressId)
     if (alreadySelected) {
       return
     }
 
     const defaultAddress = addresses.find((addr) => addr.is_default === 1) || addresses[0]
     setSelectedAddressId(defaultAddress?.id || null)
-  }, [addresses, isAuthenticated, selectedAddressId])
+  }, [addresses, isAuthenticated, selectedAddressId, tempAddress])
 
   // Carregar carrinho abandonado se cart_id estiver na URL
   useEffect(() => {
@@ -516,11 +531,13 @@ export default function CheckoutPage() {
     }
   }, [items.length, navigate, toast])
 
+  // Auto-criar Payment Intent apenas se autenticado e tiver endereço salvo
+  // Para guest checkout, o usuário precisa clicar em "Finalizar Pedido"
   useEffect(() => {
     if (items.length === 0) return
     if (authLoading) return
-    if (!isAuthenticated) return
-    if (!selectedAddressId) return
+    if (!isAuthenticated) return // Guest checkout não cria automaticamente
+    if (!selectedAddressId || selectedAddressId === -1) return // Não criar se for endereço temporário
     if (addressesLoading) return
     if (clientSecret) return
     createPaymentIntent(selectedAddressId)
@@ -549,8 +566,16 @@ export default function CheckoutPage() {
     
     try {
       setCreating(true)
-      if (!addressId) {
+      
+      // Se for endereço temporário (id === -1), não usar address_id
+      const isTempAddress = selectedAddressId === -1
+      
+      if (!isTempAddress && !addressId) {
         throw new Error('Selecione um endereço de entrega antes de continuar.')
+      }
+
+      if (!normalizedAddress || !normalizedAddress.address_line1) {
+        throw new Error('Endereço de entrega é obrigatório.')
       }
 
       const apiResp = await apiRequest<{ 
@@ -565,7 +590,8 @@ export default function CheckoutPage() {
           method: 'POST',
           body: JSON.stringify({
             items: cartItems,
-            address_id: addressId,
+            // Só enviar address_id se não for endereço temporário e se estiver autenticado
+            ...(isTempAddress || !isAuthenticated ? {} : { address_id: addressId }),
             shipping_address: normalizedAddress,
           }),
         }
@@ -639,6 +665,54 @@ export default function CheckoutPage() {
 
   const handleAddressSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validar campos obrigatórios
+    if (!addressForm.first_name || !addressForm.last_name || !addressForm.address_line1 || 
+        !addressForm.city || !addressForm.state || !addressForm.postal_code) {
+      toast({
+        title: 'Campos obrigatórios',
+        description: 'Preencha todos os campos obrigatórios do endereço.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    // Se não estiver autenticado, apenas usar o endereço temporariamente
+    if (!isAuthenticated) {
+      // Criar endereço temporário para usar no checkout
+      const newTempAddress: Address = {
+        id: -1, // ID temporário
+        customer_id: 0,
+        type: 'shipping',
+        first_name: addressForm.first_name,
+        last_name: addressForm.last_name,
+        company: addressForm.company || null,
+        address_line1: addressForm.address_line1,
+        address_line2: addressForm.address_line2 || null,
+        city: addressForm.city,
+        state: addressForm.state,
+        postal_code: addressForm.postal_code,
+        country: addressForm.country || 'PT',
+        phone: addressForm.phone || null,
+        is_default: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+      
+      // Salvar endereço temporário
+      setTempAddress(newTempAddress)
+      setSelectedAddressId(-1)
+      setIsAddressDialogOpen(false)
+      setAddressForm(addressInitialState)
+      
+      toast({
+        title: 'Endereço definido',
+        description: 'Endereço será usado para esta compra. Faça login para salvar no seu perfil.',
+      })
+      return
+    }
+
+    // Se estiver autenticado, salvar no perfil
     try {
       await addAddressMutation.mutateAsync({
         ...addressForm,
@@ -727,26 +801,27 @@ export default function CheckoutPage() {
     )
   }
 
-  if (!authLoading && !isAuthenticated) {
-    return (
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-2xl mx-auto">
-          <Card className="p-8 text-center space-y-4">
-            <h1 className="text-2xl font-bold">Entre para continuar</h1>
-            <p className="text-muted-foreground">
-              Faça login para selecionar seus endereços e concluir a compra com segurança.
-            </p>
-            <Button
-              size="lg"
-              onClick={() => navigate('/login?redirect=/checkout')}
-            >
-              Fazer Login
-            </Button>
-          </Card>
-        </div>
-      </div>
-    )
-  }
+  // Guest checkout permitido - remover bloqueio
+  // if (!authLoading && !isAuthenticated) {
+  //   return (
+  //     <div className="container mx-auto px-4 py-16">
+  //       <div className="max-w-2xl mx-auto">
+  //         <Card className="p-8 text-center space-y-4">
+  //           <h1 className="text-2xl font-bold">Entre para continuar</h1>
+  //           <p className="text-muted-foreground">
+  //             Faça login para selecionar seus endereços e concluir a compra com segurança.
+  //           </p>
+  //           <Button
+  //             size="lg"
+  //             onClick={() => navigate('/login?redirect=/checkout')}
+  //           >
+  //             Fazer Login
+  //           </Button>
+  //         </Card>
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
   if (items.length === 0) {
     return null
@@ -975,6 +1050,31 @@ export default function CheckoutPage() {
                   Nenhum endereço cadastrado. Adicione um novo para continuar.
                 </div>
               )}
+              
+              {/* Mostrar endereço temporário se existir */}
+              {tempAddress && selectedAddressId === -1 && (
+                <div className="mt-4 rounded-lg border border-primary ring-2 ring-primary/20 bg-primary/5 p-4">
+                  <div className="flex items-start gap-4">
+                    <MapPin className="w-5 h-5 mt-1 text-primary" />
+                    <div className="flex-1 text-sm">
+                      <div className="flex items-center gap-2 mb-2">
+                        <p className="font-semibold">
+                          {tempAddress.first_name} {tempAddress.last_name}
+                        </p>
+                        <Badge variant="outline" className="text-xs">Temporário</Badge>
+                      </div>
+                      <p className="text-muted-foreground">{tempAddress.address_line1}</p>
+                      {tempAddress.address_line2 && <p className="text-muted-foreground">{tempAddress.address_line2}</p>}
+                      <p className="text-muted-foreground">
+                        {tempAddress.postal_code} {tempAddress.city} · {tempAddress.state}
+                      </p>
+                      <p className="text-muted-foreground">{tempAddress.country}</p>
+                      {tempAddress.phone && <p className="text-muted-foreground mt-1">Tel: {tempAddress.phone}</p>}
+                    </div>
+                    <Check className="w-5 h-5 text-primary" />
+                  </div>
+                </div>
+              )}
             </motion.div>
 
             {/* Pagamento */}
@@ -986,12 +1086,32 @@ export default function CheckoutPage() {
               <h2 className="text-xl font-bold mb-6">2. Pagamento</h2>
               
               {!clientSecret || !stripePromise ? (
-                <div className="p-6 text-center text-sm text-muted-foreground border border-dashed rounded-lg">
-                  {!publishableKey
-                    ? 'Configuração do Stripe não encontrada. Contacte o suporte.'
-                    : selectedAddressId
-                    ? 'Preparando checkout seguro...'
-                    : 'Selecione ou cadastre um endereço para habilitar o pagamento.'}
+                <div className="space-y-4">
+                  {!publishableKey ? (
+                    <div className="p-6 text-center text-sm text-muted-foreground border border-dashed rounded-lg">
+                      Configuração do Stripe não encontrada. Contacte o suporte.
+                    </div>
+                  ) : selectedAddress ? (
+                    <Button
+                      onClick={() => createPaymentIntent(selectedAddressId === -1 ? null : selectedAddressId)}
+                      disabled={creating || !selectedAddress}
+                      size="lg"
+                      className="w-full"
+                    >
+                      {creating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Preparando pedido...
+                        </>
+                      ) : (
+                        'Finalizar Pedido'
+                      )}
+                    </Button>
+                  ) : (
+                    <div className="p-6 text-center text-sm text-muted-foreground border border-dashed rounded-lg">
+                      Selecione ou cadastre um endereço para habilitar o pagamento.
+                    </div>
+                  )}
                 </div>
               ) : (
                 <Elements stripe={stripePromise} options={options} key={clientSecret}>
