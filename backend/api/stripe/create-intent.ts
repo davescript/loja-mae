@@ -283,6 +283,17 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
     // Nota: Para EUR, o valor mínimo é 0.50 EUR (50 centavos)
     // Métodos permitidos: Cartão, MB Way (via link), Klarna
     // Apple Pay e Google Pay aparecem automaticamente quando card está habilitado e o dispositivo suporta
+    const country = shippingAddressPayload?.country || 'PT';
+    
+    // Log para debug - verificar se o país está sendo enviado corretamente
+    console.log('[STRIPE] Criando Payment Intent:', {
+      amount: totalCents,
+      currency: 'eur',
+      country: country,
+      payment_method_types: ['card', 'link', 'klarna'],
+      hasShipping: !!shippingAddressPayload,
+    });
+    
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalCents,
       currency: 'eur',
@@ -294,7 +305,7 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
       // Métodos de pagamento específicos: Cartão, MB Way (link), Klarna
       payment_method_types: ['card', 'link', 'klarna'],
       description: `Pedido ${orderNumber} - Loja Mãe`,
-      // Adicionar shipping address para métodos que requerem
+      // Adicionar shipping address para métodos que requerem (importante para MB Way detectar país PT)
       shipping: shippingAddressPayload ? {
         name: `${shippingAddressPayload.first_name} ${shippingAddressPayload.last_name}`,
         address: {
@@ -303,10 +314,16 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
           city: shippingAddressPayload.city,
           state: shippingAddressPayload.state || undefined,
           postal_code: shippingAddressPayload.postal_code,
-          country: shippingAddressPayload.country || 'PT',
+          country: country, // Garantir que o país seja PT para MB Way aparecer
         },
         phone: shippingAddressPayload.phone || undefined,
       } : undefined,
+      // Adicionar payment_method_options para garantir que Link (MB Way) esteja disponível
+      payment_method_options: {
+        link: {
+          persistent_token: undefined, // Não usar token persistente na primeira vez
+        },
+      },
     });
 
     if (!paymentIntent.client_secret) {
