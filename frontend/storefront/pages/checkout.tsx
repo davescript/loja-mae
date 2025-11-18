@@ -277,10 +277,9 @@ function CheckoutForm({
               applePay: 'auto',
               googlePay: 'auto',
             },
-            // Forçar exibição de todos os métodos disponíveis
-            paymentMethodOrder: ['card', 'link', 'klarna'],
             // Métodos disponíveis: Cartão, MB Way (link), Klarna
             // Apple Pay e Google Pay aparecem automaticamente quando disponíveis no dispositivo
+            // Nota: MB Way (link) e Klarna só aparecem se estiverem habilitados no painel do Stripe
           }}
         />
       </div>
