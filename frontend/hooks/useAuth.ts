@@ -108,14 +108,38 @@ export function useAuth() {
       // Aguardar um pouco para garantir que qualquer operação pendente seja concluída
       // Isso garante que endereços sejam salvos antes do logout
       await new Promise(resolve => setTimeout(resolve, 500));
-      await apiRequest('/api/auth/logout', { method: 'POST' });
+      await apiRequest('/api/auth/logout', { 
+        method: 'POST',
+        credentials: 'include', // Importante: enviar cookies para serem removidos
+      });
     },
     onSuccess: () => {
-      // Limpar tokens apenas quando o usuário explicitamente clicar em "Sair"
+      // Limpar tokens e estado local
+      localStorage.removeItem('token');
+      localStorage.removeItem('customer_token');
+      setUser(null);
+      
+      // Limpar todas as queries do cache
+      queryClient.clear();
+      
+      // Invalidar especificamente a query de autenticação
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      
+      // Redirecionar para a home após logout
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
+    },
+    onError: (error) => {
+      console.error('[AUTH] Erro no logout:', error);
+      // Mesmo com erro, limpar estado local e redirecionar
       localStorage.removeItem('token');
       localStorage.removeItem('customer_token');
       setUser(null);
       queryClient.clear();
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
     },
   });
 
@@ -153,5 +177,6 @@ export function useAuth() {
     logout,
     isLoggingIn: loginMutation.isPending,
     isRegistering: registerMutation.isPending,
+    isLoggingOut: logoutMutation.isPending,
   };
 }

@@ -296,15 +296,45 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
         const h = await _hp(raw);
         await executeRun(db, 'UPDATE user_sessions SET revoked_at = datetime("now") WHERE refresh_token_hash = ?', [h]);
       }
+      
       const response = successResponse(null, 'Logout successful');
-      const domain = url.hostname;
-      response.headers.set('Set-Cookie', `session_access=; Path=/; Domain=${domain}; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
-      response.headers.append('Set-Cookie', `session_refresh=; Path=/; Domain=${domain}; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
+      
+      // Usar a mesma lógica de domínio do login para garantir que os cookies sejam removidos corretamente
+      const requestHostname = url.hostname;
+      let cookieDomain = '';
+      let sameSite: 'Lax' | 'None' = 'Lax';
+      let secure = true;
+      
+      if (requestHostname.includes('leiasabores.pt')) {
+        cookieDomain = 'Domain=.leiasabores.pt; ';
+        sameSite = 'Lax';
+      } else if (requestHostname.includes('workers.dev')) {
+        cookieDomain = '';
+        sameSite = 'None';
+        secure = true;
+      } else {
+        cookieDomain = `Domain=${requestHostname}; `;
+      }
+      
+      // Remover cookies de sessão do cliente
+      const accessCookie = `session_access=; Path=/; ${cookieDomain}HttpOnly; ${secure ? 'Secure; ' : ''}SameSite=${sameSite}; Max-Age=0`;
+      const refreshCookie = `session_refresh=; Path=/; ${cookieDomain}HttpOnly; ${secure ? 'Secure; ' : ''}SameSite=${sameSite}; Max-Age=0`;
+      
+      response.headers.set('Set-Cookie', accessCookie);
+      response.headers.append('Set-Cookie', refreshCookie);
       response.headers.append('Set-Cookie', clearAuthCookie('admin_token'));
       response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
       response.headers.set('Pragma', 'no-cache');
       response.headers.set('Expires', '0');
       response.headers.set('Vary', 'Authorization, Cookie');
+      
+      console.log('[AUTH] Logout - cookies removidos:', {
+        domain: cookieDomain || 'sem domain',
+        sameSite,
+        secure,
+        hostname: requestHostname,
+      });
+      
       return response;
     }
 

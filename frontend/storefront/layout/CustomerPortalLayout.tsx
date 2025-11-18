@@ -20,7 +20,7 @@ import { useState } from 'react';
 import BannerDisplay from '../components/app/BannerDisplay';
 
 export default function CustomerPortalLayout() {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, isLoggingOut } = useAuth();
   const navigate = useNavigate();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
@@ -114,15 +114,11 @@ export default function CustomerPortalLayout() {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={async () => {
-                  // Aguardar um pouco para garantir que qualquer operação pendente seja concluída
-                  // Isso garante que endereços sejam salvos antes do logout
-                  await new Promise(resolve => setTimeout(resolve, 500));
-                  logout();
-                }}
+                onClick={() => logout()}
+                disabled={isLoggingOut}
               >
                 <LogOut className="w-4 h-4 mr-2" />
-                Sair
+                {isLoggingOut ? 'Saindo...' : 'Sair'}
               </Button>
             </div>
           </div>
