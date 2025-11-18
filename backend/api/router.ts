@@ -96,6 +96,11 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
     }
 
     if (path.startsWith('/api/auth')) {
+      // OAuth routes
+      if (path.startsWith('/api/auth/oauth')) {
+        const { handleOAuthRoutes } = await import('./auth/oauth');
+        return handleCORS(await handleOAuthRoutes(request, env), env, request);
+      }
       return handleCORS(await handleAuthRoutes(request, env), env, request);
     }
 

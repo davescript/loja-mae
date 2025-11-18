@@ -392,49 +392,36 @@ export default function CheckoutPage() {
   })
 
   const total = getTotal()
-  
-  // Estado para endereço temporário (guest checkout)
-  const [tempAddress, setTempAddress] = useState<Address | null>(null)
-  
-  const selectedAddress = selectedAddressId === -1 && tempAddress
-    ? tempAddress
-    : selectedAddressId && selectedAddressId !== -1
+  const selectedAddress = selectedAddressId
     ? addresses.find((addr) => addr.id === selectedAddressId) || null
     : null
 
   useEffect(() => {
+    // Se não estiver autenticado, redirecionar para login
+    if (!authLoading && !isAuthenticated) {
+      navigate('/login?redirect=/checkout')
+      return
+    }
+
     // Se autenticado e sem endereços, abrir diálogo automaticamente
     if (isAuthenticated && !addressesLoading && addresses.length === 0 && !isAddressDialogOpen) {
       setIsAddressDialogOpen(true)
     }
 
-    // Se não estiver autenticado, não limpar endereço temporário
-    if (!isAuthenticated) {
-      // Manter endereço temporário se existir
-      if (tempAddress && selectedAddressId === -1) {
-        return
-      }
-      // Se não tem endereço temporário, limpar seleção
-      if (!tempAddress) {
-        setSelectedAddressId(null)
-      }
-      return
-    }
-
     // Se autenticado, gerenciar endereços salvos
-    if (!addresses || addresses.length === 0) {
+    if (!isAuthenticated || !addresses || addresses.length === 0) {
       setSelectedAddressId(null)
       return
     }
 
-    const alreadySelected = selectedAddressId && selectedAddressId !== -1 && addresses.some((addr) => addr.id === selectedAddressId)
+    const alreadySelected = selectedAddressId && addresses.some((addr) => addr.id === selectedAddressId)
     if (alreadySelected) {
       return
     }
 
     const defaultAddress = addresses.find((addr) => addr.is_default === 1) || addresses[0]
     setSelectedAddressId(defaultAddress?.id || null)
-  }, [addresses, isAuthenticated, selectedAddressId, tempAddress])
+  }, [addresses, isAuthenticated, selectedAddressId, authLoading, navigate])
 
   // Carregar carrinho abandonado se cart_id estiver na URL
   useEffect(() => {
@@ -532,12 +519,11 @@ export default function CheckoutPage() {
   }, [items.length, navigate, toast])
 
   // Auto-criar Payment Intent apenas se autenticado e tiver endereço salvo
-  // Para guest checkout, o usuário precisa clicar em "Finalizar Pedido"
   useEffect(() => {
     if (items.length === 0) return
     if (authLoading) return
-    if (!isAuthenticated) return // Guest checkout não cria automaticamente
-    if (!selectedAddressId || selectedAddressId === -1) return // Não criar se for endereço temporário
+    if (!isAuthenticated) return
+    if (!selectedAddressId) return
     if (addressesLoading) return
     if (clientSecret) return
     createPaymentIntent(selectedAddressId)
@@ -567,10 +553,13 @@ export default function CheckoutPage() {
     try {
       setCreating(true)
       
-      // Se for endereço temporário (id === -1), não usar address_id
-      const isTempAddress = selectedAddressId === -1
-      
-      if (!isTempAddress && !addressId) {
+      // Requer autenticação
+      if (!isAuthenticated) {
+        navigate('/login?redirect=/checkout')
+        return
+      }
+
+      if (!addressId) {
         throw new Error('Selecione um endereço de entrega antes de continuar.')
       }
 
@@ -590,8 +579,7 @@ export default function CheckoutPage() {
           method: 'POST',
           body: JSON.stringify({
             items: cartItems,
-            // Só enviar address_id se não for endereço temporário e se estiver autenticado
-            ...(isTempAddress || !isAuthenticated ? {} : { address_id: addressId }),
+            address_id: addressId,
             shipping_address: normalizedAddress,
           }),
         }
@@ -677,42 +665,18 @@ export default function CheckoutPage() {
       return
     }
 
-    // Se não estiver autenticado, apenas usar o endereço temporariamente
+    // Requer autenticação para salvar endereço
     if (!isAuthenticated) {
-      // Criar endereço temporário para usar no checkout
-      const newTempAddress: Address = {
-        id: -1, // ID temporário
-        customer_id: 0,
-        type: 'shipping',
-        first_name: addressForm.first_name,
-        last_name: addressForm.last_name,
-        company: addressForm.company || null,
-        address_line1: addressForm.address_line1,
-        address_line2: addressForm.address_line2 || null,
-        city: addressForm.city,
-        state: addressForm.state,
-        postal_code: addressForm.postal_code,
-        country: addressForm.country || 'PT',
-        phone: addressForm.phone || null,
-        is_default: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }
-      
-      // Salvar endereço temporário
-      setTempAddress(newTempAddress)
-      setSelectedAddressId(-1)
-      setIsAddressDialogOpen(false)
-      setAddressForm(addressInitialState)
-      
       toast({
-        title: 'Endereço definido',
-        description: 'Endereço será usado para esta compra. Faça login para salvar no seu perfil.',
+        title: 'Login necessário',
+        description: 'Faça login para salvar endereços e finalizar a compra.',
+        variant: 'destructive',
       })
+      navigate('/login?redirect=/checkout')
       return
     }
 
-    // Se estiver autenticado, salvar no perfil
+    // Salvar no perfil
     try {
       await addAddressMutation.mutateAsync({
         ...addressForm,
@@ -801,27 +765,36 @@ export default function CheckoutPage() {
     )
   }
 
-  // Guest checkout permitido - remover bloqueio
-  // if (!authLoading && !isAuthenticated) {
-  //   return (
-  //     <div className="container mx-auto px-4 py-16">
-  //       <div className="max-w-2xl mx-auto">
-  //         <Card className="p-8 text-center space-y-4">
-  //           <h1 className="text-2xl font-bold">Entre para continuar</h1>
-  //           <p className="text-muted-foreground">
-  //             Faça login para selecionar seus endereços e concluir a compra com segurança.
-  //           </p>
-  //           <Button
-  //             size="lg"
-  //             onClick={() => navigate('/login?redirect=/checkout')}
-  //           >
-  //             Fazer Login
-  //           </Button>
-  //         </Card>
-  //       </div>
-  //     </div>
-  //   )
-  // }
+  // Requer autenticação para checkout
+  if (!authLoading && !isAuthenticated) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-2xl mx-auto">
+          <Card className="p-8 text-center space-y-4">
+            <h1 className="text-2xl font-bold">Entre para continuar</h1>
+            <p className="text-muted-foreground">
+              Faça login ou crie uma conta para finalizar sua compra.
+            </p>
+            <div className="flex gap-4 justify-center">
+              <Button
+                size="lg"
+                onClick={() => navigate('/login?redirect=/checkout')}
+              >
+                Fazer Login
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => navigate('/register?redirect=/checkout')}
+              >
+                Criar Conta
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   if (items.length === 0) {
     return null
@@ -1050,31 +1023,6 @@ export default function CheckoutPage() {
                   Nenhum endereço cadastrado. Adicione um novo para continuar.
                 </div>
               )}
-              
-              {/* Mostrar endereço temporário se existir */}
-              {tempAddress && selectedAddressId === -1 && (
-                <div className="mt-4 rounded-lg border border-primary ring-2 ring-primary/20 bg-primary/5 p-4">
-                  <div className="flex items-start gap-4">
-                    <MapPin className="w-5 h-5 mt-1 text-primary" />
-                    <div className="flex-1 text-sm">
-                      <div className="flex items-center gap-2 mb-2">
-                        <p className="font-semibold">
-                          {tempAddress.first_name} {tempAddress.last_name}
-                        </p>
-                        <Badge variant="outline" className="text-xs">Temporário</Badge>
-                      </div>
-                      <p className="text-muted-foreground">{tempAddress.address_line1}</p>
-                      {tempAddress.address_line2 && <p className="text-muted-foreground">{tempAddress.address_line2}</p>}
-                      <p className="text-muted-foreground">
-                        {tempAddress.postal_code} {tempAddress.city} · {tempAddress.state}
-                      </p>
-                      <p className="text-muted-foreground">{tempAddress.country}</p>
-                      {tempAddress.phone && <p className="text-muted-foreground mt-1">Tel: {tempAddress.phone}</p>}
-                    </div>
-                    <Check className="w-5 h-5 text-primary" />
-                  </div>
-                </div>
-              )}
             </motion.div>
 
             {/* Pagamento */}
@@ -1093,8 +1041,14 @@ export default function CheckoutPage() {
                     </div>
                   ) : selectedAddress ? (
                     <Button
-                      onClick={() => createPaymentIntent(selectedAddressId === -1 ? null : selectedAddressId)}
-                      disabled={creating || !selectedAddress}
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          navigate('/login?redirect=/checkout')
+                          return
+                        }
+                        createPaymentIntent(selectedAddressId)
+                      }}
+                      disabled={creating || !selectedAddress || !isAuthenticated}
                       size="lg"
                       className="w-full"
                     >

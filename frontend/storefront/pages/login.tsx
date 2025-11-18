@@ -1,6 +1,9 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { Button } from '../../admin/components/ui/button';
+import { API_BASE_URL } from '../../utils/api';
+import { Apple, Chrome } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -8,6 +11,8 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const { login, isLoggingIn } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/account';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,7 +23,7 @@ export default function LoginPage() {
         { email, password },
         {
           onSuccess: () => {
-            navigate('/account');
+            navigate(redirect);
           },
           onError: (err: Error) => {
             setError(err.message);
@@ -27,6 +32,15 @@ export default function LoginPage() {
       );
     } catch (err: any) {
       setError(err.message || 'Erro ao fazer login');
+    }
+  };
+
+  const handleOAuth = async (provider: 'google' | 'apple') => {
+    try {
+      // Redirecionar para endpoint OAuth do backend
+      window.location.href = `${API_BASE_URL}/api/auth/oauth/${provider}?redirect=${encodeURIComponent(redirect)}`;
+    } catch (err: any) {
+      setError(`Erro ao iniciar login com ${provider === 'google' ? 'Google' : 'Apple'}`);
     }
   };
 
@@ -81,11 +95,43 @@ export default function LoginPage() {
             {isLoggingIn ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
+
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-muted-foreground">Ou continue com</span>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleOAuth('google')}
+              className="w-full"
+            >
+              <Chrome className="w-5 h-5 mr-2" />
+              Google
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleOAuth('apple')}
+              className="w-full"
+            >
+              <Apple className="w-5 h-5 mr-2" />
+              Apple
+            </Button>
+          </div>
+        </div>
         
         <div className="mt-6 text-center space-y-2">
           <p className="text-sm text-muted-foreground">
             Não tem uma conta?{' '}
-            <Link to="/register" className="text-primary hover:underline font-medium">
+            <Link to={`/register?redirect=${encodeURIComponent(redirect)}`} className="text-primary hover:underline font-medium">
               Registre-se
             </Link>
           </p>
