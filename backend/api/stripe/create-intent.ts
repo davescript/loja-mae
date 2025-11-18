@@ -282,7 +282,7 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
     // Criar Payment Intent no Stripe
     // Nota: Para EUR, o valor mínimo é 0.50 EUR (50 centavos)
     // Métodos permitidos: Cartão, MB Way (via link), Klarna
-    // Apple Pay e Google Pay aparecem automaticamente quando card está habilitado
+    // Apple Pay e Google Pay aparecem automaticamente quando card está habilitado e o dispositivo suporta
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalCents,
       currency: 'eur',
