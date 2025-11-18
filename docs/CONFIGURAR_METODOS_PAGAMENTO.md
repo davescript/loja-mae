@@ -19,9 +19,12 @@ Apenas 2 métodos de pagamento estão aparecendo no checkout (Cartão e Klarna),
 ### 2. Verificar Configuração do Link (MB Way)
 
 O MB Way aparece através do método **Link** do Stripe quando:
-- O país do endereço de entrega é **PT** (Portugal)
-- O método **Link** está habilitado no painel do Stripe
+- O país do endereço de entrega é **PT** (Portugal) ✅ **Código já garante isso**
+- O método **Link** está habilitado no painel do Stripe ⚠️ **VERIFICAR NO PAINEL**
 - O valor do pedido é compatível
+- A moeda é **EUR** ✅ **Já configurado**
+
+**IMPORTANTE**: O código agora garante que o país seja sempre 'PT' se não for especificado, e adiciona o país no shipping address do Payment Intent. Se o MB Way ainda não aparecer, verifique se o método **Link** está habilitado no painel do Stripe.
 
 ### 3. Configurar Apple Pay
 
