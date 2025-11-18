@@ -289,51 +289,85 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
     // Logout: POST /api/auth/logout
     if (method === 'POST' && path === '/api/auth/logout') {
       const cookieHeader = request.headers.get('Cookie') || '';
-      const m = cookieHeader.match(/session_refresh=([^;]+)/);
-      if (m) {
-        const raw = decodeURIComponent(m[1]);
-        const { hashPassword: _hp } = await import('../../utils/auth');
-        const h = await _hp(raw);
-        await executeRun(db, 'UPDATE user_sessions SET revoked_at = datetime("now") WHERE refresh_token_hash = ?', [h]);
+      const refreshMatch = cookieHeader.match(/session_refresh=([^;]+)/);
+      const accessMatch = cookieHeader.match(/session_access=([^;]+)/);
+      
+      let userId: number | null = null;
+      if (accessMatch) {
+        try {
+          const token = decodeURIComponent(accessMatch[1]);
+          const { verifyToken } = await import('../../utils/jwt');
+          const payload = verifyToken(token, jwtSecret);
+          if (payload?.type === 'customer') {
+            userId = payload.id;
+          }
+        } catch (err) {
+          console.warn('[AUTH] Logout: falha ao verificar token de acesso', err);
+        }
+      }
+      
+      if (userId) {
+        await executeRun(db, 'UPDATE user_sessions SET revoked_at = datetime("now") WHERE user_id = ?', [userId]);
+      } else if (refreshMatch) {
+        // Fallback: se não conseguiu obter o user_id, invalidar pelo refresh token
+        const raw = decodeURIComponent(refreshMatch[1]);
+        try {
+          const { hashPassword: _hp } = await import('../../utils/auth');
+          const h = await _hp(raw);
+          await executeRun(db, 'UPDATE user_sessions SET revoked_at = datetime("now") WHERE refresh_token_hash = ?', [h]);
+        } catch (err) {
+          console.warn('[AUTH] Logout: falha ao invalidar refresh token', err);
+        }
       }
       
       const response = successResponse(null, 'Logout successful');
       
       // Usar a mesma lógica de domínio do login para garantir que os cookies sejam removidos corretamente
       const requestHostname = url.hostname;
-      let cookieDomain = '';
-      let sameSite: 'Lax' | 'None' = 'Lax';
-      let secure = true;
+      const cookieVariants: Array<{ domain?: string; sameSite: 'Lax' | 'None'; secure: boolean }> = [];
+      const expires = 'Thu, 01 Jan 1970 00:00:00 GMT';
       
       if (requestHostname.includes('leiasabores.pt')) {
-        cookieDomain = 'Domain=.leiasabores.pt; ';
-        sameSite = 'Lax';
-      } else if (requestHostname.includes('workers.dev')) {
-        cookieDomain = '';
-        sameSite = 'None';
-        secure = true;
-      } else {
-        cookieDomain = `Domain=${requestHostname}; `;
+        cookieVariants.push({ domain: '.leiasabores.pt', sameSite: 'Lax', secure: true });
+        cookieVariants.push({ domain: requestHostname, sameSite: 'Lax', secure: true });
       }
       
-      // Remover cookies de sessão do cliente
-      const accessCookie = `session_access=; Path=/; ${cookieDomain}HttpOnly; ${secure ? 'Secure; ' : ''}SameSite=${sameSite}; Max-Age=0`;
-      const refreshCookie = `session_refresh=; Path=/; ${cookieDomain}HttpOnly; ${secure ? 'Secure; ' : ''}SameSite=${sameSite}; Max-Age=0`;
+      if (requestHostname.includes('workers.dev')) {
+        cookieVariants.push({ domain: undefined, sameSite: 'None', secure: true });
+      } else {
+        cookieVariants.push({ domain: undefined, sameSite: 'Lax', secure: true });
+      }
       
-      response.headers.set('Set-Cookie', accessCookie);
-      response.headers.append('Set-Cookie', refreshCookie);
+      // Remover duplicados baseados em domain + sameSite
+      const uniqueVariants = cookieVariants.filter(
+        (variant, index, self) =>
+          index === self.findIndex((v) => v.domain === variant.domain && v.sameSite === variant.sameSite)
+      );
+      
+      const buildCookie = (name: string, domain: string | undefined, sameSite: 'Lax' | 'None', secure: boolean) =>
+        `${name}=; Path=/; ${domain ? `Domain=${domain}; ` : ''}${secure ? 'Secure; ' : ''}SameSite=${sameSite}; Max-Age=0; Expires=${expires}`;
+      
+      if (uniqueVariants.length === 0) {
+        uniqueVariants.push({ domain: undefined, sameSite: 'Lax', secure: true });
+      }
+      
+      const baseHeaders: string[] = [];
+      for (const variant of uniqueVariants) {
+        baseHeaders.push(buildCookie('session_access', variant.domain, variant.sameSite, variant.secure));
+        baseHeaders.push(buildCookie('session_refresh', variant.domain, variant.sameSite, variant.secure));
+      }
+      
+      response.headers.set('Set-Cookie', baseHeaders.shift()!);
+      for (const cookie of baseHeaders) {
+        response.headers.append('Set-Cookie', cookie);
+      }
       response.headers.append('Set-Cookie', clearAuthCookie('admin_token'));
       response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
       response.headers.set('Pragma', 'no-cache');
       response.headers.set('Expires', '0');
       response.headers.set('Vary', 'Authorization, Cookie');
       
-      console.log('[AUTH] Logout - cookies removidos:', {
-        domain: cookieDomain || 'sem domain',
-        sameSite,
-        secure,
-        hostname: requestHostname,
-      });
+      console.log('[AUTH] Logout - cookies removidos:', uniqueVariants);
       
       return response;
     }

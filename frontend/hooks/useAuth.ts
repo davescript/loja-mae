@@ -134,18 +134,6 @@ export function useAuth() {
       queryClient.setQueryData(['auth', 'me'], null);
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
       
-      // Aguardar um pouco para garantir que os cookies foram processados
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Forçar remoção de cookies manualmente (fallback)
-      if (typeof document !== 'undefined') {
-        // Remover cookies manualmente como fallback
-        document.cookie = 'session_access=; Path=/; Domain=.leiasabores.pt; Max-Age=0; SameSite=Lax';
-        document.cookie = 'session_refresh=; Path=/; Domain=.leiasabores.pt; Max-Age=0; SameSite=Lax';
-        document.cookie = 'session_access=; Path=/; Max-Age=0; SameSite=Lax';
-        document.cookie = 'session_refresh=; Path=/; Max-Age=0; SameSite=Lax';
-      }
-      
       // Redirecionar para a home após logout (recarregar página para garantir limpeza)
       if (typeof window !== 'undefined') {
         window.location.href = '/';
@@ -163,14 +151,6 @@ export function useAuth() {
       queryClient.clear();
       queryClient.cancelQueries({ queryKey: ['auth', 'me'] });
       queryClient.setQueryData(['auth', 'me'], null);
-      
-      // Forçar remoção de cookies manualmente (fallback)
-      if (typeof document !== 'undefined') {
-        document.cookie = 'session_access=; Path=/; Domain=.leiasabores.pt; Max-Age=0; SameSite=Lax';
-        document.cookie = 'session_refresh=; Path=/; Domain=.leiasabores.pt; Max-Age=0; SameSite=Lax';
-        document.cookie = 'session_access=; Path=/; Max-Age=0; SameSite=Lax';
-        document.cookie = 'session_refresh=; Path=/; Max-Age=0; SameSite=Lax';
-      }
       
       if (typeof window !== 'undefined') {
         window.location.href = '/';
