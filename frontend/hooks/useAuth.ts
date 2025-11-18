@@ -7,9 +7,8 @@ export function useAuth() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<AuthUser | null>(null);
 
-  // Check if token exists on mount to enable query
-  const hasToken = typeof window !== 'undefined' && 
-    (localStorage.getItem('token') || localStorage.getItem('customer_token'));
+  // Estado para controlar se devemos verificar autenticação (desabilitar após logout)
+  const [shouldCheckAuth, setShouldCheckAuth] = useState(true);
 
   const { data, isLoading } = useQuery({
     queryKey: ['auth', 'me'],
@@ -48,7 +47,7 @@ export function useAuth() {
     staleTime: 0, // Sempre refetch para verificar cookies atualizados
     refetchOnWindowFocus: true,
     refetchOnMount: true,
-    enabled: typeof window !== 'undefined', // Sempre habilitado para verificar cookies
+    enabled: typeof window !== 'undefined' && shouldCheckAuth, // Desabilitar após logout
   });
 
   const loginMutation = useMutation({
@@ -68,6 +67,9 @@ export function useAuth() {
       throw new Error(response.error || 'Login failed');
     },
     onSuccess: async () => {
+      // Reabilitar verificação de autenticação
+      setShouldCheckAuth(true);
+      
       // Invalidar e refetch imediatamente após login
       await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
       // Forçar refetch para verificar autenticação via cookies
@@ -113,8 +115,13 @@ export function useAuth() {
         credentials: 'include', // Importante: enviar cookies para serem removidos
       });
     },
-    onSuccess: () => {
-      // Limpar tokens e estado local
+    onSuccess: async () => {
+      console.log('[AUTH] Logout bem-sucedido, limpando estado...');
+      
+      // Desabilitar verificação de autenticação
+      setShouldCheckAuth(false);
+      
+      // Limpar tokens e estado local PRIMEIRO
       localStorage.removeItem('token');
       localStorage.removeItem('customer_token');
       setUser(null);
@@ -122,21 +129,49 @@ export function useAuth() {
       // Limpar todas as queries do cache
       queryClient.clear();
       
-      // Invalidar especificamente a query de autenticação
+      // Invalidar e cancelar a query de autenticação para evitar refetch
+      queryClient.cancelQueries({ queryKey: ['auth', 'me'] });
+      queryClient.setQueryData(['auth', 'me'], null);
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
       
-      // Redirecionar para a home após logout
+      // Aguardar um pouco para garantir que os cookies foram processados
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Forçar remoção de cookies manualmente (fallback)
+      if (typeof document !== 'undefined') {
+        // Remover cookies manualmente como fallback
+        document.cookie = 'session_access=; Path=/; Domain=.leiasabores.pt; Max-Age=0; SameSite=Lax';
+        document.cookie = 'session_refresh=; Path=/; Domain=.leiasabores.pt; Max-Age=0; SameSite=Lax';
+        document.cookie = 'session_access=; Path=/; Max-Age=0; SameSite=Lax';
+        document.cookie = 'session_refresh=; Path=/; Max-Age=0; SameSite=Lax';
+      }
+      
+      // Redirecionar para a home após logout (recarregar página para garantir limpeza)
       if (typeof window !== 'undefined') {
         window.location.href = '/';
       }
     },
-    onError: (error) => {
+    onError: async (error) => {
       console.error('[AUTH] Erro no logout:', error);
+      // Desabilitar verificação de autenticação
+      setShouldCheckAuth(false);
+      
       // Mesmo com erro, limpar estado local e redirecionar
       localStorage.removeItem('token');
       localStorage.removeItem('customer_token');
       setUser(null);
       queryClient.clear();
+      queryClient.cancelQueries({ queryKey: ['auth', 'me'] });
+      queryClient.setQueryData(['auth', 'me'], null);
+      
+      // Forçar remoção de cookies manualmente (fallback)
+      if (typeof document !== 'undefined') {
+        document.cookie = 'session_access=; Path=/; Domain=.leiasabores.pt; Max-Age=0; SameSite=Lax';
+        document.cookie = 'session_refresh=; Path=/; Domain=.leiasabores.pt; Max-Age=0; SameSite=Lax';
+        document.cookie = 'session_access=; Path=/; Max-Age=0; SameSite=Lax';
+        document.cookie = 'session_refresh=; Path=/; Max-Age=0; SameSite=Lax';
+      }
+      
       if (typeof window !== 'undefined') {
         window.location.href = '/';
       }
