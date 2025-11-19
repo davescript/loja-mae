@@ -47,11 +47,23 @@ export async function handleOAuthRoutes(request: Request, env: Env): Promise<Res
         const scope = 'openid email profile';
         const state = Buffer.from(JSON.stringify({ redirect })).toString('base64url');
         
+        // Log detalhado para debug
         console.log('[OAUTH] Google OAuth iniciado:', {
           redirectUri,
           apiOrigin,
           requestHostname: url.hostname,
+          requestOrigin: url.origin,
+          fullUrl: url.toString(),
         });
+        
+        // Log também a URL completa que será enviada ao Google
+        const authUrlFull = `https://accounts.google.com/o/oauth2/v2/auth?` +
+          `client_id=${encodeURIComponent(clientId)}&` +
+          `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+          `response_type=code&` +
+          `scope=${encodeURIComponent(scope)}&` +
+          `state=${state}`;
+        console.log('[OAUTH] URL completa do Google:', authUrlFull);
         
         const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
           `client_id=${encodeURIComponent(clientId)}&` +
@@ -234,18 +246,6 @@ export async function handleOAuthRoutes(request: Request, env: Env): Promise<Res
         ? `${customer.first_name} ${customer.last_name}`
         : customer.first_name || customer.last_name || customer.email.split('@')[0];
 
-      const response = successResponse(
-        {
-          customer: {
-            id: customer.id,
-            email: customer.email,
-            name,
-            type: 'customer' as const,
-          },
-        },
-        'OAuth login successful'
-      );
-
       // Usar a mesma lógica de cookies do login normal
       const requestHostname = url.hostname;
       let cookieDomain = '';
@@ -266,22 +266,23 @@ export async function handleOAuthRoutes(request: Request, env: Env): Promise<Res
       const accessCookie = `session_access=${access}; Path=/; ${cookieDomain}HttpOnly; ${secure ? 'Secure; ' : ''}SameSite=${sameSite}; Max-Age=${15 * 60}`;
       const refreshCookie = `session_refresh=${encodeURIComponent(refreshRaw)}; Path=/; ${cookieDomain}HttpOnly; ${secure ? 'Secure; ' : ''}SameSite=${sameSite}; Max-Age=${60 * 24 * 60 * 60}`;
       
-      response.headers.set('Set-Cookie', accessCookie);
-      response.headers.append('Set-Cookie', refreshCookie);
-      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-      response.headers.set('Pragma', 'no-cache');
-      response.headers.set('Expires', '0');
-      response.headers.set('Vary', 'Authorization, Cookie');
-      
       // Redirecionar para o frontend com cookies
       // Se o redirect for relativo, usar origin do frontend (não do API)
       const frontendOrigin = redirect.startsWith('http') 
         ? redirect 
-        : requestHostname.includes('api.') 
+        : requestHostname.includes('api.') || requestHostname.includes('workers.dev')
           ? `https://www.leiasabores.pt${redirect}`
           : `${url.origin}${redirect}`;
       
-      return Response.redirect(frontendOrigin, 302);
+      const redirectResponse = Response.redirect(frontendOrigin, 302);
+      redirectResponse.headers.set('Set-Cookie', accessCookie);
+      redirectResponse.headers.append('Set-Cookie', refreshCookie);
+      redirectResponse.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      redirectResponse.headers.set('Pragma', 'no-cache');
+      redirectResponse.headers.set('Expires', '0');
+      redirectResponse.headers.set('Vary', 'Authorization, Cookie');
+      
+      return redirectResponse;
     }
 
     return errorResponse('Not found', 404);
