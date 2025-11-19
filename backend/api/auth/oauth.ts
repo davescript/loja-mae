@@ -274,13 +274,18 @@ export async function handleOAuthRoutes(request: Request, env: Env): Promise<Res
           ? `https://www.leiasabores.pt${redirect}`
           : `${url.origin}${redirect}`;
       
-      const redirectResponse = Response.redirect(frontendOrigin, 302);
-      redirectResponse.headers.set('Set-Cookie', accessCookie);
+      const redirectResponse = new Response(null, {
+        status: 302,
+        headers: {
+          Location: frontendOrigin,
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          Pragma: 'no-cache',
+          Expires: '0',
+          Vary: 'Authorization, Cookie',
+        },
+      });
+      redirectResponse.headers.append('Set-Cookie', accessCookie);
       redirectResponse.headers.append('Set-Cookie', refreshCookie);
-      redirectResponse.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-      redirectResponse.headers.set('Pragma', 'no-cache');
-      redirectResponse.headers.set('Expires', '0');
-      redirectResponse.headers.set('Vary', 'Authorization, Cookie');
       
       return redirectResponse;
     }
