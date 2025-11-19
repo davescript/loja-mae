@@ -5,17 +5,16 @@
 - **Client ID**: `1006277981048-p2thqth4k2u76f81f3cfj433jka6n6dt.apps.googleusercontent.com`
 - **Client Secret**: `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` ✅ Configurado no Cloudflare Workers
 
-## URIs de Redirecionamento Necessárias
+## URIs de Redirecionamento Necessárias ⚠️ **IMPORTANTE**
 
-No Google Cloud Console, você precisa adicionar as seguintes URIs de redirecionamento autorizadas:
+No Google Cloud Console, você **DEVE** adicionar a seguinte URI de redirecionamento autorizada:
 
-### Para Produção (leiasabores.pt):
+### Para Produção (leiasabores.pt) - **OBRIGATÓRIA**:
 ```
 https://api.leiasabores.pt/api/auth/oauth/google/callback
-https://www.leiasabores.pt/api/auth/oauth/google/callback
 ```
 
-### Para Desenvolvimento (workers.dev):
+### Para Desenvolvimento (workers.dev) - **OBRIGATÓRIA**:
 ```
 https://loja-mae-api.davecdl.workers.dev/api/auth/oauth/google/callback
 ```
@@ -24,6 +23,8 @@ https://loja-mae-api.davecdl.workers.dev/api/auth/oauth/google/callback
 ```
 http://localhost:8787/api/auth/oauth/google/callback
 ```
+
+**Nota**: O código agora sempre usa `api.leiasabores.pt` para o callback, mesmo quando a requisição vem de `www.leiasabores.pt`. Isso garante que a URI seja sempre consistente.
 
 ## Como Adicionar URIs no Google Cloud Console
 

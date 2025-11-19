@@ -29,9 +29,27 @@ export async function handleOAuthRoutes(request: Request, env: Env): Promise<Res
           return errorResponse('Google OAuth not configured', 500);
         }
 
-        const redirectUri = `${url.origin}/api/auth/oauth/google/callback`;
+        // Determinar o domínio correto da API para o callback
+        // Se estiver em api.leiasabores.pt, usar esse domínio
+        // Caso contrário, usar o origin da requisição
+        let apiOrigin = url.origin;
+        if (url.hostname.includes('leiasabores.pt') && !url.hostname.startsWith('api.')) {
+          // Se a requisição vem do frontend (www.leiasabores.pt), usar api.leiasabores.pt
+          apiOrigin = 'https://api.leiasabores.pt';
+        } else if (url.hostname.includes('workers.dev')) {
+          // Para workers.dev, manter o origin atual
+          apiOrigin = url.origin;
+        }
+        
+        const redirectUri = `${apiOrigin}/api/auth/oauth/google/callback`;
         const scope = 'openid email profile';
         const state = Buffer.from(JSON.stringify({ redirect })).toString('base64url');
+        
+        console.log('[OAUTH] Google OAuth iniciado:', {
+          redirectUri,
+          apiOrigin,
+          requestHostname: url.hostname,
+        });
         
         const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
           `client_id=${encodeURIComponent(clientId)}&` +
@@ -92,7 +110,20 @@ export async function handleOAuthRoutes(request: Request, env: Env): Promise<Res
           return errorResponse('Google OAuth not configured', 500);
         }
 
-        const redirectUri = `${url.origin}/api/auth/oauth/google/callback`;
+        // Usar o mesmo domínio da API que foi usado no redirect inicial
+        let apiOrigin = url.origin;
+        if (url.hostname.includes('leiasabores.pt') && !url.hostname.startsWith('api.')) {
+          apiOrigin = 'https://api.leiasabores.pt';
+        }
+        
+        const redirectUri = `${apiOrigin}/api/auth/oauth/google/callback`;
+        
+        console.log('[OAUTH] Google OAuth callback:', {
+          redirectUri,
+          apiOrigin,
+          requestHostname: url.hostname,
+          code: code ? 'present' : 'missing',
+        });
         
         // Trocar código por token
         const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
