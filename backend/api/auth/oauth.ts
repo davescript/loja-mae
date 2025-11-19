@@ -24,7 +24,7 @@ export async function handleOAuthRoutes(request: Request, env: Env): Promise<Res
       
       // Para Google OAuth
       if (provider === 'google') {
-        const clientId = (env as any).GOOGLE_CLIENT_ID;
+        const clientId = env.GOOGLE_CLIENT_ID;
         if (!clientId) {
           return errorResponse('Google OAuth not configured', 500);
         }
@@ -45,7 +45,7 @@ export async function handleOAuthRoutes(request: Request, env: Env): Promise<Res
 
       // Para Apple OAuth
       if (provider === 'apple') {
-        const clientId = (env as any).APPLE_CLIENT_ID;
+        const clientId = env.APPLE_CLIENT_ID;
         if (!clientId) {
           return errorResponse('Apple OAuth not configured', 500);
         }
@@ -86,8 +86,8 @@ export async function handleOAuthRoutes(request: Request, env: Env): Promise<Res
       let userInfo: { email: string; name?: string; given_name?: string; family_name?: string };
 
       if (provider === 'google') {
-        const clientId = (env as any).GOOGLE_CLIENT_ID;
-        const clientSecret = (env as any).GOOGLE_CLIENT_SECRET;
+        const clientId = env.GOOGLE_CLIENT_ID;
+        const clientSecret = env.GOOGLE_CLIENT_SECRET;
         if (!clientId || !clientSecret) {
           return errorResponse('Google OAuth not configured', 500);
         }
@@ -205,12 +205,42 @@ export async function handleOAuthRoutes(request: Request, env: Env): Promise<Res
         'OAuth login successful'
       );
 
-      const domain = url.hostname;
-      response.headers.set('Set-Cookie', `session_access=${access}; Path=/; Domain=${domain}; HttpOnly; Secure; SameSite=Lax; Max-Age=${15 * 60}`);
-      response.headers.append('Set-Cookie', `session_refresh=${encodeURIComponent(refreshRaw)}; Path=/; Domain=${domain}; HttpOnly; Secure; SameSite=Lax; Max-Age=${60 * 24 * 60 * 60}`);
+      // Usar a mesma lógica de cookies do login normal
+      const requestHostname = url.hostname;
+      let cookieDomain = '';
+      let sameSite: 'Lax' | 'None' = 'Lax';
+      let secure = true;
+      
+      if (requestHostname.includes('leiasabores.pt')) {
+        cookieDomain = 'Domain=.leiasabores.pt; ';
+        sameSite = 'Lax';
+      } else if (requestHostname.includes('workers.dev')) {
+        cookieDomain = '';
+        sameSite = 'None';
+        secure = true;
+      } else {
+        cookieDomain = `Domain=${requestHostname}; `;
+      }
+      
+      const accessCookie = `session_access=${access}; Path=/; ${cookieDomain}HttpOnly; ${secure ? 'Secure; ' : ''}SameSite=${sameSite}; Max-Age=${15 * 60}`;
+      const refreshCookie = `session_refresh=${encodeURIComponent(refreshRaw)}; Path=/; ${cookieDomain}HttpOnly; ${secure ? 'Secure; ' : ''}SameSite=${sameSite}; Max-Age=${60 * 24 * 60 * 60}`;
+      
+      response.headers.set('Set-Cookie', accessCookie);
+      response.headers.append('Set-Cookie', refreshCookie);
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      response.headers.set('Pragma', 'no-cache');
+      response.headers.set('Expires', '0');
+      response.headers.set('Vary', 'Authorization, Cookie');
       
       // Redirecionar para o frontend com cookies
-      return Response.redirect(`${url.origin}${redirect}`, 302);
+      // Se o redirect for relativo, usar origin do frontend (não do API)
+      const frontendOrigin = redirect.startsWith('http') 
+        ? redirect 
+        : requestHostname.includes('api.') 
+          ? `https://www.leiasabores.pt${redirect}`
+          : `${url.origin}${redirect}`;
+      
+      return Response.redirect(frontendOrigin, 302);
     }
 
     return errorResponse('Not found', 404);
