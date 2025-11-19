@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { Button } from '../../admin/components/ui/button';
+import OAuthButtons, { OAuthProvider } from '../../components/OAuthButtons';
 import { API_BASE_URL } from '../../utils/api';
-import { Apple, Chrome } from 'lucide-react';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -37,140 +36,130 @@ export default function RegisterPage() {
     }
   };
 
-  const handleOAuth = async (provider: 'google' | 'apple') => {
+  const handleOAuth = (provider: OAuthProvider) => {
+    if (provider === 'microsoft') {
+      setError('Integração com Microsoft em breve.');
+      return;
+    }
+
     try {
-      window.location.href = `${API_BASE_URL}/api/auth/oauth/${provider}?redirect=${encodeURIComponent(redirect)}`;
+      window.location.href = `${API_BASE_URL}/api/auth/oauth/${provider}?redirect=${encodeURIComponent(
+        redirect
+      )}`;
     } catch (err: any) {
       setError(`Erro ao iniciar registro com ${provider === 'google' ? 'Google' : 'Apple'}`);
     }
   };
 
   return (
-    <div className="container mx-auto px-4 py-16 max-w-md">
-      <div className="card p-8">
-        <h1 className="text-3xl font-heading font-bold mb-2 text-center">Criar Conta</h1>
-        <p className="text-muted-foreground text-center mb-8">Registre-se para começar a comprar</p>
-        
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="bg-red-100 text-red-700 p-4 rounded-lg border border-red-200">
-              {error}
+    <div className="min-h-[calc(100vh-80px)] bg-gradient-to-b from-[#050505] via-[#0b0b0b] to-[#050505] flex items-center justify-center px-4 py-16">
+      <div className="w-full max-w-md">
+        <div className="rounded-3xl bg-[#111217] border border-white/5 p-8 shadow-[0_30px_80px_rgba(0,0,0,0.65)]">
+          <h1 className="text-3xl font-heading font-semibold text-white text-center mb-2">
+            Criar conta
+          </h1>
+          <p className="text-sm text-white/60 text-center mb-8">
+            Registre-se para desbloquear benefícios exclusivos.
+          </p>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/40 text-red-100 px-4 py-3 rounded-2xl text-sm">
+                {error}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="firstName" className="text-sm font-medium text-white/80">
+                  Nome
+                </label>
+                <input
+                  id="firstName"
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
+                  placeholder="Seu nome"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="lastName" className="text-sm font-medium text-white/80">
+                  Sobrenome
+                </label>
+                <input
+                  id="lastName"
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
+                  placeholder="Seu sobrenome"
+                />
+              </div>
             </div>
-          )}
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="firstName" className="block text-sm font-medium mb-2">
-                Nome
+
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium text-white/80">
+                Email
               </label>
               <input
-                id="firstName"
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                className="input w-full"
-                placeholder="Seu nome"
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
+                placeholder="seu@email.com"
               />
             </div>
-            <div>
-              <label htmlFor="lastName" className="block text-sm font-medium mb-2">
-                Sobrenome
+
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-medium text-white/80">
+                Senha
               </label>
               <input
-                id="lastName"
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                className="input w-full"
-                placeholder="Seu sobrenome"
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30"
+                placeholder="••••••••"
               />
             </div>
-          </div>
-          
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-2">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="input w-full"
-              placeholder="seu@email.com"
-            />
-          </div>
-          
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-2">
-              Senha
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              className="input w-full"
-              placeholder="••••••••"
-            />
-          </div>
-          
-          <button
-            type="submit"
-            disabled={isRegistering}
-            className="btn btn-primary w-full"
-          >
-            {isRegistering ? 'Registrando...' : 'Criar Conta'}
-          </button>
-        </form>
 
-        <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-muted-foreground">Ou continue com</span>
-            </div>
+            <button
+              type="submit"
+              disabled={isRegistering}
+              className="w-full rounded-2xl bg-white text-black font-semibold py-3 transition hover:bg-gray-100 disabled:opacity-70"
+            >
+              {isRegistering ? 'Registrando...' : 'Criar Conta'}
+            </button>
+          </form>
+
+          <div className="mt-10">
+            <p className="text-center text-white/60 text-sm mb-4">Ou continue com</p>
+            <OAuthButtons onSelect={handleOAuth} disabledProviders={['microsoft']} />
+            <p className="text-xs text-white/40 mt-3 text-center">* Microsoft em breve</p>
           </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleOAuth('google')}
-              className="w-full"
-            >
-              <Chrome className="w-5 h-5 mr-2" />
-              Google
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleOAuth('apple')}
-              className="w-full"
-            >
-              <Apple className="w-5 h-5 mr-2" />
-              Apple
-            </Button>
+          <div className="mt-8 text-center space-y-2">
+            <p className="text-sm text-white/70">
+              Já tem uma conta?{' '}
+              <Link
+                to={`/login?redirect=${encodeURIComponent(redirect)}`}
+                className="text-white font-semibold hover:underline"
+              >
+                Faça login
+              </Link>
+            </p>
+            <p className="text-sm">
+              <Link to="/" className="text-white/50 hover:text-white">
+                ← Voltar para a loja
+              </Link>
+            </p>
           </div>
-        </div>
-        
-        <div className="mt-6 text-center space-y-2">
-          <p className="text-sm text-muted-foreground">
-            Já tem uma conta?{' '}
-            <Link to={`/login?redirect=${encodeURIComponent(redirect)}`} className="text-primary hover:underline font-medium">
-              Faça login
-            </Link>
-          </p>
-          <p className="text-sm">
-            <Link to="/" className="text-muted-foreground hover:text-primary">
-              ← Voltar para a loja
-            </Link>
-          </p>
         </div>
       </div>
     </div>
