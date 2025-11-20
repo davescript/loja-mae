@@ -30,6 +30,7 @@ export async function handleFavoritesRoutes(request: Request, env: Env): Promise
     }
 
     const customerId = user.id;
+    console.log('[FAVORITES] Request:', method, path, 'customer', customerId);
 
     // GET /api/favorites - Lista favoritos
     if (method === 'GET' && path === '/api/favorites') {
@@ -56,7 +57,9 @@ export async function handleFavoritesRoutes(request: Request, env: Env): Promise
       }
 
       try {
+        console.log('[FAVORITES] Adding favorite', { customerId, productId: product_id });
         const favorite = await addFavorite(db, customerId, product_id);
+        console.log('[FAVORITES] Favorite added', favorite);
         return successResponse({ favorite, message: 'Product added to favorites' });
       } catch (error: any) {
         if (error.message?.includes('FOREIGN KEY')) {
@@ -74,6 +77,7 @@ export async function handleFavoritesRoutes(request: Request, env: Env): Promise
         return errorResponse('Invalid product ID', 400);
       }
 
+      console.log('[FAVORITES] Removing favorite', { customerId, productId });
       const removed = await removeFavorite(db, customerId, productId);
 
       if (!removed) {
