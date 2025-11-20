@@ -1,4 +1,4 @@
-import { MouseEvent } from 'react';
+import type { JSX, MouseEvent } from 'react';
 
 export type OAuthProvider = 'google' | 'microsoft' | 'apple';
 
@@ -53,10 +53,10 @@ export default function OAuthButtons({
             key={provider.id}
             onClick={(event) => handleClick(event, provider.id)}
             disabled={isDisabled}
-            className={`w-full flex items-center justify-center gap-3 rounded-2xl border border-white/10 bg-neutral-800 px-4 py-3 text-white text-base font-medium transition-transform duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 ${
+            className={`w-full flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-b from-white to-slate-50 border border-slate-200 px-4 py-3 text-slate-900 text-base font-semibold shadow-sm transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 ${
               isDisabled
                 ? 'opacity-60 cursor-not-allowed'
-                : 'hover:-translate-y-0.5 hover:bg-neutral-700'
+                : 'hover:-translate-y-0.5 hover:shadow-xl'
             }`}
           >
             <span className="h-5 w-5 flex items-center justify-center">{provider.icon}</span>
