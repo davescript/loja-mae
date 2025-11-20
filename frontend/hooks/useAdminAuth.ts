@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../utils/api';
 import { useNavigate } from 'react-router-dom';
@@ -20,47 +21,42 @@ export function useAdminAuth() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
+  const [shouldCheckAuth, setShouldCheckAuth] = useState(true);
 
   // Check if admin is authenticated
-  const { data: admin, isLoading, error } = useQuery({
+  const { data: adminData, isLoading } = useQuery({
     queryKey: ['admin', 'me'],
     queryFn: async () => {
-      // Verificar se tem token antes de fazer requisição
-      const token = localStorage.getItem('admin_token');
-      if (!token) {
-        console.log('[ADMIN_AUTH] Sem token no localStorage, não autenticado');
-        return null;
-      }
-
       try {
         console.log('[ADMIN_AUTH] Verificando autenticação...');
-        const response = await apiRequest<{ user: AdminUser; type: 'admin' }>('/api/auth/me');
+        const response = await apiRequest<{ user: AdminUser; type: 'admin' }>('/api/auth/me', {
+          credentials: 'include',
+        });
         
         if (response.data?.type === 'admin' && response.data?.user) {
           console.log('[ADMIN_AUTH] Admin autenticado:', response.data.user.email);
+          setAdminUser(response.data.user);
           return response.data.user;
         }
         
         console.warn('[ADMIN_AUTH] Resposta não é de admin');
+        setAdminUser(null);
         return null;
       } catch (error: any) {
         console.error('[ADMIN_AUTH] Erro ao verificar autenticação:', error);
         
-        // Se erro 401, token inválido ou expirado - limpar
-        if (error?.message?.includes('401') || error?.message?.includes('Authentication')) {
-          console.log('[ADMIN_AUTH] Token inválido/expirado, limpando localStorage');
-          localStorage.removeItem('admin_token');
-        }
+        setAdminUser(null);
         
         return null;
       }
     },
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes - manter cache por 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutes - manter no cache mesmo após unmount
-    refetchOnWindowFocus: false, // NÃO refetch no focus (evita re-autenticações desnecessárias)
-    refetchOnMount: true, // Refetch ao montar componente
-    enabled: typeof window !== 'undefined', // Só executar no browser
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    enabled: typeof window !== 'undefined' && shouldCheckAuth,
   });
 
   // Admin login mutation
@@ -95,7 +91,7 @@ export function useAdminAuth() {
     onSuccess: (data) => {
       console.log('[ADMIN_AUTH] Login bem-sucedido! Data recebida:', data);
       
-      // Salvar token no localStorage se fornecido pela API
+      // Salvar token no localStorage se fornecido pela API (mantido por compatibilidade com Authorization header)
       if (data?.token) {
         localStorage.setItem('admin_token', data.token);
         console.log('[ADMIN_AUTH] ✅ Token salvo no localStorage:', data.token.substring(0, 20) + '...');
@@ -109,6 +105,8 @@ export function useAdminAuth() {
       console.log('[ADMIN_AUTH] Tokens de customer removidos para evitar conflitos');
       
       // Invalidate and refetch admin data
+      setShouldCheckAuth(true);
+      setAdminUser(data?.admin || null);
       queryClient.invalidateQueries({ queryKey: ['admin', 'me'] });
       queryClient.setQueryData(['admin', 'me'], data?.admin);
       
@@ -146,7 +144,9 @@ export function useAdminAuth() {
       localStorage.removeItem('admin_token');
       localStorage.removeItem('customer_token');
       localStorage.removeItem('token');
-      queryClient.clear();
+      setShouldCheckAuth(false);
+      setAdminUser(null);
+      queryClient.removeQueries({ queryKey: ['admin', 'me'] });
       navigate('/admin/login');
     },
     onError: (error) => {
@@ -155,7 +155,9 @@ export function useAdminAuth() {
       localStorage.removeItem('admin_token');
       localStorage.removeItem('customer_token');
       localStorage.removeItem('token');
-      queryClient.clear();
+      setShouldCheckAuth(false);
+      setAdminUser(null);
+      queryClient.removeQueries({ queryKey: ['admin', 'me'] });
       navigate('/admin/login');
     },
   });
@@ -167,6 +169,8 @@ export function useAdminAuth() {
   const logout = () => {
     logoutMutation.mutate();
   };
+
+  const admin = adminData || adminUser;
 
   return {
     admin,
