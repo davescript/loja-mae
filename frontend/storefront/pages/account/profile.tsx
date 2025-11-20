@@ -77,6 +77,9 @@ export default function CustomerProfilePage() {
     mutationFn: async (data: typeof formData) => {
       return apiRequest('/api/customers/me', {
         method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(data),
       });
     },
