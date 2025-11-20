@@ -70,6 +70,15 @@ export default function CustomerOrdersPage() {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
+  const getOrderTitle = (order: Order) => {
+    const firstItemTitle = order.items?.[0]?.title;
+    if (!firstItemTitle) return `Pedido ${order.order_number}`;
+    const additionalCount = (order.items?.length || 0) - 1;
+    if (additionalCount <= 0) return firstItemTitle;
+    const suffix = additionalCount === 1 ? ' +1 item' : ` +${additionalCount} itens`;
+    return `${firstItemTitle}${suffix}`;
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -156,7 +165,7 @@ export default function CustomerOrdersPage() {
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <Package className="w-5 h-5 text-muted-foreground" />
-                          <span className="font-semibold text-lg">Pedido {order.order_number}</span>
+                          <span className="font-semibold text-lg">{getOrderTitle(order)}</span>
                           {getStatusBadge(order.status)}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-muted-foreground">
