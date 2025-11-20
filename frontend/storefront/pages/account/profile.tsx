@@ -56,6 +56,22 @@ export default function CustomerProfilePage() {
     }
   }, [customerData]);
 
+  // Fallback para dados básicos vindos do hook de auth (caso /api/customers/me ainda não tenha dados completos)
+  React.useEffect(() => {
+    if (!customerData && user) {
+      const [first, ...rest] = (user.name || '').split(' ');
+      setFormData((prev) => ({
+        first_name: prev.first_name || first || '',
+        last_name: prev.last_name || rest.join(' ') || '',
+        email: prev.email || user.email || '',
+        phone: prev.phone || '',
+      }));
+      if (user.email) {
+        setIsPrefilled(true);
+      }
+    }
+  }, [user, customerData]);
+
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
