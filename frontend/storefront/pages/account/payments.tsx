@@ -42,7 +42,15 @@ export default function CustomerPaymentsPage() {
       refunded: { variant: 'destructive', label: 'Reembolsado' },
     };
     const config = variants[status] || { variant: 'outline', label: status };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    const successClasses =
+      status === 'succeeded'
+        ? 'bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+        : undefined;
+    return (
+      <Badge variant={config.variant} className={successClasses}>
+        {config.label}
+      </Badge>
+    );
   };
 
   return (

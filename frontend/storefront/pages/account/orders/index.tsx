@@ -67,12 +67,24 @@ export default function CustomerOrdersPage() {
       refunded: { variant: 'destructive', label: 'Reembolsado' },
     };
     const config = variants[status] || { variant: 'outline', label: status };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    const successClasses =
+      status === 'paid'
+        ? 'bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+        : undefined;
+    return (
+      <Badge variant={config.variant} className={successClasses}>
+        {config.label}
+      </Badge>
+    );
   };
 
   const getOrderTitle = (order: Order) => {
+    console.log('Order items:', order.items); // Debug
     const firstItemTitle = order.items?.[0]?.title;
-    if (!firstItemTitle) return `Pedido ${order.order_number}`;
+    if (!firstItemTitle) {
+      console.log('No item title found, using order number'); // Debug
+      return `Pedido ${order.order_number}`;
+    }
     const additionalCount = (order.items?.length || 0) - 1;
     if (additionalCount <= 0) return firstItemTitle;
     const suffix = additionalCount === 1 ? ' +1 item' : ` +${additionalCount} itens`;
@@ -217,10 +229,10 @@ export default function CustomerOrdersPage() {
                         <Button
                           variant="default"
                           size="sm"
-                  onClick={(e: React.MouseEvent) => {
-                    e.stopPropagation();
-                    navigate(`/account/orders/${order.order_number}`);
-                  }}
+                          onClick={(e: React.MouseEvent) => {
+                            e.stopPropagation();
+                            navigate(`/account/orders/${order.order_number}`);
+                          }}
                         >
                           Ver Detalhes
                         </Button>

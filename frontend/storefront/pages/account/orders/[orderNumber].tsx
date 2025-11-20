@@ -95,7 +95,15 @@ export default function CustomerOrderDetailsPage() {
       refunded: { variant: 'destructive', label: 'Reembolsado' },
     };
     const config = variants[status] || { variant: 'outline', label: status };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    const successClasses =
+      status === 'paid'
+        ? 'bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+        : undefined;
+    return (
+      <Badge variant={config.variant} className={successClasses}>
+        {config.label}
+      </Badge>
+    );
   };
 
   // Timeline steps - usar order_status_history se disponível, senão usar lógica baseada no status atual
