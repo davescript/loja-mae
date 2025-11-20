@@ -247,6 +247,7 @@ export async function handleContactMessagesRoutes(request: Request, env: Env): P
         to: adminEmail,
         subject: `[Contato] ${message.subject}`,
         html: emailHtml,
+        replyTo: message.email,
       });
 
       if (emailSent) {
