@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import OAuthButtons, { OAuthProvider } from '../../components/OAuthButtons';
@@ -10,10 +10,16 @@ export default function RegisterPage() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [error, setError] = useState('');
-  const { register, isRegistering } = useAuth();
+  const { register, isRegistering, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get('redirect') || '/account';
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(redirect, { replace: true });
+    }
+  }, [isAuthenticated, navigate, redirect]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
