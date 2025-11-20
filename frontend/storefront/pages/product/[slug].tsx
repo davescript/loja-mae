@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '../../../utils/api';
 import type { Product } from '@shared/types';
@@ -10,6 +10,7 @@ import { sanitizeHtml } from '../../../utils/sanitize';
 import { useCartStore } from '../../../store/cartStore';
 import { useFavoritesStore } from '../../../store/favoritesStore';
 import { useToast } from '../../../admin/hooks/useToast';
+import { useAuth } from '../../../hooks/useAuth';
 import BannerDisplay from '../../components/app/BannerDisplay';
 
 export default function ProductPage() {
@@ -42,6 +43,8 @@ export default function ProductPage() {
   const { addItem } = useCartStore();
   const { toggleFavorite, favorites } = useFavoritesStore(); // Usar favorites diretamente
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -376,16 +379,24 @@ export default function ProductPage() {
             <div className="flex gap-3">
               <button
                 onClick={async () => {
-                  if (product) {
-                    const wasFavorite = favorites.includes(product.id);
-                    await toggleFavorite(product.id);
+                  if (!product) return;
+                  if (!isAuthenticated) {
+                    const currentPath = `${location.pathname}${location.search}`;
                     toast({
-                      title: wasFavorite ? 'Removido dos favoritos' : 'Adicionado aos favoritos',
-                      description: wasFavorite 
-                        ? 'Produto removido da sua lista de favoritos'
-                        : 'Produto adicionado à sua lista de favoritos',
+                      title: 'Entre para favoritar',
+                      description: 'Faça login para salvar seus produtos favoritos.',
                     });
+                    navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
+                    return;
                   }
+                  const wasFavorite = favorites.includes(product.id);
+                  await toggleFavorite(product.id);
+                  toast({
+                    title: wasFavorite ? 'Removido dos favoritos' : 'Adicionado aos favoritos',
+                    description: wasFavorite 
+                      ? 'Produto removido da sua lista de favoritos'
+                      : 'Produto adicionado à sua lista de favoritos',
+                  });
                 }}
                 className={`flex-1 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${
                   product && favorites.includes(product.id)

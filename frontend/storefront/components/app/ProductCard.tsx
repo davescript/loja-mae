@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import type { Product } from '@shared/types';
 import { Heart, ShoppingCart, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,6 +7,7 @@ import { formatPrice } from '../../../utils/format';
 import { useCartStore } from '../../../store/cartStore';
 import { useFavoritesStore } from '../../../store/favoritesStore';
 import { useToast } from '../../../admin/hooks/useToast';
+import { useAuth } from '../../../hooks/useAuth';
 
 type Props = {
   product: Product;
@@ -19,6 +20,9 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
   const { toggleFavorite, favorites } = useFavoritesStore(); // Usar favorites diretamente
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const isProductFavorite = favorites.includes(product.id); // Verificar do array
   
   const images = product.images && product.images.length > 0 
@@ -207,6 +211,15 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
               onClick={async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                if (!isAuthenticated) {
+                  const currentPath = `${location.pathname}${location.search}`;
+                  toast({
+                    title: 'Entre para favoritar',
+                    description: 'Faça login para salvar seus produtos favoritos.',
+                  });
+                  navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
+                  return;
+                }
                 const wasFavorite = favorites.includes(product.id);
                 await toggleFavorite(product.id);
                 toast({

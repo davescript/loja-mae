@@ -1,6 +1,6 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { X, ChevronLeft, ChevronRight, ShoppingCart, Heart, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Product } from '@shared/types';
@@ -9,6 +9,7 @@ import { useCartStore } from '../../../store/cartStore';
 import { useFavoritesStore } from '../../../store/favoritesStore';
 import { useToast } from '../../../admin/hooks/useToast';
 import { sanitizeHtml } from '../../../utils/sanitize';
+import { useAuth } from '../../../hooks/useAuth';
 
 type QuickViewModalProps = {
   open: boolean;
@@ -27,6 +28,9 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const { addItem } = useCartStore();
   const { toggleFavorite, favorites } = useFavoritesStore(); // Usar favorites diretamente
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   
   const isProductFavorite = product ? favorites.includes(product.id) : false; // Verificar do array
@@ -454,6 +458,15 @@ export default function QuickViewModal({ open, onOpenChange, product }: QuickVie
                       <button
                         onClick={async () => {
                           if (product) {
+                            if (!isAuthenticated) {
+                              const currentPath = `${location.pathname}${location.search}`;
+                              toast({
+                                title: 'Entre para favoritar',
+                                description: 'Faça login para salvar seus produtos favoritos.',
+                              });
+                              navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
+                              return;
+                            }
                             const wasFavorite = favorites.includes(product.id);
                             await toggleFavorite(product.id);
                             toast({
