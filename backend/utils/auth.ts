@@ -16,6 +16,38 @@ export async function comparePassword(
   return bcrypt.compare(password, hash);
 }
 
+const textEncoder = new TextEncoder();
+
+export async function hashRefreshToken(token: string): Promise<string> {
+  const data = textEncoder.encode(token);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+export function isBcryptHash(hash?: string | null): boolean {
+  if (!hash) return false;
+  return hash.startsWith('$2a$') || hash.startsWith('$2b$') || hash.startsWith('$2y$');
+}
+
+export async function compareRefreshTokenHash(rawToken: string, storedHash: string): Promise<boolean> {
+  if (isBcryptHash(storedHash)) {
+    return comparePassword(rawToken, storedHash);
+  }
+  const hashedRaw = await hashRefreshToken(rawToken);
+  if (hashedRaw.length !== storedHash.length) {
+    return false;
+  }
+  let isEqual = true;
+  for (let i = 0; i < hashedRaw.length; i += 1) {
+    if (hashedRaw.charCodeAt(i) !== storedHash.charCodeAt(i)) {
+      isEqual = false;
+    }
+  }
+  return isEqual;
+}
+
 export async function getCustomerFromToken(
   db: D1Database,
   token: string,

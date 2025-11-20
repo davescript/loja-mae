@@ -1,5 +1,5 @@
 import type { Env } from '../../types';
-import { getDb, executeOne, executeRun } from '../../utils/db';
+import { getDb, executeOne, executeRun, executeQuery } from '../../utils/db';
 import { successResponse, errorResponse } from '../../utils/response';
 import { handleError } from '../../utils/errors';
 import {
@@ -8,7 +8,7 @@ import {
   getCustomerByEmail,
 } from '../../modules/customers';
 import { registerSchema, loginSchema } from '../../validators/customers';
-import { setAuthCookie, clearAuthCookie, hashPassword } from '../../utils/auth';
+import { setAuthCookie, clearAuthCookie, hashPassword, hashRefreshToken, compareRefreshTokenHash } from '../../utils/auth';
 import { signToken } from '../../utils/jwt';
 import { sendEmail } from '../../utils/email';
 
@@ -38,8 +38,7 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
 
       const access = signToken({ id: customer.id, email: customer.email, type: 'customer' }, jwtSecret, '15m');
       const refreshRaw = crypto.randomUUID() + '.' + crypto.randomUUID();
-      const { hashPassword: _hp } = await import('../../utils/auth');
-      const refreshHash = await _hp(refreshRaw);
+      const refreshHash = await hashRefreshToken(refreshRaw);
       await executeRun(db, 'INSERT INTO user_sessions (user_id, refresh_token_hash, user_agent, ip, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)', [
         customer.id,
         refreshHash,
@@ -96,8 +95,7 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
 
       const access = signToken({ id: customer.id, email: customer.email, type: 'customer' }, jwtSecret, '15m');
       const refreshRaw = crypto.randomUUID() + '.' + crypto.randomUUID();
-      const { hashPassword: _hp } = await import('../../utils/auth');
-      const refreshHash = await _hp(refreshRaw); // reuse bcrypt hash for strong storage
+      const refreshHash = await hashRefreshToken(refreshRaw);
       const now = new Date().toISOString();
       const exp = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
       await executeRun(db, 'INSERT INTO user_sessions (user_id, refresh_token_hash, user_agent, ip, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)', [
@@ -309,14 +307,12 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
       if (userId) {
         await executeRun(db, 'UPDATE user_sessions SET revoked_at = datetime("now") WHERE user_id = ?', [userId]);
       } else if (refreshMatch) {
-        // Fallback: se não conseguiu obter o user_id, invalidar pelo refresh token
         const raw = decodeURIComponent(refreshMatch[1]);
-        try {
-          const { hashPassword: _hp } = await import('../../utils/auth');
-          const h = await _hp(raw);
-          await executeRun(db, 'UPDATE user_sessions SET revoked_at = datetime("now") WHERE refresh_token_hash = ?', [h]);
-        } catch (err) {
-          console.warn('[AUTH] Logout: falha ao invalidar refresh token', err);
+        const session = await findSessionByRefreshToken(db, raw);
+        if (session) {
+          await executeRun(db, 'UPDATE user_sessions SET revoked_at = datetime("now") WHERE id = ?', [session.id]);
+        } else {
+          console.warn('[AUTH] Logout: refresh token não encontrado para revogação');
         }
       }
       
@@ -414,9 +410,7 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
         return r;
       }
       const raw = decodeURIComponent(m[1]);
-      const { hashPassword: _hp } = await import('../../utils/auth');
-      const h = await _hp(raw);
-      const session = await executeOne<{ id: number; user_id: number; expires_at: string; revoked_at: string | null }>(db, 'SELECT id, user_id, expires_at, revoked_at FROM user_sessions WHERE refresh_token_hash = ?', [h]);
+      const session = await findSessionByRefreshToken(db, raw);
       if (!session || session.revoked_at || new Date(session.expires_at).getTime() < Date.now()) {
         const r = errorResponse('Unauthorized', 401);
         r.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
@@ -428,7 +422,7 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
       const cust = await executeOne<{ email: string }>(db, 'SELECT email FROM customers WHERE id = ?', [session.user_id]);
       const access = signToken({ id: session.user_id, email: cust?.email || '', type: 'customer' }, jwtSecret, '15m');
       const rotate = crypto.randomUUID() + '.' + crypto.randomUUID();
-      const rotateHash = await _hp(rotate);
+      const rotateHash = await hashRefreshToken(rotate);
       await executeRun(db, 'UPDATE user_sessions SET refresh_token_hash = ?, updated_at = datetime("now") WHERE id = ?', [rotateHash, session.id]);
       const domain = url.hostname;
       const res = successResponse({ refreshed: true });
@@ -543,4 +537,37 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
     const { message, status, details } = handleError(error);
     return errorResponse(message, status, details);
   }
+}
+
+type SessionRecord = {
+  id: number;
+  user_id: number;
+  refresh_token_hash: string;
+  expires_at: string;
+  revoked_at: string | null;
+};
+
+async function findSessionByRefreshToken(db: ReturnType<typeof getDb>, rawToken: string): Promise<SessionRecord | null> {
+  const hashed = await hashRefreshToken(rawToken);
+  const session = await executeOne<SessionRecord>(
+    db,
+    'SELECT id, user_id, refresh_token_hash, expires_at, revoked_at FROM user_sessions WHERE refresh_token_hash = ?',
+    [hashed]
+  );
+  if (session) {
+    return session;
+  }
+
+  const legacySessions = await executeQuery<SessionRecord>(
+    db,
+    'SELECT id, user_id, refresh_token_hash, expires_at, revoked_at FROM user_sessions WHERE refresh_token_hash LIKE "$2%" AND revoked_at IS NULL ORDER BY id DESC LIMIT 200'
+  );
+
+  for (const legacy of legacySessions) {
+    if (legacy.refresh_token_hash && await compareRefreshTokenHash(rawToken, legacy.refresh_token_hash)) {
+      return legacy;
+    }
+  }
+
+  return null;
 }

@@ -4,6 +4,7 @@ import { successResponse, errorResponse } from '../../utils/response';
 import { handleError } from '../../utils/errors';
 import { createCustomer, getCustomerByEmail } from '../../modules/customers';
 import { signToken } from '../../utils/jwt';
+import { hashRefreshToken } from '../../utils/auth';
 
 export async function handleOAuthRoutes(request: Request, env: Env): Promise<Response> {
   try {
@@ -226,8 +227,7 @@ export async function handleOAuthRoutes(request: Request, env: Env): Promise<Res
       // Criar sessão
       const access = signToken({ id: customer.id, email: customer.email, type: 'customer' }, jwtSecret, '15m');
       const refreshRaw = crypto.randomUUID() + '.' + crypto.randomUUID();
-      const { hashPassword } = await import('../../utils/auth');
-      const refreshHash = await hashPassword(refreshRaw);
+      const refreshHash = await hashRefreshToken(refreshRaw);
       
       await executeRun(
         db,
