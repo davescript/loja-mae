@@ -25,7 +25,7 @@ export default function AdminFavoritesPage() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
   const [customerFavorites, setCustomerFavorites] = useState<Array<{ product_id: number; product_title?: string; created_at: string }>>([]);
 
-  const { data: favoritesData, isLoading } = useQuery({
+  const { data: favoritesData, isLoading, isFetching } = useQuery({
     queryKey: ['admin', 'favorites', page, search],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -38,6 +38,9 @@ export default function AdminFavoritesPage() {
       }>(`/api/admin/favorites?${params.toString()}`);
       return response.data || { favorites: [], pagination: { total: 0, limit: 20, offset: 0, hasMore: false } };
     },
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
+    keepPreviousData: true,
   });
 
   const handleViewCustomerFavorites = async (customerId: number) => {
