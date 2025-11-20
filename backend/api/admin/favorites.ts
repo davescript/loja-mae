@@ -9,6 +9,19 @@ import {
   getCustomerFavoritesWithProducts,
 } from '../../modules/favorites';
 
+const NO_CACHE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+  Pragma: 'no-cache',
+  Expires: '0',
+} as const;
+
+function withNoCache(response: Response): Response {
+  Object.entries(NO_CACHE_HEADERS).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
+  return response;
+}
+
 /**
  * GET /api/admin/favorites - Lista todos os favoritos (admin)
  * GET /api/admin/favorites/customer/:customerId - Lista favoritos de um cliente específico
@@ -32,7 +45,7 @@ export async function handleAdminFavoritesRoutes(request: Request, env: Env): Pr
         getFavoritesCount(db),
       ]);
 
-      return successResponse({
+      return withNoCache(successResponse({
         favorites,
         pagination: {
           total,
@@ -40,7 +53,7 @@ export async function handleAdminFavoritesRoutes(request: Request, env: Env): Pr
           offset,
           hasMore: offset + limit < total,
         },
-      });
+      }));
     }
 
     // GET /api/admin/favorites/customer/:customerId - Lista favoritos de um cliente
@@ -53,7 +66,7 @@ export async function handleAdminFavoritesRoutes(request: Request, env: Env): Pr
 
       const favorites = await getCustomerFavoritesWithProducts(db, customerId);
 
-      return successResponse({ favorites });
+      return withNoCache(successResponse({ favorites }));
     }
 
     return errorResponse('Method not allowed', 405);
