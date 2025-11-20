@@ -79,6 +79,13 @@ export default function CustomerOrdersPage() {
     return `${firstItemTitle}${suffix}`;
   };
 
+  const getPrimaryItemCode = (order: Order) => {
+    const primaryItem = order.items?.[0];
+    if (!primaryItem) return null;
+    if (primaryItem.sku) return primaryItem.sku;
+    return `ID ${primaryItem.product_id}`;
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -182,8 +189,13 @@ export default function CustomerOrdersPage() {
                           </div>
                         </div>
                         {order.payment_status && (
-                          <div className="mt-2 text-xs text-muted-foreground">
-                            Pagamento: {order.payment_status === 'paid' ? 'Confirmado' : 'Pendente'}
+                          <div className="mt-2 text-xs text-muted-foreground space-y-1">
+                            <div>Pagamento: {order.payment_status === 'paid' ? 'Confirmado' : 'Pendente'}</div>
+                            {getPrimaryItemCode(order) && (
+                              <div className="font-medium text-foreground">
+                                Código do produto: {getPrimaryItemCode(order)}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
