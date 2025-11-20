@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { apiRequest } from '../utils/api'
+import { AuthenticationError } from '../utils/errorHandler'
 
 interface FavoritesStore {
   favorites: number[] // Array de product IDs
@@ -37,38 +38,34 @@ export const useFavoritesStore = create<FavoritesStore>()(
         console.log('❤️ Atualizando favoritos localmente:', newFavorites)
         set({ favorites: newFavorites })
 
-        // Sincronizar com servidor se autenticado
-        const token = localStorage.getItem('customer_token') || localStorage.getItem('token')
-        if (token) {
-          try {
-            console.log('❤️ Sincronizando com servidor...')
-            const response = await apiRequest('/api/favorites', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ product_id: productId }),
-            })
-            console.log('✅ Resposta do servidor:', response)
-            
-            // Verificar se a resposta foi bem-sucedida
-            if (!response.success) {
-              throw new Error(response.error || 'Erro ao adicionar favorito')
-            }
-            
-            console.log('✅ Favorito adicionado no servidor com sucesso')
-          } catch (error: any) {
-            console.error('❌ Erro ao adicionar favorito no servidor:', error)
-            console.error('❌ Detalhes do erro:', error.message)
-            if (error.response) {
-              console.error('❌ Resposta do servidor:', error.response)
-            }
-            // Reverter se falhar
-            console.log('❤️ Revertendo favoritos para estado anterior:', favorites)
-            set({ favorites })
+        try {
+          console.log('❤️ Sincronizando com servidor...')
+          const response = await apiRequest('/api/favorites', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ product_id: productId }),
+          })
+          console.log('✅ Resposta do servidor:', response)
+          
+          if (!response.success) {
+            throw new Error(response.error || 'Erro ao adicionar favorito')
           }
-        } else {
-          console.log('❤️ Usuário não autenticado, favorito apenas no localStorage')
+          
+          console.log('✅ Favorito adicionado no servidor com sucesso')
+        } catch (error: any) {
+          if (error instanceof AuthenticationError) {
+            console.warn('Usuário não autenticado. Favorito ficará apenas local até fazer login.')
+            return
+          }
+          console.error('❌ Erro ao adicionar favorito no servidor:', error)
+          console.error('❌ Detalhes do erro:', error.message)
+          if (error.response) {
+            console.error('❌ Resposta do servidor:', error.response)
+          }
+          console.log('❤️ Revertendo favoritos para estado anterior:', favorites)
+          set({ favorites })
         }
       },
 
@@ -87,28 +84,25 @@ export const useFavoritesStore = create<FavoritesStore>()(
         // Atualizar localmente primeiro (otimistic update)
         set({ favorites: updatedFavorites })
 
-        // Sincronizar com servidor se autenticado
-        const token = localStorage.getItem('customer_token') || localStorage.getItem('token')
-        if (token) {
-          try {
-            console.log('💔 Removendo do servidor...')
-            const response = await apiRequest(`/api/favorites/${productId}`, {
-              method: 'DELETE',
-            })
-            console.log('✅ Resposta do servidor:', response)
-            console.log('✅ Favorito removido do servidor com sucesso')
-          } catch (error: any) {
-            console.error('❌ Erro ao remover favorito do servidor:', error)
-            console.error('❌ Detalhes do erro:', error.message)
-            if (error.response) {
-              console.error('❌ Resposta do servidor:', error.response)
-            }
-            // Reverter se falhar
-            console.log('💔 Revertendo favoritos para estado anterior:', favorites)
-            set({ favorites })
+        try {
+          console.log('💔 Removendo do servidor...')
+          const response = await apiRequest(`/api/favorites/${productId}`, {
+            method: 'DELETE',
+          })
+          console.log('✅ Resposta do servidor:', response)
+          console.log('✅ Favorito removido do servidor com sucesso')
+        } catch (error: any) {
+          if (error instanceof AuthenticationError) {
+            console.warn('Usuário não autenticado. Remoção aplicada apenas localmente.')
+            return
           }
-        } else {
-          console.log('💔 Usuário não autenticado, favorito removido apenas do localStorage')
+          console.error('❌ Erro ao remover favorito do servidor:', error)
+          console.error('❌ Detalhes do erro:', error.message)
+          if (error.response) {
+            console.error('❌ Resposta do servidor:', error.response)
+          }
+          console.log('💔 Revertendo favoritos para estado anterior:', favorites)
+          set({ favorites })
         }
       },
 
@@ -145,12 +139,6 @@ export const useFavoritesStore = create<FavoritesStore>()(
       },
 
       loadFromServer: async () => {
-        const token = localStorage.getItem('customer_token') || localStorage.getItem('token')
-        if (!token) {
-          console.log('❤️ Usuário não logado, mantendo favoritos do localStorage')
-          return
-        }
-
         set({ isLoading: true })
         try {
           console.log('❤️ Carregando favoritos do servidor...')
@@ -172,21 +160,19 @@ export const useFavoritesStore = create<FavoritesStore>()(
             }
           }
         } catch (error) {
-          console.error('❌ Erro ao carregar favoritos do servidor:', error)
-          // Em caso de erro, manter favoritos do localStorage (não fazer nada)
-          const { favorites: currentFavorites } = get()
-          console.log('❤️ Mantendo', currentFavorites.length, 'favoritos do localStorage após erro')
+          if (error instanceof AuthenticationError) {
+            console.warn('❤️ Usuário não autenticado ao carregar favoritos. Mantendo apenas local.')
+          } else {
+            console.error('❌ Erro ao carregar favoritos do servidor:', error)
+            const { favorites: currentFavorites } = get()
+            console.log('❤️ Mantendo', currentFavorites.length, 'favoritos do localStorage após erro')
+          }
         } finally {
           set({ isLoading: false })
         }
       },
 
       syncWithServer: async () => {
-        const token = localStorage.getItem('customer_token') || localStorage.getItem('token')
-        if (!token) {
-          return
-        }
-
         const { favorites } = get()
         if (favorites.length === 0) {
           return
@@ -216,6 +202,10 @@ export const useFavoritesStore = create<FavoritesStore>()(
             set({ favorites: serverFavorites })
           }
         } catch (error) {
+          if (error instanceof AuthenticationError) {
+            console.warn('❤️ Usuário não autenticado ao sincronizar favoritos.')
+            return
+          }
           console.error('❌ Erro ao sincronizar favoritos:', error)
         }
       },
