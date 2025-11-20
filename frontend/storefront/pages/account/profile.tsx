@@ -14,13 +14,13 @@ export default function CustomerProfilePage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
     email: '',
     phone: '',
   });
+  const [isPrefilled, setIsPrefilled] = useState(false);
 
   const [passwordData, setPasswordData] = useState({
     current_password: '',
@@ -52,6 +52,7 @@ export default function CustomerProfilePage() {
         email: customerData.email || '',
         phone: customerData.phone || '',
       });
+      setIsPrefilled(true);
     }
   }, [customerData]);
 
@@ -174,7 +175,7 @@ export default function CustomerProfilePage() {
                   id="first_name"
                   value={formData.first_name}
                   onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                  placeholder="Seu nome"
+                  placeholder={isPrefilled ? undefined : 'Seu nome'}
                 />
               </div>
               <div>
@@ -183,7 +184,7 @@ export default function CustomerProfilePage() {
                   id="last_name"
                   value={formData.last_name}
                   onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                  placeholder="Seu sobrenome"
+                  placeholder={isPrefilled ? undefined : 'Seu sobrenome'}
                 />
               </div>
             </div>
@@ -197,7 +198,7 @@ export default function CustomerProfilePage() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="seu@email.com"
+                placeholder={isPrefilled ? undefined : 'seu@email.com'}
               />
             </div>
             <div>
@@ -210,7 +211,7 @@ export default function CustomerProfilePage() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="+351 912 345 678"
+                placeholder={isPrefilled ? undefined : '+351 912 345 678'}
               />
             </div>
             <Button
