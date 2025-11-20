@@ -95,13 +95,13 @@ export function generateInvoiceHTML(data: InvoiceData): string {
     }
     
     :root {
-      --primary: #b85c1f;
-      --primary-dark: #8f3f0f;
-      --secondary: #ffd9b0;
-      --accent: #fff1e2;
-      --muted: #8b6b55;
+      --primary: #111827;
+      --primary-dark: #0b1220;
+      --secondary: #3b4258;
+      --accent: #f3f4f6;
+      --muted: #8792af;
       --surface: #ffffff;
-      --background: radial-gradient(circle at top, #fff5ec 0%, #fff9f3 45%, #fffdf9 100%);
+      --background: radial-gradient(circle at top, #f4f6fb 0%, #eef0f8 45%, #e6e9f3 100%);
     }
     
     body {
@@ -124,8 +124,8 @@ export function generateInvoiceHTML(data: InvoiceData): string {
     }
     
     .hero {
-      background: radial-gradient(circle at top left, rgba(255,255,255,0.6), rgba(255,255,255,0)),
-                  linear-gradient(135deg, #ffb36b 0%, #ff8740 40%, #f45f1f 100%);
+      background: radial-gradient(circle at top left, rgba(255,255,255,0.35), rgba(255,255,255,0)),
+                  linear-gradient(135deg, #1f2937 0%, #111827 60%, #0b1220 100%);
       color: white;
       padding: 42px 46px 38px;
       display: flex;
@@ -219,10 +219,10 @@ export function generateInvoiceHTML(data: InvoiceData): string {
     }
     
     .card {
-      border: 1px solid rgba(184, 92, 31, 0.15);
+      border: 1px solid rgba(17, 24, 39, 0.12);
       border-radius: 20px;
       padding: 20px 22px;
-      background: linear-gradient(180deg, #ffffff 0%, #fff7ef 100%);
+      background: linear-gradient(180deg, #ffffff 0%, #f5f6fb 100%);
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
     }
     
@@ -257,8 +257,8 @@ export function generateInvoiceHTML(data: InvoiceData): string {
     }
     
     .status-pill.paid {
-      background: rgba(45, 212, 191, 0.18);
-      color: #0f766e;
+      background: rgba(16, 185, 129, 0.15);
+      color: #047857;
     }
     
     .status-pill.pending {
@@ -267,7 +267,7 @@ export function generateInvoiceHTML(data: InvoiceData): string {
     }
     
     .table-wrapper {
-      border: 1px solid rgba(184, 92, 31, 0.08);
+      border: 1px solid rgba(17, 24, 39, 0.08);
       border-radius: 22px;
       overflow: hidden;
       margin-bottom: 30px;
@@ -280,7 +280,7 @@ export function generateInvoiceHTML(data: InvoiceData): string {
     }
     
     thead {
-      background: linear-gradient(135deg, #f7893c 0%, #f45e1c 100%);
+      background: linear-gradient(135deg, #1f2937 0%, #0f172a 100%);
       color: white;
     }
     
@@ -301,7 +301,7 @@ export function generateInvoiceHTML(data: InvoiceData): string {
     }
     
     tbody tr:nth-child(even) {
-      background: #fff4ea;
+      background: #f1f3f9;
     }
     
     td:last-child, th:last-child {
@@ -323,8 +323,8 @@ export function generateInvoiceHTML(data: InvoiceData): string {
     .totals-card {
       border-radius: 22px;
       padding: 24px;
-      background: linear-gradient(160deg, #fff2e1 0%, #ffe1c8 100%);
-      border: 1px solid rgba(184, 92, 31, 0.1);
+      background: linear-gradient(160deg, #f3f5fb 0%, #e9edf7 100%);
+      border: 1px solid rgba(17, 24, 39, 0.1);
       backdrop-filter: blur(6px);
     }
     
@@ -347,9 +347,9 @@ export function generateInvoiceHTML(data: InvoiceData): string {
     
     .terms {
       border-radius: 18px;
-      border: 1px dashed rgba(184,92,31,0.35);
+      border: 1px dashed rgba(17,24,39,0.25);
       padding: 18px 22px;
-      background: rgba(255, 243, 230, 0.9);
+      background: rgba(243, 244, 246, 0.9);
       margin-bottom: 35px;
       backdrop-filter: blur(4px);
     }
