@@ -89,30 +89,6 @@ export default function HomePage() {
       {/* Top Banners */}
       <BannerDisplay position="home_top" className="mt-4" variant="grid" limit={3} />
 
-      {/* Features Bar - Moderno */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-        {features.map((feature, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: index * 0.1, duration: 0.5 }}
-            whileHover={{ y: -5 }}
-            className="glass-card p-6 md:p-8 text-center group cursor-pointer"
-          >
-            <motion.div
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center group-hover:from-primary/30 group-hover:to-primary/20 transition-all"
-            >
-              <feature.icon className="w-7 h-7 text-primary" />
-            </motion.div>
-            <h3 className="font-bold mb-2 text-base">{feature.title}</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
-          </motion.div>
-        ))}
-      </section>
-
       {/* Categories Quick Access - Design Aprimorado */}
       <section className="py-8">
         <div className="flex items-center justify-between mb-10">
@@ -225,6 +201,30 @@ export default function HomePage() {
             </motion.div>
           ))}
         </div>
+      </section>
+
+      {/* Features Bar - Moderno */}
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        {features.map((feature, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: index * 0.1, duration: 0.5 }}
+            whileHover={{ y: -5 }}
+            className="glass-card p-6 md:p-8 text-center group cursor-pointer"
+          >
+            <motion.div
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center group-hover:from-primary/30 group-hover:to-primary/20 transition-all"
+            >
+              <feature.icon className="w-7 h-7 text-primary" />
+            </motion.div>
+            <h3 className="font-bold mb-2 text-base">{feature.title}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
+          </motion.div>
+        ))}
       </section>
 
       {/* Mais Vendidos */}
