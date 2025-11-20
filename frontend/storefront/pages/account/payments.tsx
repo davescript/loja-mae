@@ -3,7 +3,7 @@ import { apiRequest } from '../../../utils/api';
 import { formatPrice } from '../../../utils/format';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../admin/components/ui/card';
 import { Badge } from '../../../admin/components/ui/badge';
-import { CreditCard, ExternalLink, Download } from 'lucide-react';
+import { CreditCard, Download } from 'lucide-react';
 import { Button } from '../../../admin/components/ui/button';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -105,16 +105,6 @@ export default function CustomerPaymentsPage() {
                       <Download className="w-4 h-4 mr-2" />
                       Baixar Fatura
                     </Button>
-                    {payment.provider === 'stripe' && payment.provider_id && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open(`https://dashboard.stripe.com/payments/${payment.provider_id}`, '_blank')}
-                      >
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Stripe
-                      </Button>
-                    )}
                   </div>
                 </div>
               </CardContent>
