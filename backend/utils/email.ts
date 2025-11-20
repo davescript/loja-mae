@@ -6,6 +6,7 @@ interface EmailOptions {
   html: string;
   text?: string;
   from?: string;
+  replyTo?: string;
 }
 
 /**
@@ -18,23 +19,17 @@ interface EmailOptions {
  */
 export async function sendEmail(env: Env, options: EmailOptions): Promise<boolean> {
   try {
+    const workerName = env.WORKER_NAME || 'loja-mae-api';
+    const workerSubdomain = env.WORKERS_SUBDOMAIN || 'davecdl';
+    const fallbackFrom = `noreply@${workerName}.${workerSubdomain}.workers.dev`;
+    
     // MailChannels requer que o email "from" seja de um domínio workers.dev
-    // ou de um domínio verificado. Para workers.dev, use: noreply@seu-worker.workers.dev
-    let fromEmail = options.from || env.FROM_EMAIL;
+    // ou de um domínio verificado.
+    let fromEmail = options.from || env.FROM_EMAIL || fallbackFrom;
     
-    // Se não houver FROM_EMAIL configurado, usar workers.dev padrão
-    // O nome do worker pode ser extraído do request ou usar padrão
-    const workerName = 'loja-mae-api'; // Nome do worker conforme wrangler.toml
-    
-    if (!fromEmail) {
-      fromEmail = `noreply@${workerName}.workers.dev`;
-    }
-    
-    // Se o email não for de workers.dev e não foi configurado explicitamente,
-    // usar workers.dev para garantir compatibilidade com MailChannels
     if (!fromEmail.endsWith('.workers.dev') && !env.FROM_EMAIL) {
-      console.warn('[EMAIL] FROM_EMAIL não é de workers.dev, usando padrão workers.dev para garantir compatibilidade');
-      fromEmail = `noreply@${workerName}.workers.dev`;
+      console.warn('[EMAIL] FROM_EMAIL não é de workers.dev e env.FROM_EMAIL não está configurado. Usando fallback workers.dev.');
+      fromEmail = fallbackFrom;
     }
     
     const fromName = env.FROM_NAME || 'Leiasabores';
@@ -48,17 +43,23 @@ export async function sendEmail(env: Env, options: EmailOptions): Promise<boolea
     });
 
     // Preparar payload conforme especificação MailChannels
-    const payload = {
-      personalizations: [
+    const personalization: Record<string, any> = {
+      to: [
         {
-          to: [
-            {
-              email: options.to,
-              name: options.to.split('@')[0] || 'Cliente',
-            },
-          ],
+          email: options.to,
+          name: options.to.split('@')[0] || 'Cliente',
         },
       ],
+    };
+
+    if (options.replyTo) {
+      personalization.headers = {
+        'Reply-To': options.replyTo,
+      };
+    }
+
+    const payload = {
+      personalizations: [personalization],
       from: {
         email: fromEmail,
         name: fromName,

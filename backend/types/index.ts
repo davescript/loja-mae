@@ -16,5 +16,7 @@ export interface Env {
   APPLE_TEAM_ID?: string;
   APPLE_KEY_ID?: string;
   APPLE_PRIVATE_KEY?: string;
+  WORKERS_SUBDOMAIN?: string;
+  WORKER_NAME?: string;
 }
 

@@ -126,6 +126,7 @@ Esta mensagem foi enviada através do formulário de contato do website.
         subject: `[Contato] ${validated.subject}`,
         html: emailHtml,
         text: emailText,
+        replyTo: validated.email,
       });
 
       if (emailSent) {
