@@ -193,25 +193,27 @@ export default function CustomerOrdersPage() {
                             <div>Pagamento: {order.payment_status === 'paid' ? 'Confirmado' : 'Pendente'}</div>
                             {getPrimaryItemCode(order) && (
                               <div className="font-medium text-foreground">
-                                Código do produto: {getPrimaryItemCode(order)}
+                                Produto: {order.items?.[0]?.title || 'Produto sem nome'}
                               </div>
                             )}
                           </div>
                         )}
                       </div>
                       <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                  onClick={async (e: React.MouseEvent) => {
-                    e.stopPropagation();
-                    const { downloadInvoicePDF } = await import('../../../../utils/invoice');
-                    await downloadInvoicePDF(order.id);
-                  }}
-                        >
-                          <Download className="w-4 h-4 mr-2" />
-                          Fatura
-                        </Button>
+                        {order.payment_status === 'paid' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async (e: React.MouseEvent) => {
+                              e.stopPropagation();
+                              const { downloadInvoicePDF } = await import('../../../../utils/invoice');
+                              await downloadInvoicePDF(order.id);
+                            }}
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Fatura
+                          </Button>
+                        )}
                         <Button
                           variant="default"
                           size="sm"

@@ -36,6 +36,11 @@ export async function handleGetInvoice(request: Request, env: Env): Promise<Resp
       }
     }
 
+    // Customers can only view invoice after payment confirmed
+    if (user.type === 'customer' && order.payment_status !== 'paid') {
+      return errorResponse('A fatura estará disponível após confirmação do pagamento.', 403);
+    }
+
     // Get order items
     const orderItems = await executeQuery<{
       title: string;

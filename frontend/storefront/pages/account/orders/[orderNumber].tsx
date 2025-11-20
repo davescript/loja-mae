@@ -190,18 +190,20 @@ export default function CustomerOrderDetailsPage() {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {getStatusBadge(order.status)}
-          <Button
-            variant="outline"
-            onClick={async () => {
-              const { downloadInvoicePDF } = await import('../../../../utils/invoice');
-              await downloadInvoicePDF(order.id);
-            }}
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Baixar Fatura
-          </Button>
+          {order.payment_status === 'paid' && (
+            <Button
+              variant="outline"
+              onClick={async () => {
+                const { downloadInvoicePDF } = await import('../../../../utils/invoice');
+                await downloadInvoicePDF(order.id);
+              }}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Baixar Fatura
+            </Button>
+          )}
         </div>
       </div>
 
