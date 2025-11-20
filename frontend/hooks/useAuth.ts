@@ -3,6 +3,30 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../utils/api';
 import type { AuthUser } from '@shared/types';
 
+const clearClientStores = () => {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const { useFavoritesStore } = require('../store/favoritesStore');
+    const favoritesStore = useFavoritesStore.getState();
+    favoritesStore.clearFavorites();
+    localStorage.removeItem('loja-mae-favorites');
+    console.log('[AUTH] Favoritos limpos após logout');
+  } catch (error) {
+    console.error('[AUTH] Falha ao limpar favoritos no logout:', error);
+  }
+
+  try {
+    const { useCartStore } = require('../store/cartStore');
+    const cartStore = useCartStore.getState();
+    cartStore.clearCart();
+    localStorage.removeItem('loja-mae-cart');
+    console.log('[AUTH] Carrinho limpo após logout');
+  } catch (error) {
+    console.error('[AUTH] Falha ao limpar carrinho no logout:', error);
+  }
+};
+
 export function useAuth() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -125,6 +149,7 @@ export function useAuth() {
       localStorage.removeItem('token');
       localStorage.removeItem('customer_token');
       setUser(null);
+      clearClientStores();
       
       // Limpar todas as queries do cache
       queryClient.clear();
@@ -148,6 +173,7 @@ export function useAuth() {
       localStorage.removeItem('token');
       localStorage.removeItem('customer_token');
       setUser(null);
+      clearClientStores();
       queryClient.clear();
       queryClient.cancelQueries({ queryKey: ['auth', 'me'] });
       queryClient.setQueryData(['auth', 'me'], null);
