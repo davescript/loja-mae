@@ -309,11 +309,11 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleAddToCart}
-              className="flex-1 btn btn-primary flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+              className="flex-1 btn btn-primary flex items-center justify-center gap-2 shadow-md hover:shadow-lg whitespace-nowrap"
               disabled={product.stock_quantity !== undefined && product.stock_quantity <= 0}
             >
-              <ShoppingCart className="w-4 h-4" />
-              <span className="text-sm font-semibold">
+              <ShoppingCart className="w-4 h-4 flex-shrink-0" />
+              <span className="text-sm font-semibold whitespace-nowrap">
                 {product.stock_quantity !== undefined && product.stock_quantity <= 0 
                   ? 'Fora de estoque' 
                   : 'Adicionar ao carrinho'}
