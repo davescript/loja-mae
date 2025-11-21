@@ -140,7 +140,7 @@ export default function StoreHeader() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden btn btn-ghost p-2"
+              className="lg:hidden btn btn-ghost btn-icon"
               aria-label="Menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -248,7 +248,7 @@ export default function StoreHeader() {
               {/* Search Button - Mobile */}
               <button
                 onClick={() => setSearchOpen(!searchOpen)}
-                className="md:hidden btn btn-ghost p-2"
+                className="md:hidden btn btn-ghost btn-icon"
                 aria-label="Buscar"
               >
                 <Search className="w-5 h-5" />
@@ -257,7 +257,7 @@ export default function StoreHeader() {
               {/* Favorites */}
               <Link
                 to="/favorites"
-                className="btn btn-ghost p-2 relative"
+                className="btn btn-ghost btn-icon relative"
                 aria-label="Favoritos"
               >
                 <Heart className="w-5 h-5" />
@@ -275,7 +275,7 @@ export default function StoreHeader() {
               {/* Cart */}
               <Link
                 to="/cart"
-                className="btn btn-ghost p-2 relative"
+                className="btn btn-ghost btn-icon relative"
                 aria-label="Carrinho"
               >
                 <ShoppingCart className="w-5 h-5" />
@@ -294,7 +294,7 @@ export default function StoreHeader() {
               {isAuthenticated ? (
                 <Link
                   to="/account"
-                  className="btn btn-ghost p-2"
+                  className="btn btn-ghost btn-icon"
                   aria-label="Minha conta"
                 >
                   <User className="w-5 h-5" />
@@ -302,7 +302,7 @@ export default function StoreHeader() {
               ) : (
                 <Link
                   to="/login"
-                  className="btn btn-primary text-sm px-4"
+                  className="btn btn-primary"
                 >
                   <User className="w-4 h-4" />
                   <span className="hidden sm:inline">Entrar</span>
@@ -444,7 +444,7 @@ export default function StoreHeader() {
                   <h2 className="text-lg font-semibold">Menu</h2>
                   <button
                     onClick={() => setMobileMenuOpen(false)}
-                    className="btn btn-ghost p-2"
+                    className="btn btn-ghost btn-icon"
                   >
                     <X className="w-5 h-5" />
                   </button>

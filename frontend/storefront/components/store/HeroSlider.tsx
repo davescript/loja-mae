@@ -109,7 +109,7 @@ export default function HeroSlider() {
                         </p>
                         <Link
                           to={slide.buttonLink}
-                          className="btn btn-primary text-base px-8 py-4 inline-flex items-center gap-2"
+                          className="btn btn-primary btn-lg inline-flex items-center gap-2"
                         >
                           {slide.buttonText}
                           <ChevronRight className="w-5 h-5" />
