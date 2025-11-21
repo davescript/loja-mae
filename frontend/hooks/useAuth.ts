@@ -154,6 +154,10 @@ export function useAuth() {
       // Limpar todas as queries do cache
       queryClient.clear();
       
+      // Invalidar queries específicas de favoritos e carrinho
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+      queryClient.removeQueries({ queryKey: ['favorites'] });
+      
       // Invalidar e cancelar a query de autenticação para evitar refetch
       queryClient.cancelQueries({ queryKey: ['auth', 'me'] });
       queryClient.setQueryData(['auth', 'me'], null);
@@ -175,6 +179,11 @@ export function useAuth() {
       setUser(null);
       clearClientStores();
       queryClient.clear();
+      
+      // Invalidar queries específicas de favoritos e carrinho
+      queryClient.invalidateQueries({ queryKey: ['favorites'] });
+      queryClient.removeQueries({ queryKey: ['favorites'] });
+      
       queryClient.cancelQueries({ queryKey: ['auth', 'me'] });
       queryClient.setQueryData(['auth', 'me'], null);
       

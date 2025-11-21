@@ -130,7 +130,13 @@ export const useFavoritesStore = create<FavoritesStore>()(
       },
 
       clearFavorites: () => {
-        set({ favorites: [] })
+        console.log('🧹 Limpando favoritos do estado e localStorage...');
+        set({ favorites: [] });
+        // Limpar localStorage diretamente para garantir que não seja re-hidratado
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(FAVORITES_KEY);
+          console.log('✅ localStorage de favoritos removido');
+        }
       },
 
       getCount: () => {

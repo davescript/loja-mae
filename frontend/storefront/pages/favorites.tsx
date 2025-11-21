@@ -16,6 +16,13 @@ export default function FavoritesPage() {
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
+    // Se não estiver autenticado, limpar favoritos locais
+    if (!isAuthenticated) {
+      const { clearFavorites } = useFavoritesStore.getState();
+      clearFavorites();
+      return;
+    }
+    
     // Ao entrar na página, tentar carregar favoritos do servidor
     loadFromServer().then(() => {
       if (isAuthenticated) syncWithServer();
