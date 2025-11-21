@@ -125,11 +125,12 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
         <div 
           className="relative aspect-square overflow-hidden bg-white flex items-center justify-center cursor-pointer"
           onClick={() => onQuickView?.(product)}
+          style={{ fontFeatureSettings: 'normal' }}
         >
           {imageUrl ? (
             <AnimatePresence mode="wait">
               <motion.img
-                key={currentImageIndex}
+                key={`product-${product.id}-image-${currentImageIndex}`}
                 src={imageUrl}
                 alt={currentImage?.alt_text || product.title}
                 className="w-full h-full object-cover"

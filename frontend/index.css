@@ -114,6 +114,17 @@
     transform: translateY(-2px);
     border-color: hsl(var(--border));
   }
+  
+  /* Garantir que nenhum texto numérico apareça no background das imagens */
+  .card img {
+    font-size: 0;
+    line-height: 0;
+  }
+  
+  .card .aspect-square::before,
+  .card .aspect-square::after {
+    content: none !important;
+  }
 
   /* Botão moderno - Padrão Apple (44px altura mínima) */
   .btn {
