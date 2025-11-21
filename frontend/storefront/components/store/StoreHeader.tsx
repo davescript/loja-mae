@@ -22,7 +22,16 @@ export default function StoreHeader() {
   const navigate = useNavigate();
   
   const cartItemCount = getItemCount();
-  const favoritesCount = favorites.length; // Calcular do array diretamente
+  // Se não estiver autenticado, não mostrar favoritos (garantir limpeza no logout)
+  const favoritesCount = isAuthenticated ? favorites.length : 0;
+  
+  // Limpar favoritos quando usuário não estiver autenticado (após logout)
+  useEffect(() => {
+    if (!isAuthenticated && favorites.length > 0) {
+      const { clearFavorites } = useFavoritesStore.getState();
+      clearFavorites();
+    }
+  }, [isAuthenticated, favorites.length]);
   
   // Debounce search query para evitar muitas requisições
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
