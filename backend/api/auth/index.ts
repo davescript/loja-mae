@@ -60,6 +60,7 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
             name,
             type: 'customer' as const,
           },
+          token: access, // Incluir token para salvar no localStorage
         },
         'Registration successful'
       );
@@ -119,6 +120,7 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
             name,
             type: 'customer' as const,
           },
+          token: access, // Incluir token para salvar no localStorage
         },
         'Login successful'
       );

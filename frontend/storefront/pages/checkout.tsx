@@ -363,6 +363,10 @@ export default function CheckoutPage() {
     mutationFn: async (payload: any) => {
       const response = await apiRequest<{ id: number; address: Address }>('/api/customers/addresses', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
         body: JSON.stringify(payload),
       })
       if (!response.success) {

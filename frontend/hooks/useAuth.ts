@@ -82,7 +82,11 @@ export function useAuth() {
         credentials: 'include', // Importante: enviar cookies
       });
       if (response.success && response.data) {
-        // Cookies HttpOnly serão definidos pela API; não armazenar tokens
+        // Cookies HttpOnly serão definidos pela API
+        // Também salvar token no localStorage para requisições cross-origin
+        if ((response.data as any).token) {
+          localStorage.setItem('customer_token', (response.data as any).token);
+        }
         // Aguardar um pouco para garantir que cookies foram definidos
         await new Promise(resolve => setTimeout(resolve, 100));
         setUser(response.data.customer as any);
@@ -115,6 +119,10 @@ export function useAuth() {
         body: JSON.stringify(data),
       });
       if (response.success && response.data) {
+        // Salvar token no localStorage para requisições cross-origin
+        if ((response.data as any).token) {
+          localStorage.setItem('customer_token', (response.data as any).token);
+        }
         setUser(response.data.customer as any);
         return response.data as any;
       }
