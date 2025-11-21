@@ -7,6 +7,33 @@ import { generateOrderNumber } from '../../utils/db';
 import Stripe from 'stripe';
 import { executeOne, executeRun } from '../../utils/db';
 
+const COUNTRY_ALIAS: Record<string, string> = {
+  portugal: 'PT',
+  'portugal continental': 'PT',
+  'república portuguesa': 'PT',
+  'republica portuguesa': 'PT',
+  'pt': 'PT',
+};
+
+function normalizeCountry(value?: string | null): string {
+  if (!value) return 'PT';
+  const trimmed = value.trim();
+  if (!trimmed) return 'PT';
+  if (/^[A-Za-z]{2}$/i.test(trimmed)) {
+    return trimmed.toUpperCase();
+  }
+  const lower = trimmed.toLowerCase();
+  if (COUNTRY_ALIAS[lower]) {
+    return COUNTRY_ALIAS[lower];
+  }
+  for (const alias of Object.keys(COUNTRY_ALIAS)) {
+    if (lower.includes(alias)) {
+      return COUNTRY_ALIAS[alias];
+    }
+  }
+  return 'PT';
+}
+
 interface CreateIntentRequest {
   items: Array<{
     product_id: number;
@@ -198,7 +225,7 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
         city: savedAddress.city,
         state: savedAddress.state,
         postal_code: savedAddress.postal_code,
-        country: savedAddress.country || 'PT',
+        country: normalizeCountry(savedAddress.country),
         phone: savedAddress.phone,
       };
     } else if (body.shipping_address) {
@@ -211,7 +238,7 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
         city: body.shipping_address.city || '',
         state: body.shipping_address.state || '',
         postal_code: body.shipping_address.postal_code || '',
-        country: body.shipping_address.country || 'PT',
+        country: normalizeCountry(body.shipping_address.country),
         phone: body.shipping_address.phone || null,
       };
     }
@@ -283,7 +310,7 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
     // Nota: Para EUR, o valor mínimo é 0.50 EUR (50 centavos)
     // Métodos permitidos: Cartão, MB Way (via link), Klarna
     // Apple Pay e Google Pay aparecem automaticamente quando card está habilitado e o dispositivo suporta
-    const country = shippingAddressPayload?.country || 'PT';
+    const country = normalizeCountry(shippingAddressPayload?.country);
     
     // Log para debug - verificar se o país está sendo enviado corretamente
     console.log('[STRIPE] Criando Payment Intent:', {
