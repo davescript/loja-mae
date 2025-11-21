@@ -158,13 +158,25 @@ export default function AdminProductsPageAdvanced() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/products/${id}`, { method: "DELETE" })
+      const response = await apiRequest(`/api/products/${id}`, { method: "DELETE" })
+      if (!response.success) {
+        throw new Error(response.error || 'Erro ao deletar produto')
+      }
+      return response
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "products"] })
       toast({
         title: "Sucesso",
         description: "Produto deletado com sucesso!",
+      })
+    },
+    onError: (error: Error) => {
+      console.error('Erro ao deletar produto:', error)
+      toast({
+        title: "Erro",
+        description: error.message || "Não foi possível deletar o produto",
+        variant: "destructive",
       })
     },
   })

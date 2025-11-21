@@ -367,6 +367,16 @@ export async function deleteProduct(db: D1Database, id: number): Promise<void> {
     throw new NotFoundError('Product not found');
   }
 
+  // Delete product variants first (foreign key will handle cascade, but explicit is better)
+  await executeRun(db, 'DELETE FROM product_variants WHERE product_id = ?', [id]);
+  
+  // Delete product images (foreign key will handle cascade, but explicit is better)
+  await executeRun(db, 'DELETE FROM product_images WHERE product_id = ?', [id]);
+  
+  // Delete from collections
+  await executeRun(db, 'DELETE FROM collection_products WHERE product_id = ?', [id]);
+  
+  // Delete product (foreign keys will cascade to favorites, cart_items, etc.)
   await executeRun(db, 'DELETE FROM products WHERE id = ?', [id]);
 }
 

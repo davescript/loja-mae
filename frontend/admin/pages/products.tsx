@@ -89,7 +89,11 @@ export default function AdminProductsPage() {
   // Delete product mutation
   const deleteProductMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/products/${id}`, { method: 'DELETE' });
+      const response = await apiRequest(`/api/products/${id}`, { method: 'DELETE' });
+      if (!response.success) {
+        throw new Error(response.error || 'Erro ao deletar produto');
+      }
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
@@ -97,6 +101,7 @@ export default function AdminProductsPage() {
       setTimeout(() => setToast(null), 3000);
     },
     onError: (error: Error) => {
+      console.error('Erro ao deletar produto:', error);
       setToast({ type: 'error', message: error.message || 'Erro ao deletar produto' });
       setTimeout(() => setToast(null), 5000);
     },
