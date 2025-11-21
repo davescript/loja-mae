@@ -861,6 +861,15 @@ export default function CheckoutPage() {
                 <Dialog
                   open={isAddressDialogOpen}
                   onOpenChange={(open) => {
+                    if (open && !isAuthenticated) {
+                      toast({
+                        title: 'Login necessário',
+                        description: 'Faça login para adicionar endereços.',
+                        variant: 'destructive',
+                      })
+                      navigate('/login?redirect=/checkout')
+                      return
+                    }
                     setIsAddressDialogOpen(open)
                     if (!open) {
                       setAddressForm(addressInitialState)
@@ -868,7 +877,22 @@ export default function CheckoutPage() {
                   }}
                 >
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      disabled={!isAuthenticated}
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          toast({
+                            title: 'Login necessário',
+                            description: 'Faça login para adicionar endereços.',
+                            variant: 'destructive',
+                          })
+                          navigate('/login?redirect=/checkout')
+                          return false
+                        }
+                      }}
+                    >
                       <Plus className="w-4 h-4 mr-2" />
                       Novo Endereço
                     </Button>

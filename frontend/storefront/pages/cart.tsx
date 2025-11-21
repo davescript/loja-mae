@@ -5,10 +5,12 @@ import { motion } from 'framer-motion'
 import { Plus, Minus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react'
 import { Button } from '../../admin/components/ui/button'
 import { useToast } from '../../admin/hooks/useToast'
+import { useAuth } from '../../hooks/useAuth'
 
 export default function CartPage() {
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
   const { items, removeItem, updateQuantity, clearCart, getTotal, getItemCount } = useCartStore()
 
   const total = getTotal()
@@ -23,6 +25,18 @@ export default function CartPage() {
       })
       return
     }
+    
+    // Verificar autenticação antes de ir para checkout
+    if (!authLoading && !isAuthenticated) {
+      toast({
+        title: 'Login necessário',
+        description: 'Faça login para finalizar a compra.',
+        variant: 'destructive',
+      })
+      navigate('/login?redirect=/checkout')
+      return
+    }
+    
     navigate('/checkout')
   }
 
