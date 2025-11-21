@@ -361,16 +361,28 @@ export async function updateProduct(
   return updated;
 }
 
-export async function deleteProduct(db: D1Database, id: number): Promise<void> {
+export async function deleteProduct(db: D1Database, id: number, force: boolean = false): Promise<void> {
   const product = await getProduct(db, id);
   if (!product) {
     throw new NotFoundError('Product not found');
   }
 
-  // Check if product has associated orders (cannot delete products with order history)
+  // Check if product has associated orders
   const orderItemsCheck = await db.prepare('SELECT COUNT(*) as count FROM order_items WHERE product_id = ?').bind(id).first<{ count: number }>();
-  if (orderItemsCheck && orderItemsCheck.count > 0) {
-    throw new ValidationError(`Cannot delete product: it has ${orderItemsCheck.count} order item(s) associated. Products with order history cannot be deleted to preserve order records.`);
+  if (orderItemsCheck && orderItemsCheck.count > 0 && !force) {
+    // Instead of blocking deletion, archive the product to preserve order history
+    await executeRun(
+      db,
+      'UPDATE products SET status = ? WHERE id = ?',
+      ['archived', id]
+    );
+    
+    // Delete from favorites and cart even when archiving
+    await executeRun(db, 'DELETE FROM favorites WHERE product_id = ?', [id]);
+    await executeRun(db, 'DELETE FROM cart_items WHERE product_id = ?', [id]);
+    
+    // Return success - product is archived, not deleted
+    return;
   }
 
   // Delete product variants first (foreign key will handle cascade, but explicit is better)
