@@ -373,8 +373,17 @@ export async function deleteProduct(db: D1Database, id: number): Promise<void> {
   // Delete product images (foreign key will handle cascade, but explicit is better)
   await executeRun(db, 'DELETE FROM product_images WHERE product_id = ?', [id]);
   
-  // Delete from collections
-  await executeRun(db, 'DELETE FROM collection_products WHERE product_id = ?', [id]);
+  // Delete from collections (if table exists - optional)
+  try {
+    await executeRun(db, 'DELETE FROM collection_products WHERE product_id = ?', [id]);
+  } catch (error: any) {
+    // If table doesn't exist, ignore the error (table may not be created yet)
+    if (error?.message?.includes('no such table: collection_products')) {
+      console.warn('collection_products table does not exist, skipping collection cleanup');
+    } else {
+      throw error;
+    }
+  }
   
   // Delete product (foreign keys will cascade to favorites, cart_items, etc.)
   await executeRun(db, 'DELETE FROM products WHERE id = ?', [id]);
