@@ -490,6 +490,12 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
             ? `${customer.first_name} ${customer.last_name}`
             : customer.first_name || customer.last_name || customer.email.split('@')[0];
 
+          const renewedAccess = signToken(
+            { id: customer.id, email: customer.email, type: 'customer' },
+            jwtSecret,
+            '15m'
+          );
+
           const res = successResponse({ 
             user: {
               id: customer.id,
@@ -497,7 +503,8 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
               name,
               type: 'customer' as const,
             }, 
-            type: 'customer' 
+            type: 'customer',
+            token: renewedAccess,
           });
           res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
           res.headers.set('Pragma', 'no-cache');
@@ -517,7 +524,13 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
             return errorResponse('Invalid token', 401);
           }
 
-          const res = successResponse({ user: admin, type: 'admin' });
+          const renewedAccess = signToken(
+            { id: admin.id, email: admin.email, type: 'admin', role: admin.role as any },
+            jwtSecret,
+            '15m'
+          );
+
+          const res = successResponse({ user: admin, type: 'admin', token: renewedAccess });
           res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
           res.headers.set('Pragma', 'no-cache');
           res.headers.set('Expires', '0');

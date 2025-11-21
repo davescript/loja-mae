@@ -41,12 +41,19 @@ export function useAuth() {
         console.log('[AUTH] Verificando autenticação via cookies...');
         
         // Usar credentials: 'include' para enviar cookies
-        const response = await apiRequest<{ user: AuthUser; type: string }>('/api/auth/me', {
+        const response = await apiRequest<{ user: AuthUser; type: string; token?: string }>('/api/auth/me', {
           credentials: 'include',
         });
         
         if (response.success && response.data) {
           console.log('[AUTH] Autenticação bem-sucedida:', response.data.user.email);
+          if (typeof window !== 'undefined' && response.data.token) {
+            if (response.data.type === 'admin') {
+              localStorage.setItem('admin_token', response.data.token);
+            } else {
+              localStorage.setItem('customer_token', response.data.token);
+            }
+          }
           setUser(response.data.user);
           return response.data;
         }
@@ -61,6 +68,10 @@ export function useAuth() {
         // Se for erro 401, usuário não está autenticado
         if (errorMessage.includes('Authentication') || errorMessage.includes('401') || errorMessage.includes('Not authenticated')) {
           console.log('[AUTH] Usuário não autenticado');
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('customer_token');
+            localStorage.removeItem('admin_token');
+          }
           setUser(null);
         }
         
