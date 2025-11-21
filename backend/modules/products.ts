@@ -379,6 +379,12 @@ export async function deleteProduct(db: D1Database, id: number): Promise<void> {
   // Delete product images (foreign key will handle cascade, but explicit is better)
   await executeRun(db, 'DELETE FROM product_images WHERE product_id = ?', [id]);
   
+  // Delete from favorites (explicit deletion to ensure cleanup, even though CASCADE handles it)
+  await executeRun(db, 'DELETE FROM favorites WHERE product_id = ?', [id]);
+  
+  // Delete from cart items (explicit deletion to ensure cleanup)
+  await executeRun(db, 'DELETE FROM cart_items WHERE product_id = ?', [id]);
+  
   // Delete from collections (if table exists - optional)
   try {
     await executeRun(db, 'DELETE FROM collection_products WHERE product_id = ?', [id]);
@@ -391,7 +397,7 @@ export async function deleteProduct(db: D1Database, id: number): Promise<void> {
     }
   }
   
-  // Delete product (foreign keys will cascade to favorites, cart_items, etc.)
+  // Delete product (foreign keys will cascade, but we've already cleaned up explicitly)
   await executeRun(db, 'DELETE FROM products WHERE id = ?', [id]);
 }
 
