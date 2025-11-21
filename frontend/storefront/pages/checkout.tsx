@@ -20,6 +20,33 @@ import { useAuth } from '../../hooks/useAuth'
 import type { Address, ApiResponse } from '@shared/types'
 import { cn } from '../../utils/cn'
 
+const COUNTRY_ALIAS: Record<string, string> = {
+  portugal: 'PT',
+  'portugal continental': 'PT',
+  'república portuguesa': 'PT',
+  'republica portuguesa': 'PT',
+  pt: 'PT',
+}
+
+const normalizeCountryCode = (value?: string | null) => {
+  if (!value) return 'PT'
+  const trimmed = value.trim()
+  if (!trimmed) return 'PT'
+  if (/^[A-Za-z]{2}$/i.test(trimmed)) {
+    return trimmed.toUpperCase()
+  }
+  const lower = trimmed.toLowerCase()
+  if (COUNTRY_ALIAS[lower]) {
+    return COUNTRY_ALIAS[lower]
+  }
+  for (const alias of Object.keys(COUNTRY_ALIAS)) {
+    if (lower.includes(alias)) {
+      return COUNTRY_ALIAS[alias]
+    }
+  }
+  return 'PT'
+}
+
 // Componente do formulário de pagamento
 function CheckoutForm({ 
   clientSecret, 
@@ -87,7 +114,7 @@ function CheckoutForm({
         city: selectedAddress.city,
         state: selectedAddress.state,
         postal_code: selectedAddress.postal_code,
-        country: selectedAddress.country || 'PT',
+        country: normalizeCountryCode(selectedAddress.country),
         phone: selectedAddress.phone || '',
       }
 
@@ -133,7 +160,7 @@ function CheckoutForm({
           city: normalizedAddress.city,
           state: normalizedAddress.state,
           postal_code: normalizedAddress.postal_code,
-          country: normalizedAddress.country || 'PT',
+          country: normalizeCountryCode(normalizedAddress.country),
         },
       }
 
@@ -146,7 +173,7 @@ function CheckoutForm({
           city: normalizedAddress.city,
           state: normalizedAddress.state,
           postal_code: normalizedAddress.postal_code,
-          country: normalizedAddress.country || 'PT',
+          country: normalizeCountryCode(normalizedAddress.country),
         },
       }
 
@@ -569,7 +596,7 @@ export default function CheckoutPage() {
       city: selectedAddress.city,
       state: selectedAddress.state,
       postal_code: selectedAddress.postal_code,
-      country: selectedAddress.country || 'PT',
+      country: normalizeCountryCode(selectedAddress.country),
       phone: selectedAddress.phone || null,
     } : undefined
     
@@ -703,6 +730,7 @@ export default function CheckoutPage() {
     try {
       await addAddressMutation.mutateAsync({
         ...addressForm,
+        country: normalizeCountryCode(addressForm.country),
         type: 'shipping',
         is_default: addressForm.is_default || addresses.length === 0,
       })

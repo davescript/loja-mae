@@ -7,6 +7,33 @@ import { executeQuery, executeOne, executeRun } from '../../utils/db';
 import { hashPassword, comparePassword } from '../../utils/auth';
 import type { Address } from '@shared/types';
 
+const COUNTRY_ALIAS: Record<string, string> = {
+  portugal: 'PT',
+  'portugal continental': 'PT',
+  'república portuguesa': 'PT',
+  'republica portuguesa': 'PT',
+  'pt': 'PT',
+};
+
+function normalizeCountryCode(value?: string | null): string {
+  if (!value) return 'PT';
+  const trimmed = value.trim();
+  if (!trimmed) return 'PT';
+  if (/^[A-Za-z]{2}$/i.test(trimmed)) {
+    return trimmed.toUpperCase();
+  }
+  const lower = trimmed.toLowerCase();
+  if (COUNTRY_ALIAS[lower]) {
+    return COUNTRY_ALIAS[lower];
+  }
+  for (const alias of Object.keys(COUNTRY_ALIAS)) {
+    if (lower.includes(alias)) {
+      return COUNTRY_ALIAS[alias];
+    }
+  }
+  return 'PT';
+}
+
 // GET /api/customers/me - Get current customer profile
 export async function handleGetMe(request: Request, env: Env): Promise<Response> {
   try {
@@ -299,7 +326,12 @@ export async function handleGetAddresses(request: Request, env: Env): Promise<Re
       [user.id]
     );
 
-    return successResponse(addresses || []);
+    const formatted = (addresses || []).map((address: any) => ({
+      ...address,
+      country: normalizeCountryCode(address.country),
+    }));
+
+    return successResponse(formatted);
   } catch (error) {
     const { message, status } = handleError(error);
     return errorResponse(message, status);
@@ -325,6 +357,8 @@ export async function handleCreateAddress(request: Request, env: Env): Promise<R
       phone?: string;
       is_default: boolean;
     };
+
+    const countryCode = normalizeCountryCode(body.country);
 
     // If this is set as default, unset other defaults
     if (body.is_default) {
@@ -352,7 +386,7 @@ export async function handleCreateAddress(request: Request, env: Env): Promise<R
         body.city,
         body.state,
         body.postal_code,
-        body.country,
+        countryCode,
         body.phone || null,
         body.is_default ? 1 : 0,
       ]
@@ -375,7 +409,11 @@ export async function handleCreateAddress(request: Request, env: Env): Promise<R
 
     console.log(`[API] Endereço confirmado no banco:`, savedAddress);
 
-    return successResponse({ id: result.meta.last_row_id, message: 'Address created', address: savedAddress });
+    return successResponse({ 
+      id: result.meta.last_row_id, 
+      message: 'Address created', 
+      address: { ...savedAddress, country: normalizeCountryCode(savedAddress.country) },
+    });
   } catch (error) {
     const { message, status } = handleError(error);
     return errorResponse(message, status);
@@ -464,7 +502,7 @@ export async function handleUpdateAddress(request: Request, env: Env, addressId:
     }
     if (body.country !== undefined) {
       updates.push('country = ?');
-      values.push(body.country);
+      values.push(normalizeCountryCode(body.country));
     }
     if (body.phone !== undefined) {
       updates.push('phone = ?');
