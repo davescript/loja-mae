@@ -270,7 +270,7 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
         )}
 
         {/* Content */}
-        <div className="p-4 flex-1 flex flex-col">
+        <div className="p-4 flex-1 flex flex-col text-center">
           {/* Category Badge */}
           {product.category && (
             <span className="text-xs text-muted-foreground mb-1 uppercase tracking-wide">
@@ -286,30 +286,29 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
           </h3>
 
           {/* Price */}
-          <div className="mb-4 flex items-baseline gap-2">
+          <div className="mb-4 flex items-baseline justify-center gap-2">
             <span className="text-xl md:text-2xl font-bold text-foreground">
               {price}
             </span>
           </div>
 
-          {/* Rating - Placeholder */}
-          <div className="flex items-center gap-1 mb-4">
+          {/* Rating - Placeholder (sem número) */}
+          <div className="flex items-center justify-center gap-1 mb-4">
             <div className="flex gap-0.5">
               {[...Array(5)].map((_, i) => (
                 <span key={i} className="text-yellow-400 text-sm">★</span>
               ))}
             </div>
-            <span className="text-xs text-muted-foreground">(0)</span>
           </div>
 
           {/* Actions */}
-          <div className="mt-auto flex gap-2">
+          <div className="mt-auto">
             <motion.button
               type="button"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleAddToCart}
-              className="flex-1 btn btn-primary flex items-center justify-center gap-2 shadow-md hover:shadow-lg whitespace-nowrap"
+              className="w-full btn btn-primary flex items-center justify-center gap-2 shadow-md hover:shadow-lg whitespace-nowrap"
               disabled={product.stock_quantity !== undefined && product.stock_quantity <= 0}
             >
               <ShoppingCart className="w-4 h-4 flex-shrink-0" />
@@ -319,24 +318,6 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
                   : 'Adicionar ao carrinho'}
               </span>
             </motion.button>
-            
-            {product.slug ? (
-              <Link
-                to={`/product/${product.slug}`}
-                className="btn btn-muted px-4 flex items-center justify-center"
-                aria-label="Ver detalhes"
-              >
-                <Eye className="w-4 h-4" />
-              </Link>
-            ) : (
-              <button
-                onClick={() => onQuickView?.(product)}
-                className="btn btn-muted px-4 flex items-center justify-center"
-                aria-label="Ver detalhes"
-              >
-                <Eye className="w-4 h-4" />
-              </button>
-            )}
           </div>
 
           {/* Stock indicator */}
