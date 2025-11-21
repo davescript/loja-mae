@@ -22,6 +22,8 @@
     "d1:limpar-exemplo:local": "wrangler d1 execute loja-mae-db --local --file=./scripts/limpar-produtos-exemplo.sql",
     "d1:limpar-clientes": "wrangler d1 execute loja-mae-db --remote --file=./scripts/limpar-todos-clientes.sql",
     "d1:limpar-clientes:local": "wrangler d1 execute loja-mae-db --local --file=./scripts/limpar-todos-clientes.sql",
+    "d1:limpar-produtos": "wrangler d1 execute loja-mae-db --remote --file=./scripts/limpar-todos-produtos.sql",
+    "d1:limpar-produtos:local": "wrangler d1 execute loja-mae-db --local --file=./scripts/limpar-todos-produtos.sql",
     "setup": "bash scripts/setup.sh",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts,.tsx"
