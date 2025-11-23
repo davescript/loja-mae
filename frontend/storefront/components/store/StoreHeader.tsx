@@ -97,8 +97,8 @@ export default function StoreHeader() {
 
   return (
     <>
-      {/* Top Bar - Promoção com animação */}
-      <motion.div
+      {/* Top Bar - Promoção com animação - DESATIVADA TEMPORARIAMENTE */}
+      {/* <motion.div
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.3 }}
@@ -118,7 +118,7 @@ export default function StoreHeader() {
             </p>
           </div>
         </div>
-      </motion.div>
+      </motion.div> */}
 
       {/* Main Header com glassmorphism */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-border/50 shadow-sm">
