@@ -101,15 +101,15 @@ export async function handleSyncPaymentStatus(
 
           // Verificar se o pedido já tem endereço salvo
           const currentOrder = await getOrder(db, order.id);
-          const currentAddress = currentOrder?.shipping_address_json 
+          const currentAddress = currentOrder?.shipping_address_json
             ? (typeof currentOrder.shipping_address_json === 'string'
-                ? JSON.parse(currentOrder.shipping_address_json)
-                : currentOrder.shipping_address_json)
+              ? JSON.parse(currentOrder.shipping_address_json)
+              : currentOrder.shipping_address_json)
             : null;
-          
+
           // Se não tem endereço ou o endereço atual está vazio, salvar o novo
           const shouldUpdate = !currentAddress || !currentAddress.address_line1 || currentAddress.address_line1 === '';
-          
+
           if (shouldUpdate && shippingAddress.address_line1) {
             // Salvar endereço no pedido
             await executeRun(
@@ -136,7 +136,57 @@ export async function handleSyncPaymentStatus(
           paymentIntent.latest_charge as string
         );
 
-        const updatedOrder = await getOrder(db, order.id);
+        // Buscar pedido atualizado com itens para enviar email
+        const updatedOrder = await getOrder(db, order.id, true);
+
+        if (updatedOrder && updatedOrder.email) {
+          try {
+            const { sendEmail, generateOrderConfirmationEmail } = await import('../../utils/email');
+
+            // Preparar dados para o email
+            let shippingAddressObj = null;
+            try {
+              if (updatedOrder.shipping_address_json) {
+                shippingAddressObj = typeof updatedOrder.shipping_address_json === 'string'
+                  ? JSON.parse(updatedOrder.shipping_address_json)
+                  : updatedOrder.shipping_address_json;
+              }
+            } catch (e) {
+              console.error('Error parsing shipping address for email:', e);
+            }
+
+            const emailHtml = generateOrderConfirmationEmail({
+              order_number: updatedOrder.order_number,
+              total_cents: updatedOrder.total_cents,
+              items: updatedOrder.items?.map(item => ({
+                title: item.title,
+                quantity: item.quantity,
+                price_cents: item.price_cents,
+                image_url: item.image_url
+              })) || [],
+              customer_name: shippingAddressObj
+                ? `${shippingAddressObj.first_name} ${shippingAddressObj.last_name}`
+                : undefined,
+              shipping_address: shippingAddressObj ? {
+                street: `${shippingAddressObj.address_line1}${shippingAddressObj.address_line2 ? ' ' + shippingAddressObj.address_line2 : ''}`,
+                city: shippingAddressObj.city,
+                postal_code: shippingAddressObj.postal_code,
+                country: shippingAddressObj.country
+              } : undefined
+            });
+
+            console.log(`[SYNC] Sending confirmation email to ${updatedOrder.email}`);
+            await sendEmail(env, {
+              to: updatedOrder.email,
+              subject: `Pedido Confirmado #${updatedOrder.order_number} - Loja Mãe`,
+              html: emailHtml
+            });
+          } catch (emailError) {
+            console.error('[SYNC] Failed to send confirmation email:', emailError);
+            // Não falhar a requisição se o email falhar
+          }
+        }
+
         return successResponse({
           message: 'Payment status and address synced successfully',
           order_id: order.id,

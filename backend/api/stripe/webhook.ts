@@ -93,7 +93,7 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
 
         if (finalOrderId) {
           console.log(`[WEBHOOK] Updating order ${finalOrderId} with payment intent ${paymentIntent.id}`);
-          
+
           // Atualizar status do pedido
           const updatedOrder = await updateOrderPayment(
             db,
@@ -101,7 +101,7 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
             paymentIntent.id,
             paymentIntent.latest_charge as string
           );
-          
+
           console.log(`[WEBHOOK] Order ${finalOrderId} updated successfully. Status: ${updatedOrder.status}, Payment Status: ${updatedOrder.payment_status}`);
 
           // Marcar webhook como processado
@@ -146,13 +146,13 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
           // Primeiro tentar pegar do Payment Intent (Stripe Payment Element coleta automaticamente)
           // Se não estiver disponível, usar o endereço salvo no pedido
           let shippingAddress: any = null;
-          
+
           try {
             // Tentar recuperar endereço do Payment Intent (mais confiável)
             const paymentIntentWithDetails = await stripe.paymentIntents.retrieve(paymentIntent.id, {
               expand: ['payment_method'],
             });
-            
+
             if (paymentIntentWithDetails.shipping?.address) {
               const stripeAddress = paymentIntentWithDetails.shipping.address;
               const stripeName = paymentIntentWithDetails.shipping.name || '';
@@ -173,7 +173,7 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
           } catch (err) {
             console.warn('Could not retrieve address from Payment Intent:', err);
           }
-          
+
           // Se não conseguiu do Payment Intent, usar o endereço salvo no pedido
           if (!shippingAddress && updatedOrder.shipping_address_json) {
             shippingAddress = typeof updatedOrder.shipping_address_json === 'string'
@@ -187,15 +187,15 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
           if (shippingAddress && shippingAddress.address_line1) {
             try {
               // Verificar se o pedido já tem endereço salvo (e se é diferente/vazio)
-              const currentAddress = updatedOrder.shipping_address_json 
+              const currentAddress = updatedOrder.shipping_address_json
                 ? (typeof updatedOrder.shipping_address_json === 'string'
-                    ? JSON.parse(updatedOrder.shipping_address_json)
-                    : updatedOrder.shipping_address_json)
+                  ? JSON.parse(updatedOrder.shipping_address_json)
+                  : updatedOrder.shipping_address_json)
                 : null;
-              
+
               // Se não tem endereço ou o endereço atual está vazio, salvar o novo
               const shouldUpdate = !currentAddress || !currentAddress.address_line1 || currentAddress.address_line1 === '';
-              
+
               if (shouldUpdate) {
                 // Salvar endereço no pedido
                 await executeRun(
@@ -214,19 +214,19 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
           } else {
             console.log(`[WEBHOOK] ⚠️ No shipping address available to save for order ${finalOrderId}`);
           }
-          
+
           // Salvar endereço no perfil do cliente se disponível
           // Buscar pedido atualizado para garantir que temos o customer_id correto (pode ter sido associado acima)
           try {
             const orderWithCustomer = await getOrder(db, finalOrderId);
             const finalCustomerId = orderWithCustomer?.customer_id;
-            
+
             if (finalCustomerId && shippingAddress && shippingAddress.address_line1) {
               console.log(`[WEBHOOK] Attempting to save address for customer ${finalCustomerId}, order ${finalOrderId}`);
-              
+
               // Verificar se já existe um endereço similar para evitar duplicatas
               const existingAddresses = await getAddresses(db, finalCustomerId);
-              const addressExists = existingAddresses?.some(addr => 
+              const addressExists = existingAddresses?.some(addr =>
                 addr.address_line1 === shippingAddress.address_line1 &&
                 addr.postal_code === shippingAddress.postal_code &&
                 addr.city === shippingAddress.city
@@ -343,61 +343,124 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
           try {
             const order = await getOrder(db, finalOrderId, true);
             if (order && order.email) {
-              const orderItems = await executeQuery<{
-                title: string;
-                quantity: number;
-                price_cents: number;
-              }>(
-                db,
-                `SELECT 
-                  p.title,
-                  oi.quantity,
-                  oi.price_cents
-                FROM order_items oi
-                LEFT JOIN products p ON oi.product_id = p.id
-                WHERE oi.order_id = ?`,
-                [finalOrderId]
-              );
-
               // Parse shipping address from JSON
-              let shippingAddress = undefined;
-              if (order.shipping_address_json) {
-                try {
-                  const addr = typeof order.shipping_address_json === 'string' 
+              let shippingAddressObj = null;
+              try {
+                if (order.shipping_address_json) {
+                  shippingAddressObj = typeof order.shipping_address_json === 'string'
                     ? JSON.parse(order.shipping_address_json)
                     : order.shipping_address_json;
-                  shippingAddress = {
-                    street: addr.street || '',
-                    city: addr.city || '',
-                    postal_code: addr.postal_code || '',
-                    country: addr.country || '',
-                  };
-                } catch (e) {
-                  console.error('Error parsing shipping address:', e);
                 }
+              } catch (e) {
+                console.error('Error parsing shipping address for email:', e);
               }
 
               const emailHtml = generateOrderConfirmationEmail({
                 order_number: order.order_number,
                 total_cents: order.total_cents,
-                items: orderItems.map(item => ({
+                items: order.items?.map(item => ({
                   title: item.title,
                   quantity: item.quantity,
                   price_cents: item.price_cents,
-                })),
-                customer_name: order.email.split('@')[0],
-                shipping_address: shippingAddress,
+                  image_url: item.image_url
+                })) || [],
+                customer_name: shippingAddressObj
+                  ? `${shippingAddressObj.first_name} ${shippingAddressObj.last_name}`
+                  : order.email.split('@')[0],
+                shipping_address: shippingAddressObj ? {
+                  street: `${shippingAddressObj.address_line1}${shippingAddressObj.address_line2 ? ' ' + shippingAddressObj.address_line2 : ''}`,
+                  city: shippingAddressObj.city,
+                  postal_code: shippingAddressObj.postal_code,
+                  country: shippingAddressObj.country
+                } : undefined
               });
 
-              await sendEmail(env, {
+              console.log(`[WEBHOOK] Enviando email de confirmação para ${order.email} (pedido #${order.order_number})`);
+              const emailSent = await sendEmail(env, {
                 to: order.email,
-                subject: `Confirmação de Pedido #${order.order_number} - Loja Mãe`,
+                subject: `Pedido Confirmado #${order.order_number} - Leiasabores`,
                 html: emailHtml,
               });
+              
+              if (emailSent) {
+                console.log(`[WEBHOOK] ✅ Email de confirmação enviado com sucesso para ${order.email}`);
+                // Log sucesso
+                try {
+                  // Tentar criar tabela se não existir
+                  try {
+                    await executeRun(
+                      db,
+                      `CREATE TABLE IF NOT EXISTS order_email_logs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        order_id INTEGER NOT NULL,
+                        email TEXT NOT NULL,
+                        email_type TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        error_message TEXT,
+                        sent_at TEXT,
+                        created_at TEXT DEFAULT (datetime('now')),
+                        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+                      )`
+                    );
+                  } catch (tableError) {
+                    // Tabela pode já existir, ignorar erro
+                  }
+                  
+                  await executeRun(
+                    db,
+                    'INSERT INTO order_email_logs (order_id, email, email_type, status, sent_at, created_at) VALUES (?, ?, ?, ?, datetime("now"), datetime("now"))',
+                    [finalOrderId, order.email, 'confirmation', 'sent']
+                  );
+                } catch (logError) {
+                  console.error('[WEBHOOK] Erro ao salvar log de email:', logError);
+                }
+              } else {
+                console.error(`[WEBHOOK] ❌ Falha ao enviar email de confirmação para ${order.email}`);
+                // Salvar log de falha no banco para poder reenviar depois
+                try {
+                  // Tentar criar tabela se não existir
+                  try {
+                    await executeRun(
+                      db,
+                      `CREATE TABLE IF NOT EXISTS order_email_logs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        order_id INTEGER NOT NULL,
+                        email TEXT NOT NULL,
+                        email_type TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        error_message TEXT,
+                        sent_at TEXT,
+                        created_at TEXT DEFAULT (datetime('now')),
+                        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+                      )`
+                    );
+                  } catch (tableError) {
+                    // Tabela pode já existir, ignorar erro
+                  }
+                  
+                  try {
+                    await executeRun(
+                      db,
+                      'INSERT INTO order_email_logs (order_id, email, email_type, status, error_message, created_at) VALUES (?, ?, ?, ?, ?, datetime("now"))',
+                      [finalOrderId, order.email, 'confirmation', 'failed', 'Email sending failed - check MailChannels logs']
+                    );
+                  } catch (logError) {
+                    console.error('[WEBHOOK] Erro ao salvar log de email:', logError);
+                  }
+                } catch (logError) {
+                  console.error('[WEBHOOK] Erro ao salvar log de email:', logError);
+                }
+              }
+            } else {
+              console.warn(`[WEBHOOK] ⚠️ Pedido ${finalOrderId} não tem email para enviar confirmação`);
             }
-          } catch (emailError) {
-            console.error('Error sending confirmation email:', emailError);
-            // Não falhar o webhook se o email falhar
+          } catch (emailError: any) {
+            console.error('[WEBHOOK] ❌ Erro ao enviar email de confirmação:', {
+              error: emailError?.message || String(emailError),
+              stack: emailError?.stack,
+              orderId: finalOrderId,
+            });
+            // Não falhar o webhook se o email falhar, mas logar o erro
           }
         }
 

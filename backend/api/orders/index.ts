@@ -176,6 +176,96 @@ export async function handleOrdersRoutes(request: Request, env: Env): Promise<Re
       return await handleGetInvoice(request, env);
     }
 
+    // Resend confirmation email: POST /api/orders/:id/resend-email
+    if (method === 'POST' && path.match(/^\/api\/orders\/\d+\/resend-email$/)) {
+      await requireAdmin(request, env);
+      const id = parseInt(path.split('/').pop() || '0');
+      const db = getDb(env);
+      
+      const order = await getOrder(db, id, true);
+      if (!order) {
+        return notFoundResponse('Order not found');
+      }
+
+      if (!order.email) {
+        return errorResponse('Order has no email address', 400);
+      }
+
+      try {
+        // Parse shipping address from JSON
+        let shippingAddressObj = null;
+        try {
+          if (order.shipping_address_json) {
+            shippingAddressObj = typeof order.shipping_address_json === 'string'
+              ? JSON.parse(order.shipping_address_json)
+              : order.shipping_address_json;
+          }
+        } catch (e) {
+          console.error('Error parsing shipping address for email:', e);
+        }
+
+        const { sendEmail, generateOrderConfirmationEmail } = await import('../../utils/email');
+        
+        const emailHtml = generateOrderConfirmationEmail({
+          order_number: order.order_number,
+          total_cents: order.total_cents,
+          items: order.items?.map(item => ({
+            title: item.title,
+            quantity: item.quantity,
+            price_cents: item.price_cents,
+            image_url: item.image_url
+          })) || [],
+          customer_name: shippingAddressObj
+            ? `${shippingAddressObj.first_name} ${shippingAddressObj.last_name}`
+            : order.email.split('@')[0],
+          shipping_address: shippingAddressObj ? {
+            street: `${shippingAddressObj.address_line1}${shippingAddressObj.address_line2 ? ' ' + shippingAddressObj.address_line2 : ''}`,
+            city: shippingAddressObj.city,
+            postal_code: shippingAddressObj.postal_code,
+            country: shippingAddressObj.country
+          } : undefined
+        });
+
+        console.log(`[API] Reenviando email de confirmação para pedido #${order.order_number} (${order.email})`);
+        const emailSent = await sendEmail(env, {
+          to: order.email,
+          subject: `Pedido Confirmado #${order.order_number} - Leiasabores`,
+          html: emailHtml,
+        });
+
+        if (emailSent) {
+          // Log sucesso
+          try {
+            await executeRun(
+              db,
+              'INSERT INTO order_email_logs (order_id, email, email_type, status, sent_at, created_at) VALUES (?, ?, ?, ?, datetime("now"), datetime("now"))',
+              [id, order.email, 'confirmation', 'sent']
+            );
+          } catch (logError) {
+            console.error('[API] Erro ao salvar log de email:', logError);
+          }
+          
+          return successResponse({ sent: true, message: 'Email sent successfully' });
+        } else {
+          // Log falha
+          try {
+            await executeRun(
+              db,
+              'INSERT INTO order_email_logs (order_id, email, email_type, status, error_message, created_at) VALUES (?, ?, ?, ?, ?, datetime("now"))',
+              [id, order.email, 'confirmation', 'failed', 'Email sending failed - check MailChannels logs']
+            );
+          } catch (logError) {
+            console.error('[API] Erro ao salvar log de email:', logError);
+          }
+          
+          return errorResponse('Failed to send email', 500);
+        }
+      } catch (error: any) {
+        console.error('[API] Error resending confirmation email:', error);
+        return errorResponse(error.message || 'Failed to send email', 500);
+      }
+    }
+
     // Create order: POST /api/orders
     if (method === 'POST' && path === '/api/orders') {
       const body = await request.json();

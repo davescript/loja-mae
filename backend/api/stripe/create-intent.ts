@@ -81,6 +81,7 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
       quantity: number;
       price_cents: number;
       product_title: string;
+      image_url: string | null;
     }> = [];
 
     for (const item of items) {
@@ -111,6 +112,18 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
 
       let priceCents = product.price_cents;
       let productTitle = product.title;
+      let imageUrl: string | null = null;
+
+      // Buscar imagem do produto
+      const productImage = await executeOne<{ image_url: string }>(
+        db,
+        'SELECT image_url FROM product_images WHERE product_id = ? ORDER BY is_primary DESC, position ASC LIMIT 1',
+        [item.product_id]
+      );
+
+      if (productImage) {
+        imageUrl = productImage.image_url;
+      }
 
       // Se tem variante, buscar preço da variante
       if (item.variant_id) {
@@ -146,6 +159,7 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
         quantity: item.quantity,
         price_cents: priceCents,
         product_title: productTitle,
+        image_url: imageUrl,
       });
     }
 
@@ -155,13 +169,13 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
 
     // Criar pedido no banco (status: pending)
     const orderNumber = generateOrderNumber();
-    
+
     // Calcular subtotais (simplificado - pode ser melhorado)
     const subtotalCents = totalCents;
     const taxCents = 0;
     const shippingCents = 0;
     const discountCents = 0;
-    
+
     // Obter email do usuário ou usar guest
     let email = 'guest@example.com';
     try {
@@ -183,7 +197,7 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
         email = body.shipping_address.email;
       }
     }
-    
+
     // Resolver endereço selecionado
     let shippingAddressPayload: any = null;
     let shippingAddressId: number | null = null;
@@ -246,7 +260,7 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
     if (!shippingAddressPayload || !shippingAddressPayload.address_line1) {
       return errorResponse('Endereço de entrega obrigatório', 400);
     }
-    
+
     const orderResult = await executeRun(
       db,
       `INSERT INTO orders (
@@ -296,7 +310,7 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
           orderItem.quantity,
           orderItem.price_cents,
           orderItem.price_cents * orderItem.quantity,
-          null, // image_url - pode ser melhorado
+          orderItem.image_url,
         ]
       );
     }
@@ -311,7 +325,7 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
     // Métodos permitidos: Cartão, MB Way (via link), Klarna
     // Apple Pay e Google Pay aparecem automaticamente quando card está habilitado e o dispositivo suporta
     const country = normalizeCountry(shippingAddressPayload?.country);
-    
+
     // Log para debug - verificar se o país está sendo enviado corretamente
     console.log('[STRIPE] Criando Payment Intent:', {
       amount: totalCents,
@@ -320,7 +334,7 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
       payment_method_types: ['card', 'link', 'klarna'],
       hasShipping: !!shippingAddressPayload,
     });
-    
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalCents,
       currency: 'eur',

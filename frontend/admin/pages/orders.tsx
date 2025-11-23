@@ -19,6 +19,7 @@ import {
   FileText,
   RefreshCw,
   User, // Adicionado import do ícone User
+  Mail, // Adicionado import do ícone Mail
 } from 'lucide-react';
 import {
   Input,
@@ -103,6 +104,28 @@ export default function AdminOrdersPage() {
     },
     onError: (error: Error) => {
       toast({ title: 'Erro', description: error.message || 'Erro ao atualizar pedido.', variant: 'destructive' });
+    },
+  });
+
+  // Resend email mutation
+  const resendEmailMutation = useMutation({
+    mutationFn: async (orderId: number) => {
+      return apiRequest<{ sent: boolean; message: string }>(`/api/orders/${orderId}/resend-email`, {
+        method: 'POST',
+      });
+    },
+    onSuccess: (data) => {
+      toast({ 
+        title: 'Email reenviado', 
+        description: data.data?.message || 'Email de confirmação reenviado com sucesso.' 
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: 'Erro ao reenviar email', 
+        description: error.message || 'Não foi possível reenviar o email de confirmação.', 
+        variant: 'destructive' 
+      });
     },
   });
 
@@ -436,6 +459,20 @@ export default function AdminOrdersPage() {
                       </>
                     ) : (
                       <p className="text-muted-foreground">Cliente não registrado</p>
+                    )}
+                    {orderDetails.email && (
+                      <div className="pt-2 border-t">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => resendEmailMutation.mutate(orderDetails.id)}
+                          disabled={resendEmailMutation.isPending}
+                          className="w-full flex items-center gap-2"
+                        >
+                          <Mail className={`w-4 h-4 ${resendEmailMutation.isPending ? 'animate-pulse' : ''}`} />
+                          {resendEmailMutation.isPending ? 'Enviando...' : 'Reenviar Email de Confirmação'}
+                        </Button>
+                      </div>
                     )}
                   </CardContent>
                 </Card>

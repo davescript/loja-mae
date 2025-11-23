@@ -48,22 +48,22 @@ const normalizeCountryCode = (value?: string | null) => {
 }
 
 // Componente do formulário de pagamento
-function CheckoutForm({ 
-  clientSecret, 
+function CheckoutForm({
+  clientSecret,
   orderNumber,
   orderId,
   paymentIntentId,
   selectedAddress,
   customerEmail,
-  onSuccess 
-}: { 
+  onSuccess
+}: {
   clientSecret: string
   orderNumber: string | null
   orderId: number | null
   paymentIntentId: string | null
   selectedAddress: Address | null
   customerEmail?: string | null
-  onSuccess: (paymentIntentId: string) => void 
+  onSuccess: (paymentIntentId: string) => void
 }) {
   const stripe = useStripe()
   const elements = useElements()
@@ -73,7 +73,7 @@ function CheckoutForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!stripe || !elements) {
       return
     }
@@ -184,7 +184,7 @@ function CheckoutForm({
           payment_method_data: billingDetails.name ? {
             billing_details: billingDetails,
           } : undefined,
-          shipping: shippingParams,
+          // Shipping address is already set by the backend securely
         },
         redirect: 'if_required',
       })
@@ -205,7 +205,7 @@ function CheckoutForm({
         if (stripeError.type === 'card_error') {
           errorTitle = 'Cartão recusado'
           const errorCode = (stripeError as any).code || (stripeError as any).decline_code
-          
+
           switch (errorCode) {
             case 'card_declined':
             case 'generic_decline':
@@ -289,7 +289,7 @@ function CheckoutForm({
         <p className="text-sm text-muted-foreground mb-4">
           Escolha entre Cartão, MB Way, Klarna, Apple Pay ou Google Pay
         </p>
-        <PaymentElement 
+        <PaymentElement
           options={{
             layout: 'tabs',
             fields: {
@@ -310,7 +310,7 @@ function CheckoutForm({
           }}
         />
       </div>
-      
+
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-sm text-red-800">{error}</p>
@@ -514,7 +514,7 @@ export default function CheckoutPage() {
               image_url: item.image_url,
               sku: item.sku,
             }))
-            
+
             // Limpar carrinho atual e adicionar itens do carrinho abandonado
             clearCart()
             cartItems.forEach((item: any) => {
@@ -522,10 +522,10 @@ export default function CheckoutPage() {
                 // useCartStore addItem será chamado via sync
               }
             })
-            
+
             // Sincronizar com servidor
             loadFromServer()
-            
+
             toast({
               title: 'Carrinho recuperado',
               description: 'Seus itens foram restaurados com sucesso',
@@ -620,10 +620,10 @@ export default function CheckoutPage() {
       country: normalizeCountryCode(selectedAddress.country),
       phone: selectedAddress.phone || null,
     } : undefined
-    
+
     try {
       setCreating(true)
-      
+
       // Requer autenticação
       if (!isAuthenticated) {
         navigate('/login?redirect=/checkout')
@@ -638,12 +638,12 @@ export default function CheckoutPage() {
         throw new Error('Endereço de entrega é obrigatório.')
       }
 
-      const apiResp = await apiRequest<{ 
-        client_secret: string; 
-        order_number: string; 
-        order_id: number; 
-        total_cents: number; 
-        payment_intent_id: string; 
+      const apiResp = await apiRequest<{
+        client_secret: string;
+        order_number: string;
+        order_id: number;
+        total_cents: number;
+        payment_intent_id: string;
       }>(
         '/api/stripe/create-intent',
         {
@@ -724,10 +724,10 @@ export default function CheckoutPage() {
 
   const handleAddressSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // Validar campos obrigatórios
-    if (!addressForm.first_name || !addressForm.last_name || !addressForm.address_line1 || 
-        !addressForm.city || !addressForm.state || !addressForm.postal_code) {
+    if (!addressForm.first_name || !addressForm.last_name || !addressForm.address_line1 ||
+      !addressForm.city || !addressForm.state || !addressForm.postal_code) {
       toast({
         title: 'Campos obrigatórios',
         description: 'Preencha todos os campos obrigatórios do endereço.',
@@ -783,7 +783,7 @@ export default function CheckoutPage() {
   const handlePaymentSuccess = async (intentId: string) => {
     setPaymentSuccess(true)
     setPaymentIntentId(intentId)
-    
+
     // Sincronizar status do pagamento imediatamente após sucesso
     // Isso garante que o status seja atualizado mesmo se o webhook falhar
     try {
@@ -800,9 +800,9 @@ export default function CheckoutPage() {
       console.error('Error syncing payment status:', error);
       // Não bloquear o fluxo se a sincronização falhar
     }
-    
+
     clearCart()
-    
+
     setTimeout(() => {
       navigate(`/checkout/success?payment_intent=${intentId}&order=${orderNumber || ''}`)
     }, 2000)
@@ -930,8 +930,8 @@ export default function CheckoutPage() {
                   }}
                 >
                   <DialogTrigger asChild>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       disabled={!isAuthenticated}
                       onClick={() => {
@@ -1128,7 +1128,7 @@ export default function CheckoutPage() {
               className="bg-card rounded-lg p-6 shadow-sm border"
             >
               <h2 className="text-xl font-bold mb-6">2. Pagamento</h2>
-              
+
               {!clientSecret || !stripePromise ? (
                 <div className="space-y-4">
                   {!publishableKey ? (
