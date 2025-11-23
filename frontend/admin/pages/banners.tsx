@@ -10,7 +10,7 @@ import { Textarea } from "../components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
 import { useToast } from "../hooks/useToast"
 import { validateImage } from "../../utils/validateImage"
-import { Plus, Edit, Trash2, MoreVertical, Image as ImageIcon, Upload, Eye, EyeOff, ArrowUp, ArrowDown } from "lucide-react"
+import { Plus, Edit, Trash2, MoreVertical, Image as ImageIcon, Upload, Eye, EyeOff, ArrowUp, ArrowDown, Video, Film } from "lucide-react"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import { motion } from "framer-motion"
 import { format } from "date-fns"
@@ -29,6 +29,9 @@ type Banner = {
   clicks?: number
   impressions?: number
   created_at: string
+  media_type?: 'image' | 'video'
+  video_url?: string
+  video_poster_url?: string
 }
 
 export default function AdminBannersPage() {
@@ -37,6 +40,8 @@ export default function AdminBannersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [videoPreview, setVideoPreview] = useState<string | null>(null)
+  const [videoPosterPreview, setVideoPosterPreview] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     title: '',
     link_url: '',
@@ -45,6 +50,8 @@ export default function AdminBannersPage() {
     is_active: true,
     start_date: '',
     end_date: '',
+    media_type: 'image' as 'image' | 'video',
+    video_url: '',
   })
   const { toast} = useToast()
   const queryClient = useQueryClient()
@@ -67,6 +74,8 @@ export default function AdminBannersPage() {
       setIsModalOpen(false)
       setEditingBanner(null)
       setImagePreview(null)
+      setVideoPreview(null)
+      setVideoPosterPreview(null)
       setFormData({
         title: '',
         link_url: '',
@@ -75,6 +84,8 @@ export default function AdminBannersPage() {
         is_active: true,
         start_date: '',
         end_date: '',
+        media_type: 'image',
+        video_url: '',
       })
     },
     onError: (error: any) => {
@@ -140,7 +151,15 @@ export default function AdminBannersPage() {
       header: "Banner",
       accessor: (banner) => (
         <div className="flex items-center gap-3">
-          {banner.image_url ? (
+          {banner.media_type === 'video' ? (
+            banner.video_poster_url ? (
+              <img src={banner.video_poster_url} alt={banner.title} className="w-20 h-12 object-cover rounded" />
+            ) : (
+              <div className="w-20 h-12 bg-gray-200 rounded flex items-center justify-center">
+                <Video className="w-6 h-6 text-gray-400" />
+              </div>
+            )
+          ) : banner.image_url ? (
             <img src={banner.image_url} alt={banner.title} className="w-20 h-12 object-cover rounded" />
           ) : (
             <div className="w-20 h-12 bg-gray-200 rounded flex items-center justify-center">
@@ -148,7 +167,15 @@ export default function AdminBannersPage() {
             </div>
           )}
           <div>
-            <div className="font-medium">{banner.title}</div>
+            <div className="font-medium flex items-center gap-2">
+              {banner.title}
+              {banner.media_type === 'video' && (
+                <span className="px-2 py-0.5 text-xs bg-purple-100 text-purple-800 rounded-full flex items-center gap-1">
+                  <Video className="w-3 h-3" />
+                  Vídeo
+                </span>
+              )}
+            </div>
             <div className="text-sm text-muted-foreground">{positionLabels[banner.position] || banner.position}</div>
           </div>
         </div>
@@ -255,6 +282,61 @@ export default function AdminBannersPage() {
     }
   }
 
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validar tamanho do vídeo (máximo 50MB)
+      const maxSize = 50 * 1024 * 1024 // 50MB
+      if (file.size > maxSize) {
+        toast({
+          title: "Erro de validação",
+          description: "O vídeo deve ter no máximo 50MB",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Validar tipo de arquivo
+      if (!file.type.startsWith('video/')) {
+        toast({
+          title: "Erro de validação",
+          description: "Por favor, selecione um arquivo de vídeo válido",
+          variant: "destructive",
+        })
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setVideoPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleVideoPosterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const { validateImage } = await import("../../utils/validateImage")
+      const result = await validateImage(file)
+      
+      if (!result.valid) {
+        toast({
+          title: "Erro de validação",
+          description: result.error,
+          variant: "destructive",
+        })
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setVideoPosterPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
@@ -274,10 +356,32 @@ export default function AdminBannersPage() {
     if (startDate) formDataObj.append('start_date', new Date(startDate).toISOString())
     if (endDate) formDataObj.append('end_date', new Date(endDate).toISOString())
     
-    // Adicionar imagem se houver
-    const imageInput = form.elements.namedItem('image') as HTMLInputElement
-    if (imageInput?.files && imageInput.files[0]) {
-      formDataObj.append('image', imageInput.files[0])
+    // Adicionar tipo de mídia (usar estado do formulário)
+    formDataObj.append('media_type', formData.media_type)
+
+    if (formData.media_type === 'video') {
+      // Adicionar vídeo (arquivo ou URL)
+      const videoUrl = (form.elements.namedItem('video_url') as HTMLInputElement)?.value
+      if (videoUrl) {
+        formDataObj.append('video_url', videoUrl)
+      } else {
+        const videoInput = form.elements.namedItem('video') as HTMLInputElement
+        if (videoInput?.files && videoInput.files[0]) {
+          formDataObj.append('video', videoInput.files[0])
+        }
+      }
+
+      // Adicionar poster do vídeo se houver
+      const videoPosterInput = form.elements.namedItem('video_poster') as HTMLInputElement
+      if (videoPosterInput?.files && videoPosterInput.files[0]) {
+        formDataObj.append('video_poster', videoPosterInput.files[0])
+      }
+    } else {
+      // Adicionar imagem se houver
+      const imageInput = form.elements.namedItem('image') as HTMLInputElement
+      if (imageInput?.files && imageInput.files[0]) {
+        formDataObj.append('image', imageInput.files[0])
+      }
     }
     
     saveMutation.mutate(formDataObj)
@@ -287,6 +391,8 @@ export default function AdminBannersPage() {
   const handleEdit = (banner: Banner) => {
     setEditingBanner(banner)
     setImagePreview(banner.image_url || null)
+    setVideoPreview(banner.video_url || null)
+    setVideoPosterPreview(banner.video_poster_url || null)
     setFormData({
       title: banner.title,
       link_url: banner.link_url || '',
@@ -295,6 +401,8 @@ export default function AdminBannersPage() {
       is_active: banner.is_active,
       start_date: banner.start_date || '',
       end_date: banner.end_date || '',
+      media_type: banner.media_type || 'image',
+      video_url: banner.video_url || '',
     })
     setIsModalOpen(true)
   }
@@ -414,6 +522,8 @@ export default function AdminBannersPage() {
         if (!open) {
           setEditingBanner(null)
           setImagePreview(null)
+          setVideoPreview(null)
+          setVideoPosterPreview(null)
           setFormData({
             title: '',
             link_url: '',
@@ -422,6 +532,8 @@ export default function AdminBannersPage() {
             is_active: true,
             start_date: '',
             end_date: '',
+            media_type: 'image',
+            video_url: '',
           })
         }
       }}>
@@ -464,39 +576,170 @@ export default function AdminBannersPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="image">Imagem do Banner</Label>
-                <div className="space-y-4">
-                  {imagePreview && (
-                    <div className="relative">
-                      <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover rounded-lg border" />
-                      <button
-                        type="button"
-                        onClick={() => setImagePreview(null)}
-                        className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
+                <Label htmlFor="media_type">Tipo de Mídia</Label>
+                <Select 
+                  name="media_type" 
+                  defaultValue={formData.media_type}
+                  onValueChange={(value) => {
+                    setFormData({ ...formData, media_type: value as 'image' | 'video' })
+                    setImagePreview(null)
+                    setVideoPreview(null)
+                    setVideoPosterPreview(null)
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="image">
+                      <div className="flex items-center gap-2">
+                        <ImageIcon className="w-4 h-4" />
+                        Imagem
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="video">
+                      <div className="flex items-center gap-2">
+                        <Video className="w-4 h-4" />
+                        Vídeo
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {formData.media_type === 'image' ? (
+                <div className="space-y-2">
+                  <Label htmlFor="image">Imagem do Banner</Label>
+                  <div className="space-y-4">
+                    {imagePreview && (
+                      <div className="relative">
+                        <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover rounded-lg border" />
+                        <button
+                          type="button"
+                          onClick={() => setImagePreview(null)}
+                          className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-4">
+                      <Input
+                        id="image"
+                        name="image"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                      <Label
+                        htmlFor="image"
+                        className="flex items-center gap-2 px-4 py-2 border rounded-md cursor-pointer hover:bg-muted"
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                        <Upload className="w-4 h-4" />
+                        {imagePreview ? "Alterar Imagem" : "Upload de Imagem"}
+                      </Label>
                     </div>
-                  )}
-                  <div className="flex items-center gap-4">
-                    <Input
-                      id="image"
-                      name="image"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                    <Label
-                      htmlFor="image"
-                      className="flex items-center gap-2 px-4 py-2 border rounded-md cursor-pointer hover:bg-muted"
-                    >
-                      <Upload className="w-4 h-4" />
-                      {imagePreview ? "Alterar Imagem" : "Upload de Imagem"}
-                    </Label>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="video_url">URL do Vídeo (Opcional - YouTube, Vimeo, etc.)</Label>
+                    <Input
+                      id="video_url"
+                      name="video_url"
+                      type="url"
+                      placeholder="https://example.com/video.mp4 ou URL do YouTube/Vimeo"
+                      defaultValue={formData.video_url}
+                      onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Se não fornecer URL, você pode fazer upload de um arquivo de vídeo abaixo
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="video">Upload de Vídeo</Label>
+                    <div className="space-y-4">
+                      {videoPreview && (
+                        <div className="relative">
+                          <video
+                            src={videoPreview}
+                            controls
+                            className="w-full h-48 object-cover rounded-lg border"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setVideoPreview(null)}
+                            className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-4">
+                        <Input
+                          id="video"
+                          name="video"
+                          type="file"
+                          accept="video/*"
+                          onChange={handleVideoUpload}
+                          className="hidden"
+                        />
+                        <Label
+                          htmlFor="video"
+                          className="flex items-center gap-2 px-4 py-2 border rounded-md cursor-pointer hover:bg-muted"
+                        >
+                          <Film className="w-4 h-4" />
+                          {videoPreview ? "Alterar Vídeo" : "Upload de Vídeo"}
+                        </Label>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Formatos suportados: MP4, WebM, MOV. Tamanho máximo: 50MB
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="video_poster">Imagem de Capa do Vídeo (Opcional)</Label>
+                    <div className="space-y-4">
+                      {videoPosterPreview && (
+                        <div className="relative">
+                          <img src={videoPosterPreview} alt="Poster Preview" className="w-full h-48 object-cover rounded-lg border" />
+                          <button
+                            type="button"
+                            onClick={() => setVideoPosterPreview(null)}
+                            className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-4">
+                        <Input
+                          id="video_poster"
+                          name="video_poster"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleVideoPosterUpload}
+                          className="hidden"
+                        />
+                        <Label
+                          htmlFor="video_poster"
+                          className="flex items-center gap-2 px-4 py-2 border rounded-md cursor-pointer hover:bg-muted"
+                        >
+                          <ImageIcon className="w-4 h-4" />
+                          {videoPosterPreview ? "Alterar Capa" : "Upload de Imagem de Capa"}
+                        </Label>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Imagem exibida antes do vídeo carregar. Recomendado: 16:9 ou 21:9
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="link_url">Link (URL)</Label>

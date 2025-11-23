@@ -23,6 +23,9 @@ export type Banner = {
   impressions?: number
   created_at: string
   updated_at: string
+  media_type?: 'image' | 'video'
+  video_url?: string | null
+  video_poster_url?: string | null
 }
 
 interface UseBannersOptions

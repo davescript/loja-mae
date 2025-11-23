@@ -13,6 +13,9 @@ const createBannerSchema = z.object({
   is_active: z.boolean().default(true),
   start_date: z.string().optional().nullable(),
   end_date: z.string().optional().nullable(),
+  media_type: z.enum(['image', 'video']).default('image'),
+  video_url: z.string().url().optional().nullable(),
+  video_poster_url: z.string().url().optional().nullable(),
 });
 
 const updateBannerSchema = createBannerSchema.partial();
@@ -103,7 +106,7 @@ export async function handleBannersRoutes(request: Request, env: Env): Promise<R
       const contentType = request.headers.get('Content-Type') || '';
       
       if (contentType.includes('multipart/form-data')) {
-        // FormData com imagem
+        // FormData com imagem ou vídeo
         const formData = await request.formData();
         const title = formData.get('title') as string;
         const linkUrl = formData.get('link_url') as string || null;
@@ -112,34 +115,65 @@ export async function handleBannersRoutes(request: Request, env: Env): Promise<R
         const isActive = formData.get('is_active') === 'true';
         const startDate = formData.get('start_date') as string || null;
         const endDate = formData.get('end_date') as string || null;
+        const mediaType = (formData.get('media_type') as string) || 'image';
         const imageFile = formData.get('image') as File;
+        const videoFile = formData.get('video') as File;
+        const videoPosterFile = formData.get('video_poster') as File;
+        const videoUrl = formData.get('video_url') as string || null; // URL externa de vídeo
 
         if (!title || !position) {
           return errorResponse('title and position are required', 400);
         }
 
+        const r2 = env.R2;
         let imageUrl: string | null = null;
+        let videoUrlFinal: string | null = null;
+        let videoPosterUrl: string | null = null;
 
-        // Upload de imagem para R2
-        if (imageFile && imageFile.size > 0) {
-          const r2 = env.R2;
-          const key = `banners/${Date.now()}-${imageFile.name}`;
-          
-          await r2.put(key, imageFile.stream(), {
-            httpMetadata: {
-              contentType: imageFile.type,
-            },
-          });
+        if (mediaType === 'video') {
+          // Upload de vídeo para R2 ou usar URL externa
+          if (videoUrl) {
+            // URL externa (YouTube, Vimeo, etc.)
+            videoUrlFinal = videoUrl;
+          } else if (videoFile && videoFile.size > 0) {
+            // Upload de vídeo para R2
+            const key = `banners/videos/${Date.now()}-${videoFile.name}`;
+            await r2.put(key, videoFile.stream(), {
+              httpMetadata: {
+                contentType: videoFile.type || 'video/mp4',
+              },
+            });
+            videoUrlFinal = `/api/images/${key}`;
+          }
 
-          // URL pública do R2 - ajustar conforme configuração
-          imageUrl = `/api/images/${key}`;
+          // Upload de imagem de capa (poster) para o vídeo
+          if (videoPosterFile && videoPosterFile.size > 0) {
+            const key = `banners/posters/${Date.now()}-${videoPosterFile.name}`;
+            await r2.put(key, videoPosterFile.stream(), {
+              httpMetadata: {
+                contentType: videoPosterFile.type,
+              },
+            });
+            videoPosterUrl = `/api/images/${key}`;
+          }
+        } else {
+          // Upload de imagem para R2
+          if (imageFile && imageFile.size > 0) {
+            const key = `banners/${Date.now()}-${imageFile.name}`;
+            await r2.put(key, imageFile.stream(), {
+              httpMetadata: {
+                contentType: imageFile.type,
+              },
+            });
+            imageUrl = `/api/images/${key}`;
+          }
         }
 
         const result = await executeRun(
           db,
-          `INSERT INTO banners (title, image_url, link_url, position, \`order\`, is_active, start_date, end_date, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
-          [title, imageUrl, linkUrl, position, order, isActive ? 1 : 0, startDate, endDate]
+          `INSERT INTO banners (title, image_url, link_url, position, \`order\`, is_active, start_date, end_date, media_type, video_url, video_poster_url, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
+          [title, imageUrl, linkUrl, position, order, isActive ? 1 : 0, startDate, endDate, mediaType, videoUrlFinal, videoPosterUrl]
         );
 
         const banner = await executeOne(
@@ -156,8 +190,8 @@ export async function handleBannersRoutes(request: Request, env: Env): Promise<R
 
         const result = await executeRun(
           db,
-          `INSERT INTO banners (title, image_url, link_url, position, \`order\`, is_active, start_date, end_date, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
+          `INSERT INTO banners (title, image_url, link_url, position, \`order\`, is_active, start_date, end_date, media_type, video_url, video_poster_url, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
           [
             validated.title,
             null,
@@ -167,6 +201,9 @@ export async function handleBannersRoutes(request: Request, env: Env): Promise<R
             validated.is_active ? 1 : 0,
             validated.start_date || null,
             validated.end_date || null,
+            validated.media_type || 'image',
+            validated.video_url || null,
+            validated.video_poster_url || null,
           ]
         );
 
@@ -188,7 +225,7 @@ export async function handleBannersRoutes(request: Request, env: Env): Promise<R
       const contentType = request.headers.get('Content-Type') || '';
       
       if (contentType.includes('multipart/form-data')) {
-        // FormData com possível nova imagem
+        // FormData com possível nova imagem ou vídeo
         const formData = await request.formData();
         const title = formData.get('title') as string;
         const linkUrl = formData.get('link_url') as string || null;
@@ -197,12 +234,20 @@ export async function handleBannersRoutes(request: Request, env: Env): Promise<R
         const isActive = formData.get('is_active') === 'true';
         const startDate = formData.get('start_date') as string || null;
         const endDate = formData.get('end_date') as string || null;
+        const mediaType = (formData.get('media_type') as string) || 'image';
         const imageFile = formData.get('image') as File;
+        const videoFile = formData.get('video') as File;
+        const videoPosterFile = formData.get('video_poster') as File;
+        const videoUrl = formData.get('video_url') as string || null;
 
         // Buscar banner existente
-        const existingBanner = await executeOne<{ image_url: string | null }>(
+        const existingBanner = await executeOne<{ 
+          image_url: string | null;
+          video_url: string | null;
+          video_poster_url: string | null;
+        }>(
           db,
-          'SELECT image_url FROM banners WHERE id = ?',
+          'SELECT image_url, video_url, video_poster_url FROM banners WHERE id = ?',
           [id]
         );
 
@@ -210,29 +255,76 @@ export async function handleBannersRoutes(request: Request, env: Env): Promise<R
           return notFoundResponse('Banner not found');
         }
 
+        const r2 = env.R2;
         let imageUrl = existingBanner.image_url;
+        let videoUrlFinal = existingBanner.video_url;
+        let videoPosterUrl = existingBanner.video_poster_url;
 
-        // Upload de nova imagem se fornecida
-        if (imageFile && imageFile.size > 0) {
-          const r2 = env.R2;
-          const key = `banners/${Date.now()}-${imageFile.name}`;
-          
-          await r2.put(key, imageFile.stream(), {
-            httpMetadata: {
-              contentType: imageFile.type,
-            },
-          });
+        if (mediaType === 'video') {
+          // Processar vídeo
+          if (videoUrl) {
+            // URL externa
+            videoUrlFinal = videoUrl;
+          } else if (videoFile && videoFile.size > 0) {
+            // Upload de novo vídeo
+            const key = `banners/videos/${Date.now()}-${videoFile.name}`;
+            await r2.put(key, videoFile.stream(), {
+              httpMetadata: {
+                contentType: videoFile.type || 'video/mp4',
+              },
+            });
+            videoUrlFinal = `/api/images/${key}`;
 
-          // URL pública do R2 - ajustar conforme configuração
-          imageUrl = `/api/images/${key}`;
+            // Deletar vídeo antigo se existir
+            if (existingBanner.video_url && !existingBanner.video_url.startsWith('http')) {
+              try {
+                const oldKey = existingBanner.video_url.split('/').slice(-2).join('/');
+                await r2.delete(oldKey);
+              } catch (err) {
+                console.error('Error deleting old banner video:', err);
+              }
+            }
+          }
 
-          // Deletar imagem antiga do R2 se existir
-          if (existingBanner.image_url) {
-            try {
-              const oldKey = existingBanner.image_url.split('/').slice(-2).join('/');
-              await r2.delete(oldKey);
-            } catch (err) {
-              console.error('Error deleting old banner image:', err);
+          // Processar poster do vídeo
+          if (videoPosterFile && videoPosterFile.size > 0) {
+            const key = `banners/posters/${Date.now()}-${videoPosterFile.name}`;
+            await r2.put(key, videoPosterFile.stream(), {
+              httpMetadata: {
+                contentType: videoPosterFile.type,
+              },
+            });
+            videoPosterUrl = `/api/images/${key}`;
+
+            // Deletar poster antigo se existir
+            if (existingBanner.video_poster_url) {
+              try {
+                const oldKey = existingBanner.video_poster_url.split('/').slice(-2).join('/');
+                await r2.delete(oldKey);
+              } catch (err) {
+                console.error('Error deleting old banner poster:', err);
+              }
+            }
+          }
+        } else {
+          // Upload de nova imagem se fornecida
+          if (imageFile && imageFile.size > 0) {
+            const key = `banners/${Date.now()}-${imageFile.name}`;
+            await r2.put(key, imageFile.stream(), {
+              httpMetadata: {
+                contentType: imageFile.type,
+              },
+            });
+            imageUrl = `/api/images/${key}`;
+
+            // Deletar imagem antiga do R2 se existir
+            if (existingBanner.image_url) {
+              try {
+                const oldKey = existingBanner.image_url.split('/').slice(-2).join('/');
+                await r2.delete(oldKey);
+              } catch (err) {
+                console.error('Error deleting old banner image:', err);
+              }
             }
           }
         }
@@ -240,9 +332,9 @@ export async function handleBannersRoutes(request: Request, env: Env): Promise<R
         await executeRun(
           db,
           `UPDATE banners 
-           SET title = ?, image_url = ?, link_url = ?, position = ?, \`order\` = ?, is_active = ?, start_date = ?, end_date = ?, updated_at = datetime('now')
+           SET title = ?, image_url = ?, link_url = ?, position = ?, \`order\` = ?, is_active = ?, start_date = ?, end_date = ?, media_type = ?, video_url = ?, video_poster_url = ?, updated_at = datetime('now')
            WHERE id = ?`,
-          [title, imageUrl, linkUrl, position, order, isActive ? 1 : 0, startDate, endDate, id]
+          [title, imageUrl, linkUrl, position, order, isActive ? 1 : 0, startDate, endDate, mediaType, videoUrlFinal, videoPosterUrl, id]
         );
 
         const banner = await executeOne(db, 'SELECT * FROM banners WHERE id = ?', [id]);
@@ -283,6 +375,18 @@ export async function handleBannersRoutes(request: Request, env: Env): Promise<R
           updateFields.push('end_date = ?');
           updateValues.push(validated.end_date);
         }
+        if (validated.media_type !== undefined) {
+          updateFields.push('media_type = ?');
+          updateValues.push(validated.media_type);
+        }
+        if (validated.video_url !== undefined) {
+          updateFields.push('video_url = ?');
+          updateValues.push(validated.video_url);
+        }
+        if (validated.video_poster_url !== undefined) {
+          updateFields.push('video_poster_url = ?');
+          updateValues.push(validated.video_poster_url);
+        }
 
         if (updateFields.length === 0) {
           return errorResponse('No fields to update', 400);
@@ -307,10 +411,14 @@ export async function handleBannersRoutes(request: Request, env: Env): Promise<R
       await requireAdmin(request, env);
       const id = parseInt(path.split('/').pop() || '0');
 
-      // Buscar banner para deletar imagem do R2
-      const banner = await executeOne<{ image_url: string | null }>(
+      // Buscar banner para deletar mídia do R2
+      const banner = await executeOne<{ 
+        image_url: string | null;
+        video_url: string | null;
+        video_poster_url: string | null;
+      }>(
         db,
-        'SELECT image_url FROM banners WHERE id = ?',
+        'SELECT image_url, video_url, video_poster_url FROM banners WHERE id = ?',
         [id]
       );
 
@@ -318,15 +426,23 @@ export async function handleBannersRoutes(request: Request, env: Env): Promise<R
         return notFoundResponse('Banner not found');
       }
 
-      // Deletar imagem do R2 se existir
-      if (banner.image_url) {
-        try {
-          const r2 = env.R2;
+      // Deletar mídia do R2 se existir
+      const r2 = env.R2;
+      try {
+        if (banner.image_url && !banner.image_url.startsWith('http')) {
           const key = banner.image_url.split('/').slice(-2).join('/');
           await r2.delete(key);
-        } catch (err) {
-          console.error('Error deleting banner image from R2:', err);
         }
+        if (banner.video_url && !banner.video_url.startsWith('http')) {
+          const key = banner.video_url.split('/').slice(-2).join('/');
+          await r2.delete(key);
+        }
+        if (banner.video_poster_url) {
+          const key = banner.video_poster_url.split('/').slice(-2).join('/');
+          await r2.delete(key);
+        }
+      } catch (err) {
+        console.error('Error deleting banner media from R2:', err);
       }
 
       await executeRun(db, 'DELETE FROM banners WHERE id = ?', [id]);

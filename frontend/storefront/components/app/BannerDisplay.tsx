@@ -68,6 +68,16 @@ export default function BannerDisplay({
 
   if (finalVariant === 'hero') {
     const banner = banners[0]
+    const isVideo = banner.media_type === 'video' && banner.video_url
+    const getMediaUrl = (url: string | null | undefined) => {
+      if (!url) return null
+      if (url.startsWith('http')) return url
+      if (url.startsWith('/api/images')) {
+        return `${API_BASE_URL}${url}`
+      }
+      return `${API_BASE_URL}${url}`
+    }
+    
     return (
       <section className={className}>
         <motion.div
@@ -75,32 +85,44 @@ export default function BannerDisplay({
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <img
-            src={(() => {
-              if (!banner.image_url) return '/placeholder.png'
-              if (banner.image_url.startsWith('http')) return banner.image_url
-              // Se começa com /api/images, usar API_BASE_URL
-              if (banner.image_url.startsWith('/api/images')) {
-                const fullUrl = `${API_BASE_URL}${banner.image_url}`
-                console.log(`[BANNER_DISPLAY] Construindo URL completa para banner ${banner.id}:`, fullUrl)
-                return fullUrl
-              }
-              // Caso contrário, assumir que é relativo
-              return `${API_BASE_URL}${banner.image_url}`
-            })()}
-            alt={banner.title}
-            className="w-full h-full object-cover"
-            loading="lazy"
-            onError={(e) => {
-              const attemptedUrl = e.currentTarget.src
-              console.error(`[BANNER_DISPLAY] Erro ao carregar imagem do banner ${banner.id}:`, {
-                original_url: banner.image_url,
-                attempted_url: attemptedUrl,
-                api_base: API_BASE_URL
-              })
-              e.currentTarget.src = '/placeholder.png'
-            }}
-          />
+          {isVideo ? (
+            <video
+              src={getMediaUrl(banner.video_url) || ''}
+              poster={banner.video_poster_url ? getMediaUrl(banner.video_poster_url) || undefined : undefined}
+              className="w-full h-full object-cover"
+              autoPlay
+              loop
+              muted
+              playsInline
+            />
+          ) : (
+            <img
+              src={(() => {
+                if (!banner.image_url) return '/placeholder.png'
+                if (banner.image_url.startsWith('http')) return banner.image_url
+                // Se começa com /api/images, usar API_BASE_URL
+                if (banner.image_url.startsWith('/api/images')) {
+                  const fullUrl = `${API_BASE_URL}${banner.image_url}`
+                  console.log(`[BANNER_DISPLAY] Construindo URL completa para banner ${banner.id}:`, fullUrl)
+                  return fullUrl
+                }
+                // Caso contrário, assumir que é relativo
+                return `${API_BASE_URL}${banner.image_url}`
+              })()}
+              alt={banner.title}
+              className="w-full h-full object-cover"
+              loading="lazy"
+              onError={(e) => {
+                const attemptedUrl = e.currentTarget.src
+                console.error(`[BANNER_DISPLAY] Erro ao carregar imagem do banner ${banner.id}:`, {
+                  original_url: banner.image_url,
+                  attempted_url: attemptedUrl,
+                  api_base: API_BASE_URL
+                })
+                e.currentTarget.src = '/placeholder.png'
+              }}
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
           <div className="absolute bottom-0 left-0 p-8 md:p-12 text-white max-w-3xl">
             <p className="uppercase tracking-[0.3em] text-xs mb-3">
@@ -127,47 +149,93 @@ export default function BannerDisplay({
   if (finalVariant === 'grid') {
     const xlCols =
       banners.length >= 3 ? 'xl:grid-cols-3' : banners.length === 2 ? 'xl:grid-cols-2' : 'xl:grid-cols-1'
+    const getMediaUrl = (url: string | null | undefined) => {
+      if (!url) return null
+      if (url.startsWith('http')) return url
+      if (url.startsWith('/api/images')) {
+        return `${API_BASE_URL}${url}`
+      }
+      return `${API_BASE_URL}${url}`
+    }
+    
     return (
       <div className={`grid gap-4 md:gap-6 ${className || ''} grid-cols-1 md:grid-cols-2 ${xlCols}`}>
-        {banners.map((banner) => (
-          <motion.div
-            key={banner.id}
-            className="relative rounded-2xl overflow-hidden bg-muted aspect-[16/6]"
-            whileHover={{ scale: 1.01 }}
-          >
-            <img
-              src={banner.image_url || '/placeholder.png'}
-              alt={banner.title}
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
-            {banner.link_url && (
-              <Link
-                to={banner.link_url}
-                className="absolute inset-0"
-                onClick={() => handleClick(banner.id)}
-              >
-                <span className="sr-only">{banner.title}</span>
-              </Link>
-            )}
-          </motion.div>
-        ))}
+        {banners.map((banner) => {
+          const isVideo = banner.media_type === 'video' && banner.video_url
+          return (
+            <motion.div
+              key={banner.id}
+              className="relative rounded-2xl overflow-hidden bg-muted aspect-[16/6]"
+              whileHover={{ scale: 1.01 }}
+            >
+              {isVideo ? (
+                <video
+                  src={getMediaUrl(banner.video_url) || ''}
+                  poster={banner.video_poster_url ? getMediaUrl(banner.video_poster_url) || undefined : undefined}
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                />
+              ) : (
+                <img
+                  src={banner.image_url || '/placeholder.png'}
+                  alt={banner.title}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              )}
+              {banner.link_url && (
+                <Link
+                  to={banner.link_url}
+                  className="absolute inset-0"
+                  onClick={() => handleClick(banner.id)}
+                >
+                  <span className="sr-only">{banner.title}</span>
+                </Link>
+              )}
+            </motion.div>
+          )
+        })}
       </div>
     )
   }
 
   if (finalVariant === 'sidebar') {
     const banner = banners[0]
+    const isVideo = banner.media_type === 'video' && banner.video_url
+    const getMediaUrl = (url: string | null | undefined) => {
+      if (!url) return null
+      if (url.startsWith('http')) return url
+      if (url.startsWith('/api/images')) {
+        return `${API_BASE_URL}${url}`
+      }
+      return `${API_BASE_URL}${url}`
+    }
+    
     return (
       <aside
-        className={`rounded-2xl overflow-hidden bg-muted aspect-[3/4] ${className}`}
+        className={`rounded-2xl overflow-hidden bg-muted aspect-[3/4] relative ${className}`}
       >
-        <img
-          src={banner.image_url || '/placeholder.png'}
-          alt={banner.title}
-          className="w-full h-full object-cover"
-          loading="lazy"
-        />
+        {isVideo ? (
+          <video
+            src={getMediaUrl(banner.video_url) || ''}
+            poster={banner.video_poster_url ? getMediaUrl(banner.video_poster_url) || undefined : undefined}
+            className="w-full h-full object-cover"
+            autoPlay
+            loop
+            muted
+            playsInline
+          />
+        ) : (
+          <img
+            src={banner.image_url || '/placeholder.png'}
+            alt={banner.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        )}
         {banner.link_url && (
           <a
             href={banner.link_url}
@@ -184,51 +252,75 @@ export default function BannerDisplay({
   }
 
   // full variant
+  const getMediaUrl = (url: string | null | undefined) => {
+    if (!url) return null
+    if (url.startsWith('http')) return url
+    if (url.startsWith('/api/images')) {
+      return `${API_BASE_URL}${url}`
+    }
+    return `${API_BASE_URL}${url}`
+  }
+  
   return (
     <div className={`rounded-3xl overflow-hidden bg-muted ${className}`}>
-      {banners.map((banner) => (
-        <motion.div
-          key={banner.id}
-          className="relative aspect-[21/9]"
-          whileHover={{ scale: 1.005 }}
-        >
-          <img
-            src={(() => {
-              if (!banner.image_url) return '/placeholder.png'
-              if (banner.image_url.startsWith('http')) return banner.image_url
-              // Se começa com /api/images, usar API_BASE_URL
-              if (banner.image_url.startsWith('/api/images')) {
-                const fullUrl = `${API_BASE_URL}${banner.image_url}`
-                console.log(`[BANNER_DISPLAY] Construindo URL completa para banner ${banner.id}:`, fullUrl)
-                return fullUrl
-              }
-              // Caso contrário, assumir que é relativo
-              return `${API_BASE_URL}${banner.image_url}`
-            })()}
-            alt={banner.title}
-            className="w-full h-full object-cover"
-            loading="lazy"
-            onError={(e) => {
-              const attemptedUrl = e.currentTarget.src
-              console.error(`[BANNER_DISPLAY] Erro ao carregar imagem do banner ${banner.id}:`, {
-                original_url: banner.image_url,
-                attempted_url: attemptedUrl,
-                api_base: API_BASE_URL
-              })
-              e.currentTarget.src = '/placeholder.png'
-            }}
-          />
-          {banner.link_url && (
-            <Link
-              to={banner.link_url}
-              className="absolute inset-0"
-              onClick={() => handleClick(banner.id)}
-            >
-              <span className="sr-only">{banner.title}</span>
-            </Link>
-          )}
-        </motion.div>
-      ))}
+      {banners.map((banner) => {
+        const isVideo = banner.media_type === 'video' && banner.video_url
+        return (
+          <motion.div
+            key={banner.id}
+            className="relative aspect-[21/9]"
+            whileHover={{ scale: 1.005 }}
+          >
+            {isVideo ? (
+              <video
+                src={getMediaUrl(banner.video_url) || ''}
+                poster={banner.video_poster_url ? getMediaUrl(banner.video_poster_url) || undefined : undefined}
+                className="w-full h-full object-cover"
+                autoPlay
+                loop
+                muted
+                playsInline
+              />
+            ) : (
+              <img
+                src={(() => {
+                  if (!banner.image_url) return '/placeholder.png'
+                  if (banner.image_url.startsWith('http')) return banner.image_url
+                  // Se começa com /api/images, usar API_BASE_URL
+                  if (banner.image_url.startsWith('/api/images')) {
+                    const fullUrl = `${API_BASE_URL}${banner.image_url}`
+                    console.log(`[BANNER_DISPLAY] Construindo URL completa para banner ${banner.id}:`, fullUrl)
+                    return fullUrl
+                  }
+                  // Caso contrário, assumir que é relativo
+                  return `${API_BASE_URL}${banner.image_url}`
+                })()}
+                alt={banner.title}
+                className="w-full h-full object-cover"
+                loading="lazy"
+                onError={(e) => {
+                  const attemptedUrl = e.currentTarget.src
+                  console.error(`[BANNER_DISPLAY] Erro ao carregar imagem do banner ${banner.id}:`, {
+                    original_url: banner.image_url,
+                    attempted_url: attemptedUrl,
+                    api_base: API_BASE_URL
+                  })
+                  e.currentTarget.src = '/placeholder.png'
+                }}
+              />
+            )}
+            {banner.link_url && (
+              <Link
+                to={banner.link_url}
+                className="absolute inset-0"
+                onClick={() => handleClick(banner.id)}
+              >
+                <span className="sr-only">{banner.title}</span>
+              </Link>
+            )}
+          </motion.div>
+        )
+      })}
     </div>
   )
 }
