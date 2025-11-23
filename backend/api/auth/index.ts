@@ -124,7 +124,7 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
         },
         'Login successful'
       );
-      
+
       // Configurar cookies para funcionar cross-domain
       // Se o domínio for leiasabores.pt, usar .leiasabores.pt para compartilhar entre subdomínios
       // Se for workers.dev, não usar Domain (cookies funcionam apenas no mesmo domínio)
@@ -132,7 +132,7 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
       let cookieDomain = '';
       let sameSite: 'Lax' | 'None' = 'Lax';
       let secure = true;
-      
+
       if (requestHostname.includes('leiasabores.pt')) {
         // Para leiasabores.pt, usar .leiasabores.pt para compartilhar entre www e api
         cookieDomain = 'Domain=.leiasabores.pt; ';
@@ -147,24 +147,24 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
         // Fallback: usar o domínio da requisição
         cookieDomain = `Domain=${requestHostname}; `;
       }
-      
+
       const accessCookie = `session_access=${access}; Path=/; ${cookieDomain}HttpOnly; ${secure ? 'Secure; ' : ''}SameSite=${sameSite}; Max-Age=${15 * 60}`;
       const refreshCookie = `session_refresh=${encodeURIComponent(refreshRaw)}; Path=/; ${cookieDomain}HttpOnly; ${secure ? 'Secure; ' : ''}SameSite=${sameSite}; Max-Age=${60 * 24 * 60 * 60}`;
-      
+
       response.headers.set('Set-Cookie', accessCookie);
       response.headers.append('Set-Cookie', refreshCookie);
       response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
       response.headers.set('Pragma', 'no-cache');
       response.headers.set('Expires', '0');
       response.headers.set('Vary', 'Authorization, Cookie');
-      
+
       console.log('[AUTH] Login cookies configurados:', {
         domain: cookieDomain || 'sem domain',
         sameSite,
         secure,
         hostname: requestHostname,
       });
-      
+
       return response;
     }
 
@@ -302,7 +302,7 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
       const cookieHeader = request.headers.get('Cookie') || '';
       const refreshMatch = cookieHeader.match(/session_refresh=([^;]+)/);
       const accessMatch = cookieHeader.match(/session_access=([^;]+)/);
-      
+
       let userId: number | null = null;
       if (accessMatch) {
         try {
@@ -316,7 +316,7 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
           console.warn('[AUTH] Logout: falha ao verificar token de acesso', err);
         }
       }
-      
+
       if (userId) {
         await executeRun(db, 'UPDATE user_sessions SET revoked_at = datetime("now") WHERE user_id = ?', [userId]);
       } else if (refreshMatch) {
@@ -328,44 +328,45 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
           console.warn('[AUTH] Logout: refresh token não encontrado para revogação');
         }
       }
-      
+
       const response = successResponse(null, 'Logout successful');
-      
+
       // Usar a mesma lógica de domínio do login para garantir que os cookies sejam removidos corretamente
       const requestHostname = url.hostname;
       const cookieVariants: Array<{ domain?: string; sameSite: 'Lax' | 'None'; secure: boolean }> = [];
       const expires = 'Thu, 01 Jan 1970 00:00:00 GMT';
-      
+
+      // Adicionar variantes para garantir limpeza
       if (requestHostname.includes('leiasabores.pt')) {
+        // Domínio principal e subdomínios
         cookieVariants.push({ domain: '.leiasabores.pt', sameSite: 'Lax', secure: true });
-        cookieVariants.push({ domain: requestHostname, sameSite: 'Lax', secure: true });
+        cookieVariants.push({ domain: 'leiasabores.pt', sameSite: 'Lax', secure: true });
+        cookieVariants.push({ domain: 'www.leiasabores.pt', sameSite: 'Lax', secure: true });
       }
-      
+
+      // Sempre tentar limpar no hostname atual (sem especificar domain ou com domain exato)
+      cookieVariants.push({ domain: requestHostname, sameSite: 'Lax', secure: true });
+      cookieVariants.push({ domain: undefined, sameSite: 'Lax', secure: true });
+
       if (requestHostname.includes('workers.dev')) {
         cookieVariants.push({ domain: undefined, sameSite: 'None', secure: true });
-      } else {
-        cookieVariants.push({ domain: undefined, sameSite: 'Lax', secure: true });
       }
-      
+
       // Remover duplicados baseados em domain + sameSite
       const uniqueVariants = cookieVariants.filter(
         (variant, index, self) =>
           index === self.findIndex((v) => v.domain === variant.domain && v.sameSite === variant.sameSite)
       );
-      
+
       const buildCookie = (name: string, domain: string | undefined, sameSite: 'Lax' | 'None', secure: boolean) =>
         `${name}=; Path=/; ${domain ? `Domain=${domain}; ` : ''}${secure ? 'Secure; ' : ''}SameSite=${sameSite}; Max-Age=0; Expires=${expires}`;
-      
-      if (uniqueVariants.length === 0) {
-        uniqueVariants.push({ domain: undefined, sameSite: 'Lax', secure: true });
-      }
-      
+
       const baseHeaders: string[] = [];
       for (const variant of uniqueVariants) {
         baseHeaders.push(buildCookie('session_access', variant.domain, variant.sameSite, variant.secure));
         baseHeaders.push(buildCookie('session_refresh', variant.domain, variant.sameSite, variant.secure));
       }
-      
+
       response.headers.set('Set-Cookie', baseHeaders.shift()!);
       for (const cookie of baseHeaders) {
         response.headers.append('Set-Cookie', cookie);
@@ -375,9 +376,9 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
       response.headers.set('Pragma', 'no-cache');
       response.headers.set('Expires', '0');
       response.headers.set('Vary', 'Authorization, Cookie');
-      
+
       console.log('[AUTH] Logout - cookies removidos:', uniqueVariants);
-      
+
       return response;
     }
 
@@ -463,7 +464,7 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
           }
         }
       }
-      
+
       // Se não encontrou token no cookie, tentar Authorization header
       if (!token) {
         const authHeader = request.headers.get('Authorization');
@@ -481,7 +482,7 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
         const payload = verifyToken(token, jwtSecret);
 
         const { executeOne } = await import('../../utils/db');
-        
+
         if (payload.type === 'customer') {
           const customer = await executeOne<{
             id: number;
@@ -507,13 +508,13 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
             '15m'
           );
 
-          const res = successResponse({ 
+          const res = successResponse({
             user: {
               id: customer.id,
               email: customer.email,
               name,
               type: 'customer' as const,
-            }, 
+            },
             type: 'customer',
             token: renewedAccess,
           });
@@ -544,16 +545,16 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
           // Build name from email if name is null
           const adminName = admin.name || admin.email.split('@')[0];
 
-          const res = successResponse({ 
+          const res = successResponse({
             user: {
               id: admin.id,
               email: admin.email,
               name: adminName,
               role: admin.role,
               type: 'admin' as const,
-            }, 
-            type: 'admin', 
-            token: renewedAccess 
+            },
+            type: 'admin',
+            token: renewedAccess
           });
           res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
           res.headers.set('Pragma', 'no-cache');

@@ -57,7 +57,7 @@ export async function getCustomerFromToken(
     console.log(`[AUTH] Verificando token JWT: ${token.substring(0, 20)}...`);
     const payload = verifyToken(token, jwtSecret);
     console.log(`[AUTH] Payload decodificado:`, { id: payload.id, email: payload.email, type: payload.type });
-    
+
     if (payload.type !== 'customer') {
       console.error(`[AUTH] Token não é de cliente, tipo: ${payload.type}`);
       return null;
@@ -130,17 +130,40 @@ export async function requireAuth(
   // Priorizar header Authorization pois é mais confiável (não depende de cookies cross-domain)
   const authHeader = request.headers.get('Authorization');
   const cookieHeader = request.headers.get('Cookie');
-  
+
+  // 1. Tentar token do header primeiro
+  const headerToken = getTokenFromHeader(authHeader);
+
+  if (headerToken) {
+    try {
+      // Verificar se o token do header é válido
+      if (type === 'customer') {
+        const customer = await getCustomerFromToken(db, headerToken, jwtSecret);
+        if (customer) return { ...customer, type: 'customer' };
+      } else if (type === 'admin') {
+        const admin = await getAdminFromToken(db, headerToken, jwtSecret);
+        if (admin) return { ...admin, type: 'admin' };
+      } else {
+        // both - tentar admin depois customer
+        const admin = await getAdminFromToken(db, headerToken, jwtSecret);
+        if (admin) return { ...admin, type: 'admin' };
+        const customer = await getCustomerFromToken(db, headerToken, jwtSecret);
+        if (customer) return { ...customer, type: 'customer' };
+      }
+    } catch (e) {
+      console.warn('[AUTH] Header token invalid/expired, falling back to cookie:', e);
+      // Silenciosamente falhar e tentar cookie
+    }
+  }
+
+  // 2. Fallback para cookie se header não existir ou for inválido
   let token: string | null = null;
-  
+
   if (type === 'admin') {
-    // Admin can use either Authorization header or cookie
-    // Priorizar header Authorization
-    token = getTokenFromHeader(authHeader) || getTokenFromCookie(cookieHeader, 'admin_token');
+    token = getTokenFromCookie(cookieHeader, 'admin_token');
   } else {
-    // Customer: priorizar Authorization header (token do localStorage)
-    // Fallback para cookie session_access se header não estiver disponível
-    token = getTokenFromHeader(authHeader) || getTokenFromCookie(cookieHeader, 'session_access');
+    // Customer ou Both
+    token = getTokenFromCookie(cookieHeader, 'session_access');
   }
 
   // Log para debug
@@ -210,7 +233,7 @@ export async function requireAdmin(
   roles: ('super_admin' | 'admin' | 'editor')[] = ['admin', 'super_admin']
 ): Promise<{ id: number; email: string; role: string }> {
   const user = await requireAuth(request, env, 'admin');
-  
+
   if (!roles.includes(user.role as any)) {
     throw new ForbiddenError('Insufficient permissions');
   }
