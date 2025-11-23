@@ -68,6 +68,15 @@ export async function apiRequest<T = any>(
       const adminToken = localStorage.getItem('admin_token');
       const customerToken = localStorage.getItem('customer_token') || localStorage.getItem('token');
 
+      // Log para debug em desenvolvimento
+      if (import.meta.env.DEV && isCustomerEndpoint) {
+        console.log(`[API] Tokens disponíveis para ${endpoint}:`, {
+          hasAdminToken: !!adminToken,
+          hasCustomerToken: !!customerToken,
+          customerTokenLength: customerToken?.length || 0,
+        });
+      }
+
       if (isAdminEndpoint) {
         // Admin endpoints: use admin_token only
         token = adminToken;
@@ -80,6 +89,9 @@ export async function apiRequest<T = any>(
       } else if (isCustomerEndpoint) {
         // Customer self-service endpoints devem usar somente token do cliente
         token = customerToken;
+        if (!token && import.meta.env.DEV) {
+          console.warn(`[API] ⚠️ Endpoint de customer (${endpoint}) sem token no localStorage!`);
+        }
       } else if (endpoint.startsWith('/api/orders')) {
         // Orders endpoints: use admin token when available (for admin panel)
         // Use customer token only for customer self-service

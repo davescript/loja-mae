@@ -47,11 +47,17 @@ export function useAuth() {
 
         if (response.success && response.data) {
           console.log('[AUTH] Autenticação bem-sucedida:', response.data.user.email);
-          if (typeof window !== 'undefined' && response.data.token) {
-            if (response.data.type === 'admin') {
-              localStorage.setItem('admin_token', response.data.token);
+          if (typeof window !== 'undefined') {
+            if (response.data.token) {
+              if (response.data.type === 'admin') {
+                localStorage.setItem('admin_token', response.data.token);
+                console.log('[AUTH] ✅ Token admin salvo no localStorage');
+              } else {
+                localStorage.setItem('customer_token', response.data.token);
+                console.log('[AUTH] ✅ Token customer salvo no localStorage:', response.data.token.substring(0, 20) + '...');
+              }
             } else {
-              localStorage.setItem('customer_token', response.data.token);
+              console.warn('[AUTH] ⚠️ Resposta de /api/auth/me não incluiu token!');
             }
           }
           setUser(response.data.user);
