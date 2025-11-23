@@ -61,7 +61,7 @@ export async function apiRequest<T = any>(
     const isCheckoutEndpoint = endpoint.startsWith('/api/stripe/create-intent');
     const isAuthLoginEndpoint = endpoint === '/api/auth/admin/login' || endpoint === '/api/auth/login';
     const isAuthMeEndpoint = endpoint.startsWith('/api/auth/me');
-    const isCustomerEndpoint = isCustomerSelfEndpoint || endpoint.startsWith('/api/favorites') || isCheckoutEndpoint;
+    const isCustomerEndpoint = isCustomerSelfEndpoint || endpoint.startsWith('/api/favorites') || isCheckoutEndpoint || endpoint.startsWith('/api/cart');
     
     let token: string | null = null;
     if (typeof window !== 'undefined') {
@@ -151,15 +151,10 @@ export async function apiRequest<T = any>(
       if (response.status === 401) {
         console.warn(`[API] 401 Unauthorized para ${endpoint}. Tentando refresh...`);
         
-        // Limpar tokens expirados
-        if (typeof window !== 'undefined') {
-          if (isCustomerEndpoint) {
-            localStorage.removeItem('customer_token');
-            localStorage.removeItem('token');
-          } else if (isAdminEndpoint) {
-            localStorage.removeItem('admin_token');
-          }
-        }
+        // NÃO limpar tokens imediatamente - pode ser um problema temporário de cookie
+        // O token pode ainda ser válido, apenas os cookies podem estar faltando
+        // Vamos tentar refresh primeiro antes de limpar
+        console.warn(`[API] 401 Unauthorized - mantendo token para tentar refresh`);
         
         // Tentar refresh uma vez (apenas para customer, admin não tem refresh)
         // O refresh funciona via cookies, então se não houver cookie, não funcionará

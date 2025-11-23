@@ -388,6 +388,27 @@ export default function CheckoutPage() {
 
   const addAddressMutation = useMutation({
     mutationFn: async (payload: any) => {
+      // Verificar se há token antes de fazer a requisição
+      const token = localStorage.getItem('customer_token') || localStorage.getItem('token');
+      if (!token) {
+        console.error('[CHECKOUT] ⚠️ Tentando salvar endereço sem token! Verificando autenticação...');
+        // Tentar obter token via /api/auth/me
+        try {
+          const authCheck = await apiRequest<{ user: any; token?: string }>('/api/auth/me', {
+            credentials: 'include',
+          });
+          if (authCheck.success && authCheck.data?.token) {
+            localStorage.setItem('customer_token', authCheck.data.token);
+            console.log('[CHECKOUT] ✅ Token obtido via /api/auth/me');
+          } else {
+            throw new Error('Não autenticado. Por favor, faça login novamente.');
+          }
+        } catch (authError: any) {
+          console.error('[CHECKOUT] ❌ Erro ao verificar autenticação:', authError);
+          throw new Error('Sessão expirada. Por favor, faça login novamente.');
+        }
+      }
+
       const response = await apiRequest<{ id: number; address: Address }>('/api/customers/addresses', {
         method: 'POST',
         headers: {

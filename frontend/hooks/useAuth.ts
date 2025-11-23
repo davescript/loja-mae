@@ -72,12 +72,11 @@ export function useAuth() {
         console.error('[AUTH] Erro ao verificar autenticação:', errorMessage);
 
         // Se for erro 401, usuário não está autenticado
+        // MAS não remover o token imediatamente - pode ser um problema temporário
         if (errorMessage.includes('Authentication') || errorMessage.includes('401') || errorMessage.includes('Not authenticated')) {
-          console.log('[AUTH] Usuário não autenticado');
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('customer_token');
-            localStorage.removeItem('admin_token');
-          }
+          console.log('[AUTH] Usuário não autenticado - mas mantendo token para tentar refresh');
+          // Não remover token imediatamente - pode ser um problema de cookie/refresh
+          // O token pode ainda ser válido, apenas os cookies podem estar faltando
           setUser(null);
         }
 
