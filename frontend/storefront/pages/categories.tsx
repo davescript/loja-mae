@@ -6,8 +6,13 @@ import { Search, Grid, List, ChevronRight, Package, X } from 'lucide-react';
 import { useState } from 'react';
 import type { Category } from '@shared/types';
 import BannerDisplay from '../components/app/BannerDisplay';
+import { useSEO } from '../../hooks/useSEO';
+import { generateCategorySEO } from '../../utils/seo';
 
 export default function CategoriesPage() {
+  // SEO
+  useSEO(generateCategorySEO('Categorias', 'Explore nossa coleção completa de produtos organizados por categorias'));
+
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 

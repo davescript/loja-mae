@@ -58,10 +58,16 @@ import AdminBlogPage from './admin/pages/blog';
 import AdminAnalyticsPage from './admin/pages/analytics';
 import AdminSettingsPage from './admin/pages/settings-advanced';
 import AdminContactMessagesPage from './admin/pages/contact-messages';
+import { GoogleAnalytics } from './components/GoogleAnalytics';
+
+// Google Analytics ID - pode ser configurado via variável de ambiente
+const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID || '';
 
 function App() {
   return (
-    <Routes>
+    <>
+      {GA_MEASUREMENT_ID && <GoogleAnalytics measurementId={GA_MEASUREMENT_ID} />}
+      <Routes>
       {/* Storefront Routes */}
       <Route path="/" element={<StorefrontLayout />}>
         <Route index element={<HomePage />} />
@@ -122,6 +128,7 @@ function App() {
         <Route index element={<Navigate to="/admin/dashboard" replace />} />
       </Route>
     </Routes>
+    </>
   );
 }
 

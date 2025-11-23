@@ -13,11 +13,16 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Package, Star, Truck, Shield } from 'lucide-react';
 import { useBanners } from '../../hooks/useBanners';
+import { useSEO } from '../../hooks/useSEO';
+import { generateHomeSEO } from '../../utils/seo';
 
 export default function HomePage() {
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | undefined>();
+
+  // SEO
+  useSEO(generateHomeSEO());
 
   const { data: bestSellers, isLoading: loadingBest } = useQuery({
     queryKey: ['products', 'best'],

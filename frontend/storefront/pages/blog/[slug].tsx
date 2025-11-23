@@ -2,6 +2,8 @@ import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { apiRequest } from '../../../utils/api'
 import type { BlogPost } from '@shared/types'
+import { useSEO } from '../../../hooks/useSEO'
+import { generateBlogPostSEO } from '../../../utils/seo'
 
 export default function BlogPostPage() {
   const { slug } = useParams()
@@ -13,6 +15,12 @@ export default function BlogPostPage() {
     },
     enabled: !!slug,
   })
+
+  // SEO
+  useSEO(data ? generateBlogPostSEO(data) : {
+    title: 'Post do Blog',
+    description: 'Post não encontrado',
+  });
 
   if (isLoading) return <div className="container mx-auto px-4 py-12">Carregando...</div>
   if (!data) return <div className="container mx-auto px-4 py-12">Post não encontrado</div>

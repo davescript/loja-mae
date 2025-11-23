@@ -12,6 +12,8 @@ import { useFavoritesStore } from '../../../store/favoritesStore';
 import { useToast } from '../../../admin/hooks/useToast';
 import { useAuth } from '../../../hooks/useAuth';
 import BannerDisplay from '../../components/app/BannerDisplay';
+import { useSEO } from '../../../hooks/useSEO';
+import { generateProductSEO } from '../../../utils/seo';
 
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -45,6 +47,12 @@ export default function ProductPage() {
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
   const location = useLocation();
+
+  // SEO
+  useSEO(product ? generateProductSEO(product) : {
+    title: 'Produto',
+    description: 'Produto não encontrado',
+  });
 
   if (isLoading) {
     return (
