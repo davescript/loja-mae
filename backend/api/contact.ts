@@ -28,30 +28,30 @@ export async function handleContactRoutes(request: Request, env: Env): Promise<R
 
     // Email para o administrador
     const adminEmail = 'davecdl@outlook.com';
-    
+
     // Obter IP e User-Agent para logs
     const ipAddress = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || 'unknown';
     const userAgent = request.headers.get('user-agent') || 'unknown';
-    
+
     // Sanitizar mensagem para evitar problemas com HTML
     const sanitizedMessage = validated.message
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#x27;');
-    
+
     const sanitizedName = validated.name
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#x27;');
-    
+
     const sanitizedSubject = validated.subject
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#x27;');
-    
+
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: #333; border-bottom: 2px solid #8B4513; padding-bottom: 10px;">
@@ -156,8 +156,8 @@ Esta mensagem foi enviada através do formulário de contato do website.
           );
         }
       }
-    } catch (emailError) {
-      const errorMsg = emailError instanceof Error ? emailError.message : String(emailError);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
       emailError = errorMsg;
       console.error('[CONTACT] Email error:', emailError);
       // Atualizar erro no banco
@@ -209,7 +209,7 @@ Esta mensagem foi enviada através do formulário de contato do website.
     );
   } catch (error) {
     console.error('[CONTACT] Form error:', error);
-    
+
     if (error instanceof z.ZodError) {
       return handleCORS(
         errorResponse(error.errors[0].message, 400),

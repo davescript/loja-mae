@@ -35,7 +35,7 @@ export async function handleOrdersRoutes(request: Request, env: Env): Promise<Re
       console.log(`[API] List orders - user type: ${user.type}, filters:`, validated);
 
       const result = await listOrders(db, validated);
-      
+
       // Log para debug
       console.log(`[API] Found ${result.items?.length || 0} orders, total: ${result.total}`);
 
@@ -91,7 +91,7 @@ export async function handleOrdersRoutes(request: Request, env: Env): Promise<Re
       }
 
       let resolvedAddress = shippingAddress;
-      let shippingAddressId = addressIdFromBody || null;
+      const shippingAddressId = addressIdFromBody || null;
 
       if (addressIdFromBody) {
         if (!order.customer_id) {
@@ -140,7 +140,7 @@ export async function handleOrdersRoutes(request: Request, env: Env): Promise<Re
       const user = await requireAuth(request, env);
       const id = parseInt(path.split('/').pop() || '0');
       const db = getDb(env);
-      
+
       // Verificar se deve incluir itens (query param include=items)
       const includeItems = url.searchParams.get('include') === 'items';
       const order = await getOrder(db, id, includeItems);

@@ -127,6 +127,7 @@ export async function requireAuth(
   }
 
   // Try to get token from header or cookie
+  // Priorizar header Authorization pois é mais confiável (não depende de cookies cross-domain)
   const authHeader = request.headers.get('Authorization');
   const cookieHeader = request.headers.get('Cookie');
   
@@ -134,14 +135,16 @@ export async function requireAuth(
   
   if (type === 'admin') {
     // Admin can use either Authorization header or cookie
+    // Priorizar header Authorization
     token = getTokenFromHeader(authHeader) || getTokenFromCookie(cookieHeader, 'admin_token');
   } else {
-    // Customer uses session_access cookie (set by login) or Authorization header
+    // Customer: priorizar Authorization header (token do localStorage)
+    // Fallback para cookie session_access se header não estiver disponível
     token = getTokenFromHeader(authHeader) || getTokenFromCookie(cookieHeader, 'session_access');
   }
 
   // Log para debug
-  console.log(`[AUTH] RequireAuth - type: ${type}, hasToken: ${!!token}, authHeader: ${!!authHeader}, cookieHeader: ${!!cookieHeader}`);
+  console.log(`[AUTH] RequireAuth - type: ${type}, hasToken: ${!!token}, authHeader: ${!!authHeader}, cookieHeader: ${!!cookieHeader}, tokenSource: ${getTokenFromHeader(authHeader) ? 'header' : 'cookie'}`);
 
   if (!token) {
     console.error('[AUTH] No token found in request');

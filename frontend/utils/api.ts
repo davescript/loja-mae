@@ -107,13 +107,23 @@ export async function apiRequest<T = any>(
 
     if (shouldAttachAuthHeader && token) {
       headers['Authorization'] = `Bearer ${token}`;
-      if (import.meta.env.DEV) console.log(`[API] Admin request para ${endpoint} com token`);
+      if (import.meta.env.DEV) {
+        console.log(`[API] Request para ${endpoint} com token`, { 
+          endpoint, 
+          hasToken: !!token, 
+          tokenLength: token.length,
+          tokenPreview: token.substring(0, 20) + '...'
+        });
+      }
+    } else if (isCustomerEndpoint && !token) {
+      // Log warning se endpoint de customer não tiver token
+      console.warn(`[API] ⚠️ Endpoint de customer sem token: ${endpoint}`);
     }
 
     const url = `${API_BASE_URL}${endpoint}`;
     // Only log in development
     if (import.meta.env.DEV) {
-      console.log('API Request:', url, { hasToken: !!token });
+      console.log('API Request:', url, { hasToken: !!token, isCustomerEndpoint });
     }
 
     let response = await fetch(url, {
@@ -127,17 +137,70 @@ export async function apiRequest<T = any>(
       
       // Handle specific status codes
       if (response.status === 401) {
-        // Tentar refresh uma vez
-        const refreshResp = await fetch(`${API_BASE_URL}/api/auth/refresh`, { method: 'POST', credentials: 'include', headers: { 'Cache-Control': 'no-store' } })
-        if (refreshResp.ok) {
-          response = await fetch(url, { ...options, headers, credentials: 'include' })
-          if (!response.ok) {
-            const d2 = await response.json().catch(() => ({})) as ApiResponse<T>
-            throw new AuthenticationError(d2.error || 'Não autenticado')
+        console.warn(`[API] 401 Unauthorized para ${endpoint}. Tentando refresh...`);
+        
+        // Limpar tokens expirados
+        if (typeof window !== 'undefined') {
+          if (isCustomerEndpoint) {
+            localStorage.removeItem('customer_token');
+            localStorage.removeItem('token');
+          } else if (isAdminEndpoint) {
+            localStorage.removeItem('admin_token');
           }
-        } else {
-          throw new AuthenticationError(data.error || 'Não autenticado')
         }
+        
+        // Tentar refresh uma vez (apenas para customer, admin não tem refresh)
+        // O refresh funciona via cookies, então se não houver cookie, não funcionará
+        if (isCustomerEndpoint || isAuthMeEndpoint) {
+          try {
+            console.log('[API] Tentando refresh do token via cookie...');
+            const refreshResp = await fetch(`${API_BASE_URL}/api/auth/refresh`, { 
+              method: 'POST', 
+              credentials: 'include', 
+              headers: { 'Cache-Control': 'no-store' } 
+            });
+            
+            if (refreshResp.ok) {
+              const refreshData = await refreshResp.json().catch(() => ({})) as ApiResponse<{ token?: string; refreshed?: boolean }>;
+              console.log('[API] Refresh bem-sucedido:', refreshData);
+              
+              // O refresh retorna um novo cookie, mas também podemos tentar obter um novo token via /api/auth/me
+              // Primeiro, tentar novamente a requisição original (o cookie foi atualizado)
+              response = await fetch(url, { ...options, headers, credentials: 'include' });
+              if (response.ok) {
+                return await response.json() as ApiResponse<T>;
+              }
+              
+              // Se ainda falhar, tentar obter novo token via /api/auth/me
+              try {
+                const meResp = await fetch(`${API_BASE_URL}/api/auth/me`, { 
+                  credentials: 'include',
+                  headers: { 'Cache-Control': 'no-store' }
+                });
+                if (meResp.ok) {
+                  const meData = await meResp.json().catch(() => ({})) as ApiResponse<{ token?: string; user?: any }>;
+                  if (meData.data?.token && typeof window !== 'undefined') {
+                    localStorage.setItem('customer_token', meData.data.token);
+                    headers['Authorization'] = `Bearer ${meData.data.token}`;
+                    response = await fetch(url, { ...options, headers, credentials: 'include' });
+                    if (response.ok) {
+                      return await response.json() as ApiResponse<T>;
+                    }
+                  }
+                }
+              } catch (meError) {
+                console.error('[API] Erro ao obter novo token via /api/auth/me:', meError);
+              }
+            } else {
+              console.warn('[API] Refresh falhou:', refreshResp.status);
+            }
+          } catch (refreshError) {
+            console.error('[API] Erro ao fazer refresh:', refreshError);
+          }
+        }
+        
+        // Se chegou aqui, refresh falhou ou não foi possível
+        throw new AuthenticationError(data.error || 'Não autenticado. Por favor, faça login novamente.');
       }
       
       if (response.status === 403) {

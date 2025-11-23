@@ -43,7 +43,7 @@ export async function createOrder(
     let priceCents = product.price_cents;
     let title = product.title;
     let sku = product.sku;
-    let imageUrl = product.images?.[0]?.image_url || null;
+    const imageUrl = product.images?.[0]?.image_url || null;
 
     // Check variant if provided
     if (item.variant_id) {

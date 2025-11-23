@@ -112,137 +112,137 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
       return handleCORS(await handleBlogRoutes(request, env), env, request);
     }
 
-        // Image serving (R2 proxy)
-        if (path.startsWith('/api/images')) {
-          const { handleImageRequest } = await import('./images');
-          return handleCORS(await handleImageRequest(request, env), env, request);
-        }
+    // Image serving (R2 proxy)
+    if (path.startsWith('/api/images')) {
+      const { handleImageRequest } = await import('./images');
+      return handleCORS(await handleImageRequest(request, env), env, request);
+    }
 
-        // Chat routes
-        if (path.startsWith('/api/chat')) {
-          return handleCORS(await handleChatRoutes(request, env), env, request);
-        }
+    // Chat routes
+    if (path.startsWith('/api/chat')) {
+      return handleCORS(await handleChatRoutes(request, env), env, request);
+    }
 
-        // Admin Dashboard routes
-        if (path.startsWith('/api/admin/dashboard')) {
-          const { handleGetDashboardStats, handleGetSalesChart, handleGetTopProducts } = await import('./admin/dashboard');
-          if (path === '/api/admin/dashboard/stats') {
-            return handleCORS(await handleGetDashboardStats(request, env), env, request);
-          }
-          if (path === '/api/admin/dashboard/sales-chart') {
-            return handleCORS(await handleGetSalesChart(request, env), env, request);
-          }
-          if (path === '/api/admin/dashboard/top-products') {
-            return handleCORS(await handleGetTopProducts(request, env), env, request);
-          }
-          if (path === '/api/admin/dashboard/top-customers') {
-            const { handleGetTopCustomers } = await import('./admin/dashboard');
-            return handleCORS(await handleGetTopCustomers(request, env), env, request);
-          }
-        }
+    // Admin Dashboard routes
+    if (path.startsWith('/api/admin/dashboard')) {
+      const { handleGetDashboardStats, handleGetSalesChart, handleGetTopProducts } = await import('./admin/dashboard');
+      if (path === '/api/admin/dashboard/stats') {
+        return handleCORS(await handleGetDashboardStats(request, env), env, request);
+      }
+      if (path === '/api/admin/dashboard/sales-chart') {
+        return handleCORS(await handleGetSalesChart(request, env), env, request);
+      }
+      if (path === '/api/admin/dashboard/top-products') {
+        return handleCORS(await handleGetTopProducts(request, env), env, request);
+      }
+      if (path === '/api/admin/dashboard/top-customers') {
+        const { handleGetTopCustomers } = await import('./admin/dashboard');
+        return handleCORS(await handleGetTopCustomers(request, env), env, request);
+      }
+    }
 
-        // Admin Analytics routes
-        if (path.startsWith('/api/admin/analytics')) {
-          const { handleGetAnalyticsStats, handleGetRevenueChart, handleGetAnalyticsTopProducts } = await import('./admin/analytics');
-          if (path === '/api/admin/analytics/stats') {
-            return handleCORS(await handleGetAnalyticsStats(request, env), env, request);
-          }
-          if (path === '/api/admin/analytics/revenue-chart') {
-            return handleCORS(await handleGetRevenueChart(request, env), env, request);
-          }
-          if (path === '/api/admin/analytics/top-products') {
-            return handleCORS(await handleGetAnalyticsTopProducts(request, env), env, request);
-          }
-        }
+    // Admin Analytics routes
+    if (path.startsWith('/api/admin/analytics')) {
+      const { handleGetAnalyticsStats, handleGetRevenueChart, handleGetAnalyticsTopProducts } = await import('./admin/analytics');
+      if (path === '/api/admin/analytics/stats') {
+        return handleCORS(await handleGetAnalyticsStats(request, env), env, request);
+      }
+      if (path === '/api/admin/analytics/revenue-chart') {
+        return handleCORS(await handleGetRevenueChart(request, env), env, request);
+      }
+      if (path === '/api/admin/analytics/top-products') {
+        return handleCORS(await handleGetAnalyticsTopProducts(request, env), env, request);
+      }
+    }
 
-        // Admin orders updates endpoint for polling
-        if (path === '/api/admin/orders/updates' && method === 'GET') {
-          const { handleGetOrderUpdates } = await import('./admin/orders/updates');
-          return handleCORS(await handleGetOrderUpdates(request, env), env, request);
-        }
+    // Admin orders updates endpoint for polling
+    if (path === '/api/admin/orders/updates' && method === 'GET') {
+      const { handleGetOrderUpdates } = await import('./admin/orders/updates');
+      return handleCORS(await handleGetOrderUpdates(request, env), env, request);
+    }
 
-        // Admin orders tracking endpoints
-        if (path.match(/^\/api\/admin\/orders\/\d+\/tracking$/)) {
-          const orderId = path.split('/')[4];
-          const { handleUpdateTracking, handleGetTrackingEvents } = await import('./admin/orders/tracking');
-          if (method === 'PUT') {
-            return handleCORS(await handleUpdateTracking(request, env, orderId), env, request);
-          }
-          if (method === 'GET') {
-            return handleCORS(await handleGetTrackingEvents(request, env, orderId), env, request);
-          }
-        }
+    // Admin orders tracking endpoints
+    if (path.match(/^\/api\/admin\/orders\/\d+\/tracking$/)) {
+      const orderId = path.split('/')[4];
+      const { handleUpdateTracking, handleGetTrackingEvents } = await import('./admin/orders/tracking');
+      if (method === 'PUT') {
+        return handleCORS(await handleUpdateTracking(request, env, orderId), env, request);
+      }
+      if (method === 'GET') {
+        return handleCORS(await handleGetTrackingEvents(request, env, orderId), env, request);
+      }
+    }
 
-        if (path.match(/^\/api\/admin\/orders\/\d+\/ship$/)) {
-          const orderId = path.split('/')[4];
-          const { handleMarkAsShipped } = await import('./admin/orders/tracking');
-          if (method === 'POST') {
-            return handleCORS(await handleMarkAsShipped(request, env, orderId), env, request);
-          }
-        }
+    if (path.match(/^\/api\/admin\/orders\/\d+\/ship$/)) {
+      const orderId = path.split('/')[4];
+      const { handleMarkAsShipped } = await import('./admin/orders/tracking');
+      if (method === 'POST') {
+        return handleCORS(await handleMarkAsShipped(request, env, orderId), env, request);
+      }
+    }
 
-        if (path.match(/^\/api\/admin\/orders\/\d+\/deliver$/)) {
-          const orderId = path.split('/')[4];
-          const { handleMarkAsDelivered } = await import('./admin/orders/tracking');
-          if (method === 'POST') {
-            return handleCORS(await handleMarkAsDelivered(request, env, orderId), env, request);
-          }
-        }
+    if (path.match(/^\/api\/admin\/orders\/\d+\/deliver$/)) {
+      const orderId = path.split('/')[4];
+      const { handleMarkAsDelivered } = await import('./admin/orders/tracking');
+      if (method === 'POST') {
+        return handleCORS(await handleMarkAsDelivered(request, env, orderId), env, request);
+      }
+    }
 
-        if (path.match(/^\/api\/admin\/orders\/\d+\/tracking-event$/)) {
-          const orderId = path.split('/')[4];
-          const { handleAddTrackingEvent } = await import('./admin/orders/tracking');
-          if (method === 'POST') {
-            return handleCORS(await handleAddTrackingEvent(request, env, orderId), env, request);
-          }
-        }
+    if (path.match(/^\/api\/admin\/orders\/\d+\/tracking-event$/)) {
+      const orderId = path.split('/')[4];
+      const { handleAddTrackingEvent } = await import('./admin/orders/tracking');
+      if (method === 'POST') {
+        return handleCORS(await handleAddTrackingEvent(request, env, orderId), env, request);
+      }
+    }
 
-        // Admin favorites routes
-        if (path.startsWith('/api/admin/favorites')) {
-          const { handleAdminFavoritesRoutes } = await import('./admin/favorites');
-          return handleCORS(await handleAdminFavoritesRoutes(request, env), env, request);
-        }
+    // Admin favorites routes
+    if (path.startsWith('/api/admin/favorites')) {
+      const { handleAdminFavoritesRoutes } = await import('./admin/favorites');
+      return handleCORS(await handleAdminFavoritesRoutes(request, env), env, request);
+    }
 
-        // Favorites routes (customer)
-        if (path.startsWith('/api/favorites')) {
-          return handleCORS(await handleFavoritesRoutes(request, env), env, request);
-        }
+    // Favorites routes (customer)
+    if (path.startsWith('/api/favorites')) {
+      return handleCORS(await handleFavoritesRoutes(request, env), env, request);
+    }
 
-        // Contact form route
-        if (path === '/api/contact' && method === 'POST') {
-          const { handleContactRoutes } = await import('./contact');
-          return handleCORS(await handleContactRoutes(request, env), env, request);
-        }
+    // Contact form route
+    if (path === '/api/contact' && method === 'POST') {
+      const { handleContactRoutes } = await import('./contact');
+      return handleCORS(await handleContactRoutes(request, env), env, request);
+    }
 
-        // Admin contact messages routes
-        if (path.startsWith('/api/admin/contact-messages')) {
-          const { handleContactMessagesRoutes } = await import('./admin/contact-messages');
-          return handleCORS(await handleContactMessagesRoutes(request, env), env, request);
-        }
+    // Admin contact messages routes
+    if (path.startsWith('/api/admin/contact-messages')) {
+      const { handleContactMessagesRoutes } = await import('./admin/contact-messages');
+      return handleCORS(await handleContactMessagesRoutes(request, env), env, request);
+    }
 
-        // Admin users routes
-        if (path.startsWith('/api/admin/users')) {
-          const { handleAdminUsersRoutes } = await import('./admin/users');
-          return handleCORS(await handleAdminUsersRoutes(request, env), env, request);
-        }
+    // Admin users routes
+    if (path.startsWith('/api/admin/users')) {
+      const { handleAdminUsersRoutes } = await import('./admin/users');
+      return handleCORS(await handleAdminUsersRoutes(request, env), env, request);
+    }
 
-        // Admin campaigns routes
-        if (path.startsWith('/api/admin/campaigns')) {
-          const { handleCampaignsRoutes } = await import('./admin/campaigns');
-          return handleCORS(await handleCampaignsRoutes(request, env), env, request);
-        }
+    // Admin campaigns routes
+    if (path.startsWith('/api/admin/campaigns')) {
+      const { handleCampaignsRoutes } = await import('./admin/campaigns');
+      return handleCORS(await handleCampaignsRoutes(request, env), env, request);
+    }
 
-        // Admin collections routes
-        if (path.startsWith('/api/admin/collections')) {
-          const { handleAdminCollectionsRoutes } = await import('./admin/collections');
-          return handleCORS(await handleAdminCollectionsRoutes(request, env), env, request);
-        }
+    // Admin collections routes
+    if (path.startsWith('/api/admin/collections')) {
+      const { handleAdminCollectionsRoutes } = await import('./admin/collections');
+      return handleCORS(await handleAdminCollectionsRoutes(request, env), env, request);
+    }
 
-        // Collections routes (public)
-        if (path.startsWith('/api/collections')) {
-          const { handleCollectionsRoutes } = await import('./collections');
-          return handleCORS(await handleCollectionsRoutes(request, env), env, request);
-        }
+    // Collections routes (public)
+    if (path.startsWith('/api/collections')) {
+      const { handleCollectionsRoutes } = await import('./collections');
+      return handleCORS(await handleCollectionsRoutes(request, env), env, request);
+    }
 
     // Health check
     if (path === '/api/health') {

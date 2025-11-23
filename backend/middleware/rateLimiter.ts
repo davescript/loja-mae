@@ -116,16 +116,16 @@ export async function rateLimitMiddleware(
 
   switch (type) {
     case 'ip':
-      identifier = request.headers.get('CF-Connecting-IP') || 
-                   request.headers.get('X-Forwarded-For') || 
-                   'unknown';
+      identifier = request.headers.get('CF-Connecting-IP') ||
+        request.headers.get('X-Forwarded-For') ||
+        'unknown';
       limits = {
         windowMs: LIMITS.RATE_LIMIT.IP.WINDOW_MS,
         maxRequests: LIMITS.RATE_LIMIT.IP.MAX_REQUESTS,
       };
       break;
 
-    case 'customer':
+    case 'customer': {
       // Extrair customer_id do JWT
       const customerToken = request.headers.get('Authorization')?.replace('Bearer ', '');
       if (!customerToken) {
@@ -139,8 +139,9 @@ export async function rateLimitMiddleware(
         maxRequests: LIMITS.RATE_LIMIT.CUSTOMER.MAX_REQUESTS,
       };
       break;
+    }
 
-    case 'admin':
+    case 'admin': {
       const adminToken = request.headers.get('Authorization')?.replace('Bearer ', '');
       if (!adminToken) {
         return new Response(
@@ -154,6 +155,7 @@ export async function rateLimitMiddleware(
         maxRequests: LIMITS.RATE_LIMIT.ADMIN.MAX_REQUESTS,
       };
       break;
+    }
 
     case 'critical':
       identifier = request.headers.get('CF-Connecting-IP') || 'unknown';
@@ -187,7 +189,7 @@ export async function rateLimitMiddleware(
 
   if (!result.allowed) {
     console.warn(`[RATE_LIMIT] Rate limit exceeded for ${type}: ${identifier}`);
-    
+
     return new Response(
       JSON.stringify({
         success: false,
