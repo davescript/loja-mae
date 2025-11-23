@@ -8,8 +8,9 @@ import { useToast } from '../admin/hooks/useToast';
 type AdminUser = {
   id: number;
   email: string;
-  name: string;
+  name?: string | null;
   role: string;
+  type?: 'admin';
 };
 
 type LoginCredentials = {

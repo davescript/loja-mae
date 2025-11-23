@@ -269,11 +269,20 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
         '7d'
       );
 
+      // Get admin name if available
+      const adminWithName = await executeOne<{ name: string | null }>(
+        db,
+        'SELECT name FROM admins WHERE id = ?',
+        [adminRecord.id]
+      );
+      const adminName = adminWithName?.name || adminRecord.email.split('@')[0];
+
       const response = successResponse(
         {
           admin: {
             id: adminRecord.id,
             email: adminRecord.email,
+            name: adminName,
             role: adminRecord.role,
           },
           token, // Also return token in JSON for API usage
@@ -281,7 +290,9 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
         'Admin login successful'
       );
 
-      response.headers.set('Set-Cookie', setAuthCookie(token, 'admin_token', 7 * 24 * 60 * 60));
+      // Set cookie with proper configuration
+      const cookieValue = setAuthCookie(token, 'admin_token', 7 * 24 * 60 * 60);
+      response.headers.set('Set-Cookie', cookieValue);
 
       return response;
     }
@@ -515,7 +526,7 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
           const admin = await executeOne<{
             id: number;
             email: string;
-            name: string;
+            name: string | null;
             role: string;
             is_active: number;
           }>(db, 'SELECT id, email, name, role, is_active FROM admins WHERE id = ?', [payload.id]);
@@ -530,7 +541,20 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
             '15m'
           );
 
-          const res = successResponse({ user: admin, type: 'admin', token: renewedAccess });
+          // Build name from email if name is null
+          const adminName = admin.name || admin.email.split('@')[0];
+
+          const res = successResponse({ 
+            user: {
+              id: admin.id,
+              email: admin.email,
+              name: adminName,
+              role: admin.role,
+              type: 'admin' as const,
+            }, 
+            type: 'admin', 
+            token: renewedAccess 
+          });
           res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
           res.headers.set('Pragma', 'no-cache');
           res.headers.set('Expires', '0');
