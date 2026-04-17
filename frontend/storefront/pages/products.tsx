@@ -6,11 +6,12 @@ import type { Product, Category } from '@shared/types';
 import ProductCard from '../components/app/ProductCard';
 import QuickViewModal from '../components/app/QuickViewModal';
 import { motion } from 'framer-motion';
-import { Search, Filter, Grid, List, SlidersHorizontal, X, ChevronDown } from 'lucide-react';
+import { Search, Grid, List, SlidersHorizontal, X, ChevronDown, ChevronUp } from 'lucide-react';
 import BannerDisplay from '../components/app/BannerDisplay';
 
 export default function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  // Mobile: always grid. Desktop: user can toggle.
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
@@ -22,7 +23,6 @@ export default function ProductsPage() {
   const categoryId = searchParams.get('category_id');
   const categorySlug = searchParams.get('category');
 
-  // Fetch products
   const { data: productsData, isLoading: loadingProducts } = useQuery({
     queryKey: ['products', page, search, categoryId, categorySlug],
     queryFn: async () => {
@@ -32,35 +32,29 @@ export default function ProductsPage() {
           pageSize: '20',
           status: 'active',
         });
-        
         if (search) params.append('search', search);
         if (categoryId) params.append('category_id', categoryId);
         if (categorySlug) params.append('category', categorySlug);
-        
-        // Always include images in product list
         params.append('include', 'images');
-
         const response = await apiRequest<{ items: Product[]; total: number }>(
           `/api/products?${params.toString()}`
         );
         return response.data || { items: [], total: 0 };
-      } catch (error) {
-        console.error('Error loading products:', error);
+      } catch {
         return { items: [], total: 0 };
       }
     },
     retry: 1,
-    staleTime: 0, // Sempre buscar dados atualizados do servidor
+    staleTime: 0,
   });
 
-  // Fetch categories for filter
   const { data: categories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
       try {
         const response = await apiRequest<{ items: Category[] }>('/api/categories?status=active');
         return response.data?.items || [];
-      } catch (error) {
+      } catch {
         return [];
       }
     },
@@ -78,163 +72,140 @@ export default function ProductsPage() {
     setSearchParams(newParams);
   };
 
-  const handleAddToCart = (product: Product) => {
-    // Esta função é chamada pelo ProductCard quando o item é adicionado
-    // O ProductCard já implementa a lógica de adicionar ao carrinho via useCartStore
-  };
-
   const totalPages = productsData?.total ? Math.ceil(productsData.total / 20) : 1;
+
+  // Grid classes: mobile always 2-col, sm 2-col, md 3-col, lg 4-col
+  const gridClass = viewMode === 'grid'
+    ? 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4'
+    : 'grid grid-cols-1 gap-3';
 
   return (
     <div className="min-h-screen pb-20">
-      {/* Hero Section - Compacto */}
-      <section className="relative py-6 md:py-8 mb-6">
-        <div className="container mx-auto px-4 relative">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-          >
-            <div className="flex-1">
-              <h1 className="text-xl md:text-2xl font-heading font-bold mb-2">
-                Nossos Produtos
-              </h1>
-              <p className="text-sm text-muted-foreground hidden md:block">
-                Descubra nossa seleção completa de acessórios premium
-              </p>
-            </div>
-            
-            {/* Search Bar - Compacta */}
-            <form onSubmit={handleSearch} className="flex-1 max-w-md">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type="search"
-                  value={localSearch}
-                  onChange={(e) => setLocalSearch(e.target.value)}
-                  placeholder="Buscar produtos..."
-                  className="input pl-10 pr-10 py-2 text-sm bg-white/80 backdrop-blur-sm border focus:border-primary"
-                />
-                {localSearch && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLocalSearch('');
-                      const newParams = new URLSearchParams(searchParams);
-                      newParams.delete('search');
-                      setSearchParams(newParams);
-                    }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            </form>
-          </motion.div>
+
+      {/* ── Header bar ───────────────────────────────────────────────── */}
+      <div className="flex items-center gap-2 py-3 sm:py-4 mb-2">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-lg sm:text-2xl font-heading font-bold truncate">Nossos Produtos</h1>
+          {productsData?.total != null && (
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {productsData.total} {productsData.total === 1 ? 'produto' : 'produtos'}
+            </p>
+          )}
         </div>
-      </section>
 
-      <div className="container mx-auto px-4 mb-8">
-        <BannerDisplay position="category" variant="full" />
-      </div>
-
-      {/* Controls Bar */}
-      <div className="container mx-auto px-4 mb-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              onClick={() => setFiltersOpen(!filtersOpen)}
-              className={`flex items-center gap-2 h-11 px-3 sm:px-4 rounded-xl border font-medium text-sm transition-all ${
-                filtersOpen ? 'bg-primary text-primary-foreground border-primary' : 'bg-white border-border hover:border-primary'
-              }`}
-            >
-              <SlidersHorizontal className="w-4 h-4 flex-shrink-0" />
-              <span>Filtros</span>
-            </button>
-            <span className="text-sm text-muted-foreground whitespace-nowrap">
-              {productsData?.total || 0} {productsData?.total === 1 ? 'produto' : 'produtos'}
-            </span>
+        {/* Search — full row on mobile */}
+        <form onSubmit={handleSearch} className="flex-1 max-w-xs hidden sm:block">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="search"
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              placeholder="Buscar..."
+              className="input pl-9 pr-8 py-2 text-sm w-full"
+            />
+            {localSearch && (
+              <button type="button" onClick={() => { setLocalSearch(''); const p = new URLSearchParams(searchParams); p.delete('search'); setSearchParams(p); }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground">
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
+        </form>
 
-          {/* View Toggle */}
-          <div className="flex items-center bg-muted rounded-xl p-1 gap-1">
+        {/* Controls: filter + view toggle (toggle hidden on mobile) */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={() => setFiltersOpen(!filtersOpen)}
+            className={`flex items-center gap-1.5 h-10 px-3 rounded-xl border text-sm font-medium transition-all ${
+              filtersOpen ? 'bg-primary text-primary-foreground border-primary' : 'bg-white border-border'
+            }`}
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            <span className="hidden xs:inline">Filtros</span>
+            {filtersOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </button>
+
+          {/* View toggle — desktop only */}
+          <div className="hidden sm:flex items-center bg-muted rounded-xl p-1 gap-0.5">
             <button
               onClick={() => setViewMode('grid')}
-              className={`w-11 h-9 flex items-center justify-center rounded-lg transition-all ${
-                viewMode === 'grid'
-                  ? 'bg-white shadow text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
+              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all ${
+                viewMode === 'grid' ? 'bg-white shadow text-primary' : 'text-muted-foreground'
               }`}
               aria-label="Grelha"
             >
-              <Grid className="w-5 h-5" />
+              <Grid className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`w-11 h-9 flex items-center justify-center rounded-lg transition-all ${
-                viewMode === 'list'
-                  ? 'bg-white shadow text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
+              className={`w-9 h-8 flex items-center justify-center rounded-lg transition-all ${
+                viewMode === 'list' ? 'bg-white shadow text-primary' : 'text-muted-foreground'
               }`}
               aria-label="Lista"
             >
-              <List className="w-5 h-5" />
+              <List className="w-4 h-4" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* Filters Sidebar */}
+      {/* Search bar — full width on mobile */}
+      <form onSubmit={handleSearch} className="sm:hidden mb-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="search"
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            placeholder="Buscar produtos..."
+            className="input pl-9 pr-8 py-2.5 text-sm w-full bg-white"
+          />
+          {localSearch && (
+            <button type="button" onClick={() => { setLocalSearch(''); const p = new URLSearchParams(searchParams); p.delete('search'); setSearchParams(p); }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </form>
+
+      {/* ── Filters panel ───────────────────────────────────────────── */}
       <motion.div
         initial={false}
-        animate={{ 
-          height: filtersOpen ? 'auto' : 0,
-          opacity: filtersOpen ? 1 : 0
-        }}
-        className="container mx-auto px-4 mb-6 overflow-hidden"
+        animate={{ height: filtersOpen ? 'auto' : 0, opacity: filtersOpen ? 1 : 0 }}
+        className="overflow-hidden mb-3"
       >
-        <div className="glass-card p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Category Filter */}
+        <div className="glass-card p-4 sm:p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6">
             <div>
-              <label className="block text-sm font-semibold mb-2">Categoria</label>
+              <label className="block text-xs sm:text-sm font-semibold mb-1.5">Categoria</label>
               <select
                 value={categoryId || ''}
                 onChange={(e) => {
-                  const newParams = new URLSearchParams(searchParams);
-                  if (e.target.value) {
-                    newParams.set('category_id', e.target.value);
-                  } else {
-                    newParams.delete('category_id');
-                  }
-                  newParams.delete('category');
-                  newParams.set('page', '1');
-                  setSearchParams(newParams);
+                  const p = new URLSearchParams(searchParams);
+                  e.target.value ? p.set('category_id', e.target.value) : p.delete('category_id');
+                  p.delete('category'); p.set('page', '1');
+                  setSearchParams(p);
                 }}
-                className="input w-full"
+                className="input w-full text-sm"
               >
                 <option value="">Todas as categorias</option>
                 {categories?.map((cat) => (
-                  <option key={cat.id} value={cat.id.toString()}>
-                    {cat.name}
-                  </option>
+                  <option key={cat.id} value={cat.id.toString()}>{cat.name}</option>
                 ))}
               </select>
             </div>
-
-            {/* Sort Filter */}
             <div>
-              <label className="block text-sm font-semibold mb-2">Ordenar por</label>
+              <label className="block text-xs sm:text-sm font-semibold mb-1.5">Ordenar por</label>
               <select
                 value={searchParams.get('sortBy') || 'created_at'}
                 onChange={(e) => {
-                  const newParams = new URLSearchParams(searchParams);
-                  newParams.set('sortBy', e.target.value);
-                  newParams.set('page', '1');
-                  setSearchParams(newParams);
+                  const p = new URLSearchParams(searchParams);
+                  p.set('sortBy', e.target.value); p.set('page', '1');
+                  setSearchParams(p);
                 }}
-                className="input w-full"
+                className="input w-full text-sm"
               >
                 <option value="created_at">Mais recentes</option>
                 <option value="title">Nome A-Z</option>
@@ -242,16 +213,9 @@ export default function ProductsPage() {
                 <option value="price_cents_desc">Maior preço</option>
               </select>
             </div>
-
-            {/* Clear Filters */}
             <div className="flex items-end">
-              <button
-                onClick={() => {
-                  setSearchParams({});
-                  setLocalSearch('');
-                }}
-                className="btn btn-ghost w-full"
-              >
+              <button onClick={() => { setSearchParams({}); setLocalSearch(''); }}
+                className="btn btn-ghost w-full text-sm h-10">
                 Limpar filtros
               </button>
             </div>
@@ -259,134 +223,109 @@ export default function ProductsPage() {
         </div>
       </motion.div>
 
-      {/* Products Grid/List */}
-      <div className="container mx-auto px-4">
-        {loadingProducts ? (
-          <div className={`grid gap-3 sm:gap-4 ${
-            viewMode === 'grid'
-              ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
-              : 'grid-cols-1'
-          }`}>
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className={`card animate-pulse ${viewMode === 'grid' ? 'h-64 sm:h-80' : 'h-28'}`} />
-            ))}
-          </div>
-        ) : productsData?.items && productsData.items.length > 0 ? (
-          <>
-            <div className={`grid gap-3 sm:gap-4 ${
-              viewMode === 'grid'
-                ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
-                : 'grid-cols-1'
-            }`}>
-              {productsData.items.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  listView={viewMode === 'list'}
-                  onQuickView={(prod) => {
-                    setSelectedProduct(prod);
-                    setQuickOpen(true);
-                    setTimeout(() => {
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }, 100);
-                  }}
-                  onAddToCart={handleAddToCart}
-                />
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-12">
-                <button
-                  onClick={() => {
-                    const newParams = new URLSearchParams(searchParams);
-                    newParams.set('page', Math.max(1, page - 1).toString());
-                    setSearchParams(newParams);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  disabled={page === 1}
-                  className="btn btn-muted disabled:opacity-50"
-                >
-                  Anterior
-                </button>
-                
-                <div className="flex gap-1">
-                  {[...Array(Math.min(5, totalPages))].map((_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (page <= 3) {
-                      pageNum = i + 1;
-                    } else if (page >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = page - 2 + i;
-                    }
-                    
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => {
-                          const newParams = new URLSearchParams(searchParams);
-                          newParams.set('page', pageNum.toString());
-                          setSearchParams(newParams);
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }}
-                        className={`w-11 h-11 rounded-lg font-semibold transition-all text-sm ${
-                          page === pageNum
-                            ? 'bg-primary text-primary-foreground shadow-md'
-                            : 'bg-muted hover:bg-muted/80'
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <button
-                  onClick={() => {
-                    const newParams = new URLSearchParams(searchParams);
-                    newParams.set('page', Math.min(totalPages, page + 1).toString());
-                    setSearchParams(newParams);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  disabled={page === totalPages}
-                  className="btn btn-muted disabled:opacity-50"
-                >
-                  Próxima
-                </button>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="card p-12 text-center">
-            <Search className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-xl font-semibold mb-2">Nenhum produto encontrado</h3>
-            <p className="text-muted-foreground mb-6">
-              {search ? 'Tente buscar com outros termos ou limpe os filtros' : 'Nenhum produto disponível no momento'}
-            </p>
-            {search && (
-              <button
-                onClick={() => {
-                  setSearchParams({});
-                  setLocalSearch('');
-                }}
-                className="btn btn-primary"
-              >
-                Limpar busca
-              </button>
-            )}
-          </div>
-        )}
+      <div className="container mx-auto px-4 mb-8">
+        <BannerDisplay position="category" variant="full" />
       </div>
 
-      <QuickViewModal 
-        open={quickOpen} 
-        onOpenChange={setQuickOpen} 
-        product={selectedProduct} 
-      />
+      {/* ── Products ─────────────────────────────────────────────────── */}
+      {loadingProducts ? (
+        <div className={gridClass}>
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="card animate-pulse h-56 sm:h-72 rounded-xl" />
+          ))}
+        </div>
+      ) : productsData?.items && productsData.items.length > 0 ? (
+        <>
+          <div className={gridClass}>
+            {productsData.items.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                listView={viewMode === 'list'}
+                onQuickView={(prod) => {
+                  setSelectedProduct(prod);
+                  setQuickOpen(true);
+                  setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
+                }}
+              />
+            ))}
+          </div>
+
+          {/* ── Pagination ──────────────────────────────────────────── */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-10 flex-wrap">
+              <button
+                onClick={() => {
+                  const p = new URLSearchParams(searchParams);
+                  p.set('page', Math.max(1, page - 1).toString());
+                  setSearchParams(p);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                disabled={page === 1}
+                className="h-11 px-4 rounded-xl bg-muted font-medium text-sm disabled:opacity-40 hover:bg-muted/80 transition-colors"
+              >
+                ← Anterior
+              </button>
+
+              <div className="flex gap-1.5">
+                {[...Array(Math.min(5, totalPages))].map((_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 5) pageNum = i + 1;
+                  else if (page <= 3) pageNum = i + 1;
+                  else if (page >= totalPages - 2) pageNum = totalPages - 4 + i;
+                  else pageNum = page - 2 + i;
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => {
+                        const p = new URLSearchParams(searchParams);
+                        p.set('page', pageNum.toString());
+                        setSearchParams(p);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className={`w-11 h-11 rounded-xl font-semibold text-sm transition-all ${
+                        page === pageNum
+                          ? 'bg-primary text-primary-foreground shadow-md'
+                          : 'bg-muted hover:bg-muted/80'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={() => {
+                  const p = new URLSearchParams(searchParams);
+                  p.set('page', Math.min(totalPages, page + 1).toString());
+                  setSearchParams(p);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                disabled={page === totalPages}
+                className="h-11 px-4 rounded-xl bg-muted font-medium text-sm disabled:opacity-40 hover:bg-muted/80 transition-colors"
+              >
+                Próxima →
+              </button>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="card p-10 text-center">
+          <Search className="w-14 h-14 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-semibold mb-2">Nenhum produto encontrado</h3>
+          <p className="text-muted-foreground text-sm mb-6">
+            {search ? 'Tente outros termos ou limpe os filtros' : 'Nenhum produto disponível'}
+          </p>
+          {search && (
+            <button onClick={() => { setSearchParams({}); setLocalSearch(''); }} className="btn btn-primary">
+              Limpar busca
+            </button>
+          )}
+        </div>
+      )}
+
+      <QuickViewModal open={quickOpen} onOpenChange={setQuickOpen} product={selectedProduct} />
     </div>
   );
 }

@@ -270,24 +270,21 @@ export default function ProductCard({ product, onQuickView, onAddToCart, listVie
             </>
           )}
 
-          {/* Quick View Button - sempre visível em mobile, hover em desktop */}
-          <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
+          {/* Quick View Button — desktop hover only */}
+          <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-20 hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              onClick={(e) => {
-                e.preventDefault();
-                onQuickView?.(product);
-              }}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg hover:bg-white transition-colors"
+              onClick={(e) => { e.preventDefault(); onQuickView?.(product); }}
+              className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg hover:bg-white transition-colors"
               aria-label="Visualização rápida"
             >
-              <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-foreground" />
+              <Eye className="w-4 h-4 text-foreground" />
             </motion.button>
           </div>
 
-          {/* Favorite Button - sempre visível em mobile, hover em desktop */}
-          <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
+          {/* Favorite Button — desktop hover only */}
+          <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-20 hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity duration-200">
 
             <motion.button
               whileHover={{ scale: 1.1 }}
@@ -354,66 +351,60 @@ export default function ProductCard({ product, onQuickView, onAddToCart, listVie
         )}
 
         {/* Content */}
-        <div className="p-3 sm:p-4 flex-1 flex flex-col text-center">
-          {/* Category Badge */}
+        <div className="p-2.5 sm:p-4 flex-1 flex flex-col">
+          {/* Category */}
           {product.category && (
-            <span className="text-[10px] sm:text-xs text-muted-foreground mb-1 uppercase tracking-wide">
+            <span className="text-[9px] sm:text-xs text-muted-foreground mb-0.5 uppercase tracking-wide block truncate">
               {product.category.name}
             </span>
           )}
 
           <h3
-            className="font-bold text-sm sm:text-base mb-1 sm:mb-2 line-clamp-2 group-hover:text-primary transition-colors cursor-pointer leading-tight"
+            className="font-bold text-xs sm:text-sm leading-tight line-clamp-2 group-hover:text-primary transition-colors cursor-pointer mb-1.5 sm:mb-2"
             onClick={() => onQuickView?.(product)}
           >
             {product.title}
           </h3>
 
-          {/* Price */}
-          <div className="mb-2 sm:mb-3 flex items-baseline justify-center gap-2">
-            <span className="text-base sm:text-xl font-bold text-foreground">
-              {price}
-            </span>
+          {/* Stars — hidden on small mobile to save space */}
+          <div className="hidden sm:flex gap-0.5 mb-2">
+            {[...Array(5)].map((_, i) => (
+              <span key={i} className="text-yellow-400 text-xs">★</span>
+            ))}
           </div>
 
-          {/* Rating */}
-          <div className="flex items-center justify-center gap-1 mb-2 sm:mb-3">
-            <div className="flex gap-0.5">
-              {[...Array(5)].map((_, i) => (
-                <span key={i} className="text-yellow-400 text-xs sm:text-sm">★</span>
-              ))}
-            </div>
-          </div>
-
-          {/* Actions */}
+          {/* Price + Add button */}
           <div className="mt-auto">
+            <div className="flex items-center justify-between gap-1 mb-2">
+              <span className="text-sm sm:text-lg font-bold text-foreground leading-none">
+                {price}
+              </span>
+              {/* Stock badge — desktop only */}
+              {product.stock_quantity !== undefined && product.stock_quantity <= 0 && (
+                <span className="hidden sm:inline text-[10px] text-destructive font-medium">Esgotado</span>
+              )}
+            </div>
+
             <motion.button
               type="button"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileTap={{ scale: 0.96 }}
               onClick={handleAddToCart}
-              className="w-full btn btn-primary flex items-center justify-center gap-1 sm:gap-2 shadow-md hover:shadow-lg min-h-[44px]"
+              className={`w-full flex items-center justify-center gap-1.5 rounded-xl font-semibold transition-all min-h-[42px] text-xs sm:text-sm ${
+                product.stock_quantity !== undefined && product.stock_quantity <= 0
+                  ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                  : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md active:scale-95'
+              }`}
               disabled={product.stock_quantity !== undefined && product.stock_quantity <= 0}
             >
-              <ShoppingCart className="w-4 h-4 flex-shrink-0" />
-              <span className="text-xs sm:text-sm font-semibold">
-                {product.stock_quantity !== undefined && product.stock_quantity <= 0
-                  ? 'Esgotado'
-                  : <><span className="hidden sm:inline">Adicionar ao </span>Carrinho</>}
+              <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="hidden sm:inline">
+                {product.stock_quantity !== undefined && product.stock_quantity <= 0 ? 'Esgotado' : 'Adicionar'}
+              </span>
+              <span className="sm:hidden">
+                {product.stock_quantity !== undefined && product.stock_quantity <= 0 ? 'Esg.' : 'Carrinho'}
               </span>
             </motion.button>
           </div>
-
-          {/* Stock indicator */}
-          {product.stock_quantity !== undefined && (
-            <div className="mt-2 text-[10px] sm:text-xs text-center">
-              {product.stock_quantity > 0 ? (
-                <span className="text-green-600 font-medium">✓ Em estoque</span>
-              ) : (
-                <span className="text-destructive font-medium">✗ Esgotado</span>
-              )}
-            </div>
-          )}
         </div>
       </div>
     </motion.div>
