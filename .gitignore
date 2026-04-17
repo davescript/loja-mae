@@ -43,3 +43,8 @@ lerna-debug.log*
 # Cloudflare
 .wrangler/
 SECRETS_INFO.txt
+
+# macOS metadata
+.DS_Store
+._*
+._.DS_Store

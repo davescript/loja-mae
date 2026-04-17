@@ -23,6 +23,8 @@ import CheckoutSuccessPage from './storefront/pages/checkout/success';
 import CheckoutFailedPage from './storefront/pages/checkout/failed';
 import LoginPage from './storefront/pages/login';
 import RegisterPage from './storefront/pages/register';
+import ForgotPasswordPage from './storefront/pages/forgot-password';
+import ResetPasswordPage from './storefront/pages/reset-password';
 import AccountPage from './storefront/pages/account';
 import FavoritesPage from './storefront/pages/favorites';
 import OrdersPage from './storefront/pages/orders';
@@ -89,6 +91,8 @@ function App() {
         <Route path="checkout/failed" element={<CheckoutFailedPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
+        <Route path="forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="reset-password" element={<ResetPasswordPage />} />
         <Route path="favorites" element={<FavoritesPage />} />
         <Route path="orders" element={<OrdersPage />} />
         

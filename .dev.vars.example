@@ -6,3 +6,6 @@ STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key_here
 STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
 STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key_here
 ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+APP_URL=http://localhost:5173
+FROM_EMAIL=noreply@leiasabores.pt
+FROM_NAME=Leiasabores

@@ -16,7 +16,10 @@ export interface Env {
   APPLE_TEAM_ID?: string;
   APPLE_KEY_ID?: string;
   APPLE_PRIVATE_KEY?: string;
+  MICROSOFT_CLIENT_ID?: string;
+  MICROSOFT_CLIENT_SECRET?: string;
   WORKERS_SUBDOMAIN?: string;
   WORKER_NAME?: string;
+  APP_URL?: string;
 }
 

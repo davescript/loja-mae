@@ -288,3 +288,50 @@ export function generateOrderConfirmationEmail(order: {
 </html>
   `.trim();
 }
+
+export function generatePasswordResetEmail(name: string, resetUrl: string): string {
+  return `
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recuperação de Senha</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #fdf6f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #3c2a1c; }
+    .wrapper { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+    .header { background: #24160b; padding: 32px; text-align: center; }
+    .header h1 { color: #f0cdae; margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 1px; }
+    .body { padding: 40px 32px; }
+    .body p { line-height: 1.7; color: #5a3e2b; margin: 0 0 16px; }
+    .btn { display: inline-block; margin: 24px 0; padding: 14px 32px; background: #24160b; color: #f0cdae !important; text-decoration: none; border-radius: 50px; font-weight: 700; font-size: 16px; }
+    .notice { background: #fdf6f0; border-left: 4px solid #f0cdae; padding: 14px 18px; border-radius: 8px; font-size: 13px; color: #a98367; }
+    .footer { background: #fdf6f0; padding: 24px 32px; text-align: center; font-size: 12px; color: #a98367; border-top: 1px solid #edd9c9; }
+    .url-fallback { word-break: break-all; font-size: 12px; color: #a98367; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <h1>Leiasabores</h1>
+    </div>
+    <div class="body">
+      <p>Olá, <strong>${name}</strong>!</p>
+      <p>Recebemos um pedido para redefinir a senha da sua conta. Clique no botão abaixo para criar uma nova senha:</p>
+      <div style="text-align:center;">
+        <a href="${resetUrl}" class="btn">Redefinir Minha Senha</a>
+      </div>
+      <div class="notice">
+        Este link é válido por <strong>30 minutos</strong>. Se você não solicitou a recuperação de senha, pode ignorar este email com segurança.
+      </div>
+      <p class="url-fallback">Se o botão não funcionar, copie e cole este link no navegador:<br>${resetUrl}</p>
+    </div>
+    <div class="footer">
+      <p>Leiasabores &bull; Acessórios para Confeitaria</p>
+      <p>Este email foi enviado automaticamente. Não responda a este endereço.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}

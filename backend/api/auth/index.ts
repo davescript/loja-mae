@@ -10,7 +10,7 @@ import {
 import { registerSchema, loginSchema } from '../../validators/customers';
 import { setAuthCookie, clearAuthCookie, hashPassword, hashRefreshToken, compareRefreshTokenHash } from '../../utils/auth';
 import { signToken } from '../../utils/jwt';
-import { sendEmail } from '../../utils/email';
+import { sendEmail, generatePasswordResetEmail } from '../../utils/email';
 
 export async function handleAuthRoutes(request: Request, env: Env): Promise<Response> {
   try {
@@ -166,6 +166,77 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
       });
 
       return response;
+    }
+
+    // Forgot Password: POST /api/auth/forgot-password
+    if (method === 'POST' && path === '/api/auth/forgot-password') {
+      const body = await request.json() as { email?: string };
+      if (!body.email) {
+        return errorResponse('Email é obrigatório', 400);
+      }
+      const email = body.email.toLowerCase().trim();
+      const customer = await executeOne<{ id: number; first_name: string | null; last_name: string | null }>(
+        db,
+        'SELECT id, first_name, last_name FROM customers WHERE email = ? AND is_active = 1',
+        [email]
+      );
+      // Always return success to avoid user enumeration
+      if (!customer) {
+        return successResponse({ sent: true });
+      }
+      const token = crypto.randomUUID() + crypto.randomUUID().replace(/-/g, '');
+      const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+      await executeRun(
+        db,
+        'INSERT OR REPLACE INTO customer_password_resets (email, token, expires_at, created_at) VALUES (?, ?, ?, datetime("now"))',
+        [email, token, expiresAt]
+      );
+      const appUrl = env.APP_URL || 'https://www.leiasabores.pt';
+      const resetUrl = `${appUrl}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+      const name = customer.first_name || email.split('@')[0];
+      await sendEmail(env, {
+        to: email,
+        subject: 'Recuperação de senha — Leiasabores',
+        html: generatePasswordResetEmail(name, resetUrl),
+      });
+      return successResponse({ sent: true });
+    }
+
+    // Reset Password: POST /api/auth/reset-password
+    if (method === 'POST' && path === '/api/auth/reset-password') {
+      const body = await request.json() as { email?: string; token?: string; password?: string };
+      if (!body.email || !body.token || !body.password) {
+        return errorResponse('Email, token e senha são obrigatórios', 400);
+      }
+      if (body.password.length < 8) {
+        return errorResponse('A senha deve ter pelo menos 8 caracteres', 400);
+      }
+      const email = body.email.toLowerCase().trim();
+      const row = await executeOne<{ token: string; expires_at: string }>(
+        db,
+        'SELECT token, expires_at FROM customer_password_resets WHERE email = ?',
+        [email]
+      );
+      if (!row || row.token !== body.token) {
+        return errorResponse('Link inválido ou expirado', 400);
+      }
+      if (new Date(row.expires_at).getTime() < Date.now()) {
+        return errorResponse('Link expirado. Solicite um novo.', 400);
+      }
+      const customer = await executeOne<{ id: number }>(
+        db,
+        'SELECT id FROM customers WHERE email = ? AND is_active = 1',
+        [email]
+      );
+      if (!customer) {
+        return errorResponse('Conta não encontrada', 404);
+      }
+      const passwordHash = await hashPassword(body.password);
+      await executeRun(db, 'UPDATE customers SET password_hash = ?, updated_at = datetime("now") WHERE id = ?', [passwordHash, customer.id]);
+      await executeRun(db, 'DELETE FROM customer_password_resets WHERE email = ?', [email]);
+      // Revoke all sessions for security
+      await executeRun(db, 'UPDATE user_sessions SET revoked_at = datetime("now") WHERE user_id = ?', [customer.id]);
+      return successResponse({ reset: true }, 'Senha atualizada com sucesso');
     }
 
     if (method === 'POST' && path === '/api/auth/admin/register') {
@@ -331,53 +402,48 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
 
       const response = successResponse(null, 'Logout successful');
 
-      // Usar a mesma lógica de domínio do login para garantir que os cookies sejam removidos corretamente
+      // Clear-Site-Data header forces browser to clear cookies and storage
+      // This is the most reliable way to ensure logout
+      response.headers.set('Clear-Site-Data', '"cookies", "storage"');
+
+      // Also manually clear cookies for compatibility
       const requestHostname = url.hostname;
-      const cookieVariants: Array<{ domain?: string; sameSite: 'Lax' | 'None'; secure: boolean }> = [];
       const expires = 'Thu, 01 Jan 1970 00:00:00 GMT';
 
-      // Adicionar variantes para garantir limpeza
+      // Helper to build clear cookie string
+      const buildClearCookie = (name: string, domain?: string) =>
+        `${name}=; Path=/; ${domain ? `Domain=${domain}; ` : ''}HttpOnly; Secure; SameSite=Lax; Max-Age=0; Expires=${expires}`;
+
+      const cookiesToClear = [
+        // 1. Clear for current hostname (most common)
+        buildClearCookie('session_access', requestHostname),
+        buildClearCookie('session_refresh', requestHostname),
+
+        // 2. Clear without domain (host-only cookie)
+        buildClearCookie('session_access'),
+        buildClearCookie('session_refresh'),
+      ];
+
+      // 3. Clear for root domain if on subdomain
       if (requestHostname.includes('leiasabores.pt')) {
-        // Domínio principal e subdomínios
-        cookieVariants.push({ domain: '.leiasabores.pt', sameSite: 'Lax', secure: true });
-        cookieVariants.push({ domain: 'leiasabores.pt', sameSite: 'Lax', secure: true });
-        cookieVariants.push({ domain: 'www.leiasabores.pt', sameSite: 'Lax', secure: true });
+        cookiesToClear.push(buildClearCookie('session_access', '.leiasabores.pt'));
+        cookiesToClear.push(buildClearCookie('session_refresh', '.leiasabores.pt'));
       }
 
-      // Sempre tentar limpar no hostname atual (sem especificar domain ou com domain exato)
-      cookieVariants.push({ domain: requestHostname, sameSite: 'Lax', secure: true });
-      cookieVariants.push({ domain: undefined, sameSite: 'Lax', secure: true });
+      // Set the first cookie
+      response.headers.set('Set-Cookie', cookiesToClear[0]);
 
-      if (requestHostname.includes('workers.dev')) {
-        cookieVariants.push({ domain: undefined, sameSite: 'None', secure: true });
+      // Append the rest
+      for (let i = 1; i < cookiesToClear.length; i++) {
+        response.headers.append('Set-Cookie', cookiesToClear[i]);
       }
 
-      // Remover duplicados baseados em domain + sameSite
-      const uniqueVariants = cookieVariants.filter(
-        (variant, index, self) =>
-          index === self.findIndex((v) => v.domain === variant.domain && v.sameSite === variant.sameSite)
-      );
-
-      const buildCookie = (name: string, domain: string | undefined, sameSite: 'Lax' | 'None', secure: boolean) =>
-        `${name}=; Path=/; ${domain ? `Domain=${domain}; ` : ''}${secure ? 'Secure; ' : ''}SameSite=${sameSite}; Max-Age=0; Expires=${expires}`;
-
-      const baseHeaders: string[] = [];
-      for (const variant of uniqueVariants) {
-        baseHeaders.push(buildCookie('session_access', variant.domain, variant.sameSite, variant.secure));
-        baseHeaders.push(buildCookie('session_refresh', variant.domain, variant.sameSite, variant.secure));
-      }
-
-      response.headers.set('Set-Cookie', baseHeaders.shift()!);
-      for (const cookie of baseHeaders) {
-        response.headers.append('Set-Cookie', cookie);
-      }
+      // Also clear admin token
       response.headers.append('Set-Cookie', clearAuthCookie('admin_token'));
+
       response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
       response.headers.set('Pragma', 'no-cache');
       response.headers.set('Expires', '0');
-      response.headers.set('Vary', 'Authorization, Cookie');
-
-      console.log('[AUTH] Logout - cookies removidos:', uniqueVariants);
 
       return response;
     }
