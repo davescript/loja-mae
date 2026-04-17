@@ -3,15 +3,15 @@ import { Facebook, Instagram, Mail, Phone, MapPin } from 'lucide-react';
 
 export default function StoreFooter() {
   return (
-    <footer className="bg-gray-900 text-gray-300 mt-20">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+    <footer className="bg-gray-900 text-gray-300 mt-12 sm:mt-20">
+      <div className="container mx-auto px-4 py-8 sm:py-12">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           {/* About */}
-          <div>
-            <h3 className="text-white font-heading text-lg font-semibold mb-4">
+          <div className="col-span-2 md:col-span-1">
+            <h3 className="text-white font-heading text-lg font-semibold mb-3 sm:mb-4">
               Leiasabores
             </h3>
-            <p className="text-sm leading-relaxed mb-4">
+            <p className="text-sm leading-relaxed mb-4 hidden sm:block">
               Sua loja especializada em acessórios premium para confeitaria, bolos e eventos.
               Qualidade e elegância em cada produto.
             </p>
@@ -137,7 +137,7 @@ export default function StoreFooter() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="border-t border-gray-800 mt-6 sm:mt-8 pt-6 sm:pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
             <p className="text-sm text-gray-400">
               © {new Date().getFullYear()} Leiasabores. Todos os direitos reservados.
             </p>

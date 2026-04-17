@@ -65,7 +65,7 @@ export default function HeroSlider() {
   };
 
   return (
-    <section className="relative h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden rounded-2xl md:rounded-[var(--radius)] shadow-elevated">
+    <section className="relative h-[340px] sm:h-[420px] md:h-[520px] lg:h-[640px] overflow-hidden rounded-xl sm:rounded-2xl shadow-elevated">
       <AnimatePresence mode="wait">
         {slides.map(
           (slide, index) =>
@@ -90,29 +90,29 @@ export default function HeroSlider() {
                 </div>
 
                 {/* Content */}
-                <div className="relative h-full flex items-center">
-                  <div className="container mx-auto px-6 md:px-8">
-                    <div className="max-w-2xl">
+                <div className="relative h-full flex items-end sm:items-center pb-12 sm:pb-0">
+                  <div className="container mx-auto px-5 sm:px-6 md:px-8">
+                    <div className="max-w-lg md:max-w-2xl">
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
                       >
-                        <p className="text-white/90 text-sm md:text-base mb-2 font-medium">
+                        <p className="text-white/90 text-xs sm:text-sm md:text-base mb-1 sm:mb-2 font-medium">
                           {slide.subtitle}
                         </p>
-                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-white mb-4 leading-tight">
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-heading font-bold text-white mb-2 sm:mb-4 leading-tight">
                           {slide.title}
                         </h1>
-                        <p className="text-white/90 text-lg md:text-xl mb-8 leading-relaxed">
+                        <p className="text-white/85 text-sm sm:text-base md:text-lg mb-4 sm:mb-6 leading-relaxed line-clamp-2 sm:line-clamp-none">
                           {slide.description}
                         </p>
                         <Link
                           to={slide.buttonLink}
-                          className="btn btn-primary btn-lg inline-flex items-center gap-2"
+                          className="btn btn-primary inline-flex items-center gap-2 text-sm sm:text-base px-4 sm:px-6 py-2.5 sm:py-3"
                         >
                           {slide.buttonText}
-                          <ChevronRight className="w-5 h-5" />
+                          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
                         </Link>
                       </motion.div>
                     </div>
@@ -126,29 +126,29 @@ export default function HeroSlider() {
       {/* Navigation Arrows */}
       <button
         onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all shadow-lg z-10"
+        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all shadow-lg z-10"
         aria-label="Slide anterior"
       >
-        <ChevronLeft className="w-6 h-6 text-foreground" />
+        <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-foreground" />
       </button>
       <button
         onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all shadow-lg z-10"
+        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm flex items-center justify-center transition-all shadow-lg z-10"
         aria-label="Próximo slide"
       >
-        <ChevronRight className="w-6 h-6 text-foreground" />
+        <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-foreground" />
       </button>
 
       {/* Dots Indicator */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+      <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10">
         {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
-            className={`w-2 h-2 rounded-full transition-all ${
+            className={`h-2 rounded-full transition-all ${
               index === currentSlide
                 ? 'bg-white w-8'
-                : 'bg-white/50 hover:bg-white/75'
+                : 'bg-white/50 hover:bg-white/75 w-2'
             }`}
             aria-label={`Ir para slide ${index + 1}`}
           />

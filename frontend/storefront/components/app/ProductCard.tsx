@@ -178,13 +178,8 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
             </>
           )}
 
-          {/* Quick View Button - aparece no hover */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: isHovered ? 1 : 0 }}
-            transition={{ duration: 0.2 }}
-            className="absolute top-3 right-3 z-20"
-          >
+          {/* Quick View Button - sempre visível em mobile, hover em desktop */}
+          <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
@@ -192,20 +187,16 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
                 e.preventDefault();
                 onQuickView?.(product);
               }}
-              className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg hover:bg-white transition-colors"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg hover:bg-white transition-colors"
               aria-label="Visualização rápida"
             >
-              <Eye className="w-5 h-5 text-foreground" />
+              <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-foreground" />
             </motion.button>
-          </motion.div>
+          </div>
 
-          {/* Favorite Button - aparece no hover */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: isHovered ? 1 : 0 }}
-            transition={{ duration: 0.2 }}
-            className="absolute top-3 left-3 z-20"
-          >
+          {/* Favorite Button - sempre visível em mobile, hover em desktop */}
+          <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
+
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
@@ -230,16 +221,16 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
                     : 'Produto adicionado à sua lista de favoritos',
                 });
               }}
-              className={`w-10 h-10 rounded-full backdrop-blur-sm flex items-center justify-center shadow-lg transition-colors ${
-                isProductFavorite 
-                  ? 'bg-primary text-primary-foreground' 
+              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full backdrop-blur-sm flex items-center justify-center shadow-lg transition-colors ${
+                isProductFavorite
+                  ? 'bg-primary text-primary-foreground'
                   : 'bg-white/90 hover:bg-white'
               }`}
               aria-label="Adicionar aos favoritos"
             >
-              <Heart className={`w-5 h-5 ${isProductFavorite ? 'fill-current' : ''}`} />
+              <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${isProductFavorite ? 'fill-current' : ''}`} />
             </motion.button>
-          </motion.div>
+          </div>
         </div>
 
         {/* Preview de Imagens - 4 miniaturas */}
@@ -271,33 +262,33 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
         )}
 
         {/* Content */}
-        <div className="p-4 flex-1 flex flex-col text-center">
+        <div className="p-3 sm:p-4 flex-1 flex flex-col text-center">
           {/* Category Badge */}
           {product.category && (
-            <span className="text-xs text-muted-foreground mb-1 uppercase tracking-wide">
+            <span className="text-[10px] sm:text-xs text-muted-foreground mb-1 uppercase tracking-wide">
               {product.category.name}
             </span>
           )}
 
-          <h3 
-            className="font-bold text-base md:text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors cursor-pointer"
+          <h3
+            className="font-bold text-sm sm:text-base mb-1 sm:mb-2 line-clamp-2 group-hover:text-primary transition-colors cursor-pointer leading-tight"
             onClick={() => onQuickView?.(product)}
           >
             {product.title}
           </h3>
 
           {/* Price */}
-          <div className="mb-4 flex items-baseline justify-center gap-2">
-            <span className="text-xl md:text-2xl font-bold text-foreground">
+          <div className="mb-2 sm:mb-3 flex items-baseline justify-center gap-2">
+            <span className="text-base sm:text-xl font-bold text-foreground">
               {price}
             </span>
           </div>
 
-          {/* Rating - Placeholder (sem número) */}
-          <div className="flex items-center justify-center gap-1 mb-4">
+          {/* Rating */}
+          <div className="flex items-center justify-center gap-1 mb-2 sm:mb-3">
             <div className="flex gap-0.5">
               {[...Array(5)].map((_, i) => (
-                <span key={i} className="text-yellow-400 text-sm">★</span>
+                <span key={i} className="text-yellow-400 text-xs sm:text-sm">★</span>
               ))}
             </div>
           </div>
@@ -309,21 +300,21 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleAddToCart}
-              className="w-full btn btn-primary flex items-center justify-center gap-2 shadow-md hover:shadow-lg whitespace-nowrap"
+              className="w-full btn btn-primary flex items-center justify-center gap-1 sm:gap-2 shadow-md hover:shadow-lg min-h-[44px]"
               disabled={product.stock_quantity !== undefined && product.stock_quantity <= 0}
             >
               <ShoppingCart className="w-4 h-4 flex-shrink-0" />
-              <span className="text-sm font-semibold whitespace-nowrap">
-                {product.stock_quantity !== undefined && product.stock_quantity <= 0 
-                  ? 'Fora de estoque' 
-                  : 'Adicionar ao carrinho'}
+              <span className="text-xs sm:text-sm font-semibold">
+                {product.stock_quantity !== undefined && product.stock_quantity <= 0
+                  ? 'Esgotado'
+                  : <><span className="hidden sm:inline">Adicionar ao </span>Carrinho</>}
               </span>
             </motion.button>
           </div>
 
           {/* Stock indicator */}
           {product.stock_quantity !== undefined && (
-            <div className="mt-3 text-xs text-center">
+            <div className="mt-2 text-[10px] sm:text-xs text-center">
               {product.stock_quantity > 0 ? (
                 <span className="text-green-600 font-medium">✓ Em estoque</span>
               ) : (

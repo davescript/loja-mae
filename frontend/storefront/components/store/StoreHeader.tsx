@@ -121,8 +121,8 @@ export default function StoreHeader() {
       </motion.div> */}
 
       {/* Main Header com glassmorphism */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-border/50 shadow-sm">
-        <div className="container mx-auto px-4">
+      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-border/50 shadow-sm">
+        <div className="container mx-auto px-3 sm:px-4">
           {/* Header Top - Social & Welcome */}
           <div className="hidden md:flex items-center justify-between py-2 text-xs text-muted-foreground border-b border-border/50">
             <div className="flex items-center gap-4">
@@ -136,21 +136,21 @@ export default function StoreHeader() {
           </div>
 
           {/* Header Main - Logo, Search, Actions - Centralizado */}
-          <div className="flex items-center justify-between gap-4 py-4">
+          <div className="flex items-center justify-between gap-2 sm:gap-4 py-3 sm:py-4">
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden btn btn-ghost btn-icon"
+              className="lg:hidden w-11 h-11 flex items-center justify-center rounded-xl hover:bg-muted transition-colors flex-shrink-0"
               aria-label="Menu"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
 
-            {/* Logo - Centralizado */}
-            <Link to="/" className="flex-shrink-0 mx-auto lg:mx-0">
+            {/* Logo */}
+            <Link to="/" className="flex-shrink-0">
               <motion.h1
                 whileHover={{ scale: 1.05 }}
-                className="text-2xl md:text-3xl font-heading font-bold gradient-text"
+                className="text-xl sm:text-2xl md:text-3xl font-heading font-bold gradient-text"
               >
                 Leiasabores
               </motion.h1>
@@ -244,20 +244,20 @@ export default function StoreHeader() {
             </form>
 
             {/* Actions - Direita */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               {/* Search Button - Mobile */}
               <button
                 onClick={() => setSearchOpen(!searchOpen)}
-                className="md:hidden btn btn-ghost btn-icon"
+                className="lg:hidden w-11 h-11 flex items-center justify-center rounded-xl hover:bg-muted transition-colors"
                 aria-label="Buscar"
               >
                 <Search className="w-5 h-5" />
               </button>
 
-              {/* Favorites */}
+              {/* Favorites - hidden on very small, visible sm+ */}
               <Link
                 to="/favorites"
-                className="btn btn-ghost btn-icon relative"
+                className="hidden sm:flex w-11 h-11 items-center justify-center rounded-xl hover:bg-muted transition-colors relative"
                 aria-label="Favoritos"
               >
                 <Heart className="w-5 h-5" />
@@ -265,7 +265,7 @@ export default function StoreHeader() {
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 min-w-[1.25rem] h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center font-semibold shadow-md px-1"
+                    className="absolute -top-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center font-bold shadow-md px-0.5"
                   >
                     {favoritesCount > 99 ? '99+' : favoritesCount}
                   </motion.span>
@@ -275,7 +275,7 @@ export default function StoreHeader() {
               {/* Cart */}
               <Link
                 to="/cart"
-                className="btn btn-ghost btn-icon relative"
+                className="w-11 h-11 flex items-center justify-center rounded-xl hover:bg-muted transition-colors relative"
                 aria-label="Carrinho"
               >
                 <ShoppingCart className="w-5 h-5" />
@@ -283,7 +283,7 @@ export default function StoreHeader() {
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 min-w-[1.25rem] h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center font-semibold shadow-md px-1"
+                    className="absolute -top-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center font-bold shadow-md px-0.5"
                   >
                     {cartItemCount > 99 ? '99+' : cartItemCount}
                   </motion.span>
@@ -294,7 +294,7 @@ export default function StoreHeader() {
               {isAuthenticated ? (
                 <Link
                   to="/account"
-                  className="btn btn-ghost btn-icon"
+                  className="w-11 h-11 flex items-center justify-center rounded-xl hover:bg-muted transition-colors"
                   aria-label="Minha conta"
                 >
                   <User className="w-5 h-5" />
@@ -302,10 +302,10 @@ export default function StoreHeader() {
               ) : (
                 <Link
                   to="/login"
-                  className="btn btn-primary"
+                  className="btn btn-primary h-10 px-3 sm:px-4 text-sm"
                 >
                   <User className="w-4 h-4" />
-                  <span className="hidden sm:inline">Entrar</span>
+                  <span className="hidden sm:inline ml-1">Entrar</span>
                 </Link>
               )}
             </div>
@@ -429,47 +429,75 @@ export default function StoreHeader() {
           )}
         </AnimatePresence>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu Overlay */}
         <AnimatePresence>
           {mobileMenuOpen && (
-            <motion.div
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="lg:hidden fixed inset-y-0 left-0 w-80 bg-white/95 backdrop-blur-xl border-r border-border/50 shadow-2xl z-50 overflow-y-auto"
-            >
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-lg font-semibold">Menu</h2>
-                  <button
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="btn btn-ghost btn-icon"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                <nav className="flex flex-col gap-2">
-                  {[
-                    { to: '/', label: 'Home' },
-                    { to: '/products', label: 'Produtos' },
-                    { to: '/categories', label: 'Categorias' },
-                    { to: '/collections', label: 'Coleções' },
-                    { to: '/about', label: 'Sobre' },
-                    { to: '/contact', label: 'Contato' },
-                  ].map((item) => (
-                    <Link
-                      key={item.to}
-                      to={item.to}
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setMobileMenuOpen(false)}
+                className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+              />
+              {/* Drawer */}
+              <motion.div
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+                className="lg:hidden fixed inset-y-0 left-0 w-[80vw] max-w-xs bg-white border-r border-border/50 shadow-2xl z-50 overflow-y-auto"
+              >
+                <div className="p-5">
+                  <div className="flex items-center justify-between mb-6">
+                    <span className="text-xl font-heading font-bold gradient-text">Leiasabores</span>
+                    <button
                       onClick={() => setMobileMenuOpen(false)}
-                      className="px-4 py-3 rounded-xl hover:bg-muted transition-colors font-medium"
+                      className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-muted transition-colors"
                     >
-                      {item.label}
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <nav className="flex flex-col gap-1">
+                    {[
+                      { to: '/', label: '🏠 Home' },
+                      { to: '/products', label: '🛍️ Produtos' },
+                      { to: '/categories', label: '📂 Categorias' },
+                      { to: '/collections', label: '✨ Coleções' },
+                      { to: '/blog', label: '📝 Blog' },
+                      { to: '/about', label: 'ℹ️ Sobre' },
+                      { to: '/contact', label: '📩 Contato' },
+                    ].map((item) => (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="px-4 py-3.5 rounded-xl hover:bg-muted transition-colors font-medium text-base"
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </nav>
+                  {/* Favoritos no menu mobile */}
+                  <div className="mt-4 pt-4 border-t border-border/50">
+                    <Link
+                      to="/favorites"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3.5 rounded-xl hover:bg-muted transition-colors font-medium text-base"
+                    >
+                      <Heart className="w-5 h-5 text-primary" />
+                      Favoritos
+                      {favoritesCount > 0 && (
+                        <span className="ml-auto bg-primary text-primary-foreground text-xs rounded-full px-2 py-0.5 font-bold">
+                          {favoritesCount}
+                        </span>
+                      )}
                     </Link>
-                  ))}
-                </nav>
-              </div>
-            </motion.div>
+                  </div>
+                </div>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
       </header>

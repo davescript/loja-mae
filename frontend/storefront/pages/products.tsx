@@ -330,7 +330,7 @@ export default function ProductsPage() {
                           setSearchParams(newParams);
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
-                        className={`w-10 h-10 rounded-lg font-semibold transition-all ${
+                        className={`w-11 h-11 rounded-lg font-semibold transition-all text-sm ${
                           page === pageNum
                             ? 'bg-primary text-primary-foreground shadow-md'
                             : 'bg-muted hover:bg-muted/80'

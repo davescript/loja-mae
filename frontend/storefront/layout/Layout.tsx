@@ -47,8 +47,8 @@ export default function StorefrontLayout() {
     <div className="min-h-screen bg-background">
       <ScrollToTop />
       <StoreHeader />
-      <main className="pt-16">
-        <div className="max-w-7xl mx-auto px-4 lg:px-6">
+      <main className="pt-4 sm:pt-6">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
           <Outlet />
         </div>
       </main>
