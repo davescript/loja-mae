@@ -13,9 +13,10 @@ type Props = {
   product: Product;
   onQuickView?: (product: Product) => void;
   onAddToCart?: (product: Product) => void;
+  listView?: boolean;
 };
 
-export default function ProductCard({ product, onQuickView, onAddToCart }: Props) {
+export default function ProductCard({ product, onQuickView, onAddToCart, listView = false }: Props) {
   const [isHovered, setIsHovered] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
@@ -110,6 +111,97 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Props
     }
   };
 
+  // ── List View Layout ────────────────────────────────────────────────────────
+  if (listView) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: -10 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.25 }}
+        className="card overflow-hidden bg-white"
+      >
+        <div className="flex gap-3 sm:gap-4 p-3 sm:p-4">
+          {/* Image */}
+          <div
+            className="relative w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 rounded-xl overflow-hidden cursor-pointer bg-muted"
+            onClick={() => onQuickView?.(product)}
+          >
+            {imageUrl ? (
+              <img src={imageUrl} alt={product.title} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-2xl">📦</div>
+            )}
+            {product.featured && (
+              <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                Destaque
+              </div>
+            )}
+          </div>
+
+          {/* Info */}
+          <div className="flex-1 min-w-0 flex flex-col justify-between">
+            <div>
+              {product.category && (
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                  {product.category.name}
+                </span>
+              )}
+              <h3
+                className="font-bold text-sm sm:text-base leading-tight line-clamp-2 cursor-pointer hover:text-primary transition-colors mt-0.5"
+                onClick={() => onQuickView?.(product)}
+              >
+                {product.title}
+              </h3>
+              <div className="flex gap-0.5 mt-1">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className="text-yellow-400 text-xs">★</span>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 mt-2">
+              <span className="text-base sm:text-lg font-bold text-foreground">{price}</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    if (!isAuthenticated) {
+                      navigate(`/login?redirect=${encodeURIComponent(location.pathname + location.search)}`);
+                      return;
+                    }
+                    await toggleFavorite(product.id);
+                  }}
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center border transition-colors ${
+                    isProductFavorite
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'border-border hover:border-primary'
+                  }`}
+                  aria-label="Favorito"
+                >
+                  <Heart className={`w-4 h-4 ${isProductFavorite ? 'fill-current' : ''}`} />
+                </button>
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleAddToCart}
+                  disabled={product.stock_quantity !== undefined && product.stock_quantity <= 0}
+                  className="btn btn-primary h-9 px-3 sm:px-4 text-xs sm:text-sm gap-1.5 min-h-0 disabled:opacity-50"
+                >
+                  <ShoppingCart className="w-3.5 h-3.5" />
+                  <span className="hidden xs:inline">
+                    {product.stock_quantity !== undefined && product.stock_quantity <= 0 ? 'Esgotado' : 'Carrinho'}
+                  </span>
+                  <span className="xs:hidden">+</span>
+                </motion.button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // ── Grid View Layout (default) ───────────────────────────────────────────────
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

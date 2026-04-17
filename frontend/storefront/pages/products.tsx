@@ -140,41 +140,44 @@ export default function ProductsPage() {
       </div>
 
       {/* Controls Bar */}
-      <div className="container mx-auto px-4 mb-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+      <div className="container mx-auto px-4 mb-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => setFiltersOpen(!filtersOpen)}
-              className="btn btn-muted flex items-center gap-2"
+              className={`flex items-center gap-2 h-11 px-3 sm:px-4 rounded-xl border font-medium text-sm transition-all ${
+                filtersOpen ? 'bg-primary text-primary-foreground border-primary' : 'bg-white border-border hover:border-primary'
+              }`}
             >
-              <SlidersHorizontal className="w-4 h-4" />
-              <span className="hidden sm:inline">Filtros</span>
+              <SlidersHorizontal className="w-4 h-4 flex-shrink-0" />
+              <span>Filtros</span>
             </button>
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">
               {productsData?.total || 0} {productsData?.total === 1 ? 'produto' : 'produtos'}
             </span>
           </div>
-          
-          <div className="flex items-center gap-2">
+
+          {/* View Toggle */}
+          <div className="flex items-center bg-muted rounded-xl p-1 gap-1">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg transition-all ${
+              className={`w-11 h-9 flex items-center justify-center rounded-lg transition-all ${
                 viewMode === 'grid'
-                  ? 'bg-primary text-primary-foreground shadow-md'
-                  : 'bg-muted hover:bg-muted/80'
+                  ? 'bg-white shadow text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
-              aria-label="Visualização em grade"
+              aria-label="Grelha"
             >
               <Grid className="w-5 h-5" />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg transition-all ${
+              className={`w-11 h-9 flex items-center justify-center rounded-lg transition-all ${
                 viewMode === 'list'
-                  ? 'bg-primary text-primary-foreground shadow-md'
-                  : 'bg-muted hover:bg-muted/80'
+                  ? 'bg-white shadow text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
-              aria-label="Visualização em lista"
+              aria-label="Lista"
             >
               <List className="w-5 h-5" />
             </button>
@@ -259,30 +262,30 @@ export default function ProductsPage() {
       {/* Products Grid/List */}
       <div className="container mx-auto px-4">
         {loadingProducts ? (
-          <div className={`grid gap-6 ${
-            viewMode === 'grid' 
-              ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
+          <div className={`grid gap-3 sm:gap-4 ${
+            viewMode === 'grid'
+              ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
               : 'grid-cols-1'
           }`}>
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="card h-96 animate-pulse" />
+              <div key={i} className={`card animate-pulse ${viewMode === 'grid' ? 'h-64 sm:h-80' : 'h-28'}`} />
             ))}
           </div>
         ) : productsData?.items && productsData.items.length > 0 ? (
           <>
-            <div className={`grid gap-6 ${
-              viewMode === 'grid' 
-                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
+            <div className={`grid gap-3 sm:gap-4 ${
+              viewMode === 'grid'
+                ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
                 : 'grid-cols-1'
             }`}>
               {productsData.items.map((product) => (
                 <ProductCard
                   key={product.id}
                   product={product}
+                  listView={viewMode === 'list'}
                   onQuickView={(prod) => {
                     setSelectedProduct(prod);
                     setQuickOpen(true);
-                    // Scroll to top to ensure modal is visible
                     setTimeout(() => {
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }, 100);
