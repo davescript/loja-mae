@@ -161,45 +161,38 @@ export async function apiRequest<T = any>(
         if (isCustomerEndpoint || isAuthMeEndpoint) {
           try {
             console.log('[API] Tentando refresh do token via cookie...');
-            const refreshResp = await fetch(`${API_BASE_URL}/api/auth/refresh`, { 
-              method: 'POST', 
-              credentials: 'include', 
-              headers: { 'Cache-Control': 'no-store' } 
+            const refreshResp = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Cache-Control': 'no-store' }
             });
-            
+
             if (refreshResp.ok) {
               const refreshData = await refreshResp.json().catch(() => ({})) as ApiResponse<{ token?: string; refreshed?: boolean }>;
-              console.log('[API] Refresh bem-sucedido:', refreshData);
-              
-              // O refresh retorna um novo cookie, mas também podemos tentar obter um novo token via /api/auth/me
-              // Primeiro, tentar novamente a requisição original (o cookie foi atualizado)
+
+              // Guardar o novo token no localStorage e actualizar o header
+              if (refreshData.data?.token && typeof window !== 'undefined') {
+                localStorage.setItem('customer_token', refreshData.data.token);
+                headers['Authorization'] = `Bearer ${refreshData.data.token}`;
+              } else {
+                // Sem token no body — remover header expirado para o backend usar o cookie
+                delete headers['Authorization'];
+              }
+
+              // Retry com token actualizado (ou sem header, usando cookie renovado)
               response = await fetch(url, { ...options, headers, credentials: 'include' });
               if (response.ok) {
                 return await response.json() as ApiResponse<T>;
               }
-              
-              // Se ainda falhar, tentar obter novo token via /api/auth/me
-              try {
-                const meResp = await fetch(`${API_BASE_URL}/api/auth/me`, { 
-                  credentials: 'include',
-                  headers: { 'Cache-Control': 'no-store' }
-                });
-                if (meResp.ok) {
-                  const meData = await meResp.json().catch(() => ({})) as ApiResponse<{ token?: string; user?: any }>;
-                  if (meData.data?.token && typeof window !== 'undefined') {
-                    localStorage.setItem('customer_token', meData.data.token);
-                    headers['Authorization'] = `Bearer ${meData.data.token}`;
-                    response = await fetch(url, { ...options, headers, credentials: 'include' });
-                    if (response.ok) {
-                      return await response.json() as ApiResponse<T>;
-                    }
-                  }
-                }
-              } catch (meError) {
-                console.error('[API] Erro ao obter novo token via /api/auth/me:', meError);
-              }
             } else {
               console.warn('[API] Refresh falhou:', refreshResp.status);
+              // Se o refresh falhou com 401 ou 403, limpa o token local pois a sessão expirou mesmo
+              if (refreshResp.status === 401 || refreshResp.status === 403) {
+                if (typeof window !== 'undefined') {
+                  localStorage.removeItem('customer_token');
+                  localStorage.removeItem('token');
+                }
+              }
             }
           } catch (refreshError) {
             console.error('[API] Erro ao fazer refresh:', refreshError);

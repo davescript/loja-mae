@@ -84,7 +84,7 @@ export function useAuth() {
       }
     },
     retry: false,
-    staleTime: 0, // Sempre refetch para verificar cookies atualizados
+    staleTime: 5 * 60 * 1000, // 5 minutos de cache para evitar excesso de requests
     refetchOnWindowFocus: true,
     refetchOnMount: true,
     enabled: typeof window !== 'undefined' && shouldCheckAuth, // Desabilitar após logout
@@ -158,66 +158,58 @@ export function useAuth() {
   const logoutMutation = useMutation({
     mutationFn: async () => {
       // Aguardar um pouco para garantir que qualquer operação pendente seja concluída
-      // Isso garante que endereços sejam salvos antes do logout
       await new Promise(resolve => setTimeout(resolve, 500));
-      await apiRequest('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include', // Importante: enviar cookies para serem removidos
-      });
+      try {
+        await apiRequest('/api/auth/logout', {
+          method: 'POST',
+          credentials: 'include',
+        });
+      } catch (e) {
+        console.warn('[AUTH] Logout API falhou, mas continuando com limpeza local:', e);
+      }
     },
     onSuccess: async () => {
       console.log('[AUTH] Logout bem-sucedido, limpando estado...');
-
-      // Desabilitar verificação de autenticação
-      setShouldCheckAuth(false);
-
-      // Limpar tokens e estado local PRIMEIRO
-      localStorage.removeItem('token');
-      localStorage.removeItem('customer_token');
-      setUser(null);
-      clearClientStores();
-
-      // Limpar todas as queries do cache
-      queryClient.clear();
-
-      // Invalidar queries específicas de favoritos e carrinho
-      queryClient.invalidateQueries({ queryKey: ['favorites'] });
-      queryClient.removeQueries({ queryKey: ['favorites'] });
-
-      // Invalidar e cancelar a query de autenticação para evitar refetch
-      queryClient.cancelQueries({ queryKey: ['auth', 'me'] });
-      queryClient.setQueryData(['auth', 'me'], null);
-      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
-
-      // Redirecionar para a home após logout (recarregar página para garantir limpeza)
-      if (typeof window !== 'undefined') {
-        window.location.href = '/';
-      }
+      handleLocalLogout();
     },
     onError: async (error) => {
       console.error('[AUTH] Erro no logout:', error);
-      // Desabilitar verificação de autenticação
-      setShouldCheckAuth(false);
-
-      // Mesmo com erro, limpar estado local e redirecionar
-      localStorage.removeItem('token');
-      localStorage.removeItem('customer_token');
-      setUser(null);
-      clearClientStores();
-      queryClient.clear();
-
-      // Invalidar queries específicas de favoritos e carrinho
-      queryClient.invalidateQueries({ queryKey: ['favorites'] });
-      queryClient.removeQueries({ queryKey: ['favorites'] });
-
-      queryClient.cancelQueries({ queryKey: ['auth', 'me'] });
-      queryClient.setQueryData(['auth', 'me'], null);
-
-      if (typeof window !== 'undefined') {
-        window.location.href = '/';
-      }
+      handleLocalLogout();
     },
   });
+
+  const handleLocalLogout = () => {
+    // Desabilitar verificação de autenticação
+    setShouldCheckAuth(false);
+
+    // Limpar tokens e estado local
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('customer_token');
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('loja-mae-favorites');
+      localStorage.removeItem('loja-mae-cart');
+
+      // Limpar sessionStorage também por garantia
+      sessionStorage.clear();
+
+      // Limpar cookies acessíveis via JS
+      document.cookie.split(";").forEach((c) => {
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+    }
+
+    setUser(null);
+    clearClientStores();
+
+    // Limpar todas as queries do cache
+    queryClient.clear();
+
+    // Redirecionar e forçar reload para garantir limpeza total
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
+  };
 
   const logout = () => {
     logoutMutation.mutate();

@@ -105,10 +105,9 @@ export function useAdminAuth() {
       localStorage.removeItem('token');
       console.log('[ADMIN_AUTH] Tokens de customer removidos para evitar conflitos');
       
-      // Invalidate and refetch admin data
+      // Set admin data directly — no need to invalidate (avoids race condition)
       setShouldCheckAuth(true);
       setAdminUser(data?.admin || null);
-      queryClient.invalidateQueries({ queryKey: ['admin', 'me'] });
       queryClient.setQueryData(['admin', 'me'], data?.admin);
       
       toast({

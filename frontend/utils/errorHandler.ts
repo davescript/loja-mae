@@ -42,6 +42,16 @@ export class AuthorizationError extends Error {
   }
 }
 
+const SENSITIVE_PAYMENT_ERROR_PATTERN = /(sk|rk)_(live|test)_|expired api key|invalid api key|api key provided|stripe_secret_key/i
+
+function sanitizeUserMessage(message?: string) {
+  if (!message) return undefined
+  if (SENSITIVE_PAYMENT_ERROR_PATTERN.test(message)) {
+    return 'Pagamento temporariamente indisponível. Tente novamente mais tarde.'
+  }
+  return message
+}
+
 /**
  * Handle and format errors for user display
  */
@@ -77,7 +87,7 @@ export function handleError(error: unknown): { message: string; type: string; de
 
   if (error instanceof ApiError) {
     return {
-      message: error.message || 'Erro ao processar solicitação.',
+      message: sanitizeUserMessage(error.message) || 'Erro ao processar solicitação.',
       type: 'api',
       details: error.details,
     }
@@ -85,7 +95,7 @@ export function handleError(error: unknown): { message: string; type: string; de
 
   if (error instanceof Error) {
     return {
-      message: error.message || 'Erro inesperado. Tente novamente.',
+      message: sanitizeUserMessage(error.message) || 'Erro inesperado. Tente novamente.',
       type: 'unknown',
     }
   }
@@ -95,4 +105,3 @@ export function handleError(error: unknown): { message: string; type: string; de
     type: 'unknown',
   }
 }
-
