@@ -14,28 +14,24 @@ const getApiBaseUrl = (): string => {
   if (forceLocal && (import.meta as any).env?.DEV) {
     return 'http://localhost:8787';
   }
-  
-  // Try to get from environment variable (set at build time)
+
+  // On the real production domain, always talk to api.leiasabores.pt — this must win
+  // over VITE_API_BASE_URL, which is a CI-time secret that silently falls back to the
+  // workers.dev URL when unset. Calling workers.dev from leiasabores.pt turns the auth
+  // cookies into third-party cookies, which Safari/iOS (and increasingly Chrome) block,
+  // breaking login persistence for anyone on that domain.
+  const hostname = window.location.hostname;
+  if (hostname.includes('leiasabores.pt')) {
+    return 'https://api.leiasabores.pt';
+  }
+
+  // Try to get from environment variable (set at build time) for other environments
   const envUrl = (import.meta.env as { VITE_API_BASE_URL?: string }).VITE_API_BASE_URL;
   if (envUrl) {
     return envUrl;
   }
-  
-  // Fallback: use current origin for API (assuming API is on same domain)
-  // Or use production API URL as fallback
-  const hostname = window.location.hostname;
-  
-  // If on custom domain, assume API is on api subdomain
-  if (hostname.includes('leiasabores.pt')) {
-    return 'https://api.leiasabores.pt';
-  }
-  
-  // If on pages.dev, use workers.dev API
-  if (hostname.includes('pages.dev')) {
-    return 'https://loja-mae-api.davecdl.workers.dev';
-  }
-  
-  // Default fallback (production)
+
+  // Default fallback (e.g. pages.dev preview deployments)
   return 'https://loja-mae-api.davecdl.workers.dev';
 };
 

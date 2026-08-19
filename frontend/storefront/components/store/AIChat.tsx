@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Bot, User, Minimize2, Maximize2, Sparkles } from 'lucide-react';
+import { API_BASE_URL } from '../../../utils/api';
 
 type Message = {
   id: string;
@@ -79,13 +80,7 @@ export default function AIChat() {
     setIsLoading(true);
 
     try {
-      const apiBaseUrl =
-        (import.meta.env as { VITE_API_BASE_URL?: string }).VITE_API_BASE_URL ||
-        (window.location.hostname.includes('leiasabores.pt')
-          ? 'https://api.leiasabores.pt'
-          : 'https://loja-mae-api.davecdl.workers.dev');
-
-      const response = await fetch(`${apiBaseUrl}/api/chat`, {
+      const response = await fetch(`${API_BASE_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

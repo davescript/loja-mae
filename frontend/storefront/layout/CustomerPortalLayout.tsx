@@ -63,16 +63,20 @@ export default function CustomerPortalLayout() {
         className="border-b bg-card sticky top-0 z-50"
         style={{ paddingTop: 'var(--safe-area-top)' }}
       >
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" onClick={() => navigate('/')} className="text-lg font-bold">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+              <Button
+                variant="ghost"
+                onClick={() => navigate('/')}
+                className="text-base sm:text-lg font-bold px-2 sm:px-4 shrink-0"
+              >
                 Leiasabores
               </Button>
-              <span className="text-muted-foreground">/</span>
-              <span className="font-medium">Portal do Cliente</span>
+              <span className="text-muted-foreground hidden sm:inline">/</span>
+              <span className="font-medium hidden sm:inline truncate">Portal do Cliente</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-0.5 sm:gap-2 shrink-0">
               {/* Notifications */}
               <div className="relative">
                 <Button
@@ -80,6 +84,7 @@ export default function CustomerPortalLayout() {
                   size="icon"
                   onClick={() => setNotificationsOpen(!notificationsOpen)}
                   className="relative"
+                  aria-label="Notificações"
                 >
                   <Bell className="w-5 h-5" />
                   {unreadCount > 0 && (
@@ -89,10 +94,10 @@ export default function CustomerPortalLayout() {
                   )}
                 </Button>
                 {notificationsOpen && (
-                  <div className="absolute right-0 mt-2 w-80 bg-card border rounded-lg shadow-lg p-4 z-50">
+                  <div className="absolute right-0 mt-2 w-[calc(100vw-1.5rem)] max-w-80 bg-card border rounded-lg shadow-lg p-4 z-50">
                     <p className="text-sm font-medium mb-2">Notificações</p>
                     <p className="text-xs text-muted-foreground">
-                      {unreadCount > 0 
+                      {unreadCount > 0
                         ? `${unreadCount} notificação${unreadCount > 1 ? 'ões' : ''} não lida${unreadCount > 1 ? 's' : ''}`
                         : 'Nenhuma notificação nova'}
                     </p>
@@ -110,18 +115,19 @@ export default function CustomerPortalLayout() {
                   </div>
                 )}
               </div>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
-                <ShoppingBag className="w-4 h-4 mr-2" />
-                Loja
+              <Button variant="ghost" size="sm" onClick={() => navigate('/')} aria-label="Voltar à loja">
+                <ShoppingBag className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Loja</span>
               </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => logout()}
                 disabled={isLoggingOut}
+                aria-label="Sair da conta"
               >
-                <LogOut className="w-4 h-4 mr-2" />
-                {isLoggingOut ? 'Saindo...' : 'Sair'}
+                <LogOut className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">{isLoggingOut ? 'Saindo...' : 'Sair'}</span>
               </Button>
             </div>
           </div>

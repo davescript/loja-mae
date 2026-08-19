@@ -154,10 +154,7 @@ export default function BannerDisplay({
           {renderMedia(banner)}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none" />
           <div className="absolute bottom-0 left-0 p-8 md:p-12 text-white max-w-3xl pointer-events-auto">
-            <p className="uppercase tracking-[0.3em] text-xs mb-3">
-              {banner.position.replace('_', ' ')}
-            </p>
-            <h2 className="text-3xl md:text-5xl font-bold leading-tight">
+            <h2 className="text-3xl md:text-5xl font-bold leading-tight drop-shadow-lg">
               {banner.title}
             </h2>
             {banner.link_url && (

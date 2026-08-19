@@ -1,4 +1,4 @@
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { ShoppingCart } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -11,9 +11,21 @@ import { useFavoritesStore } from '../../store/favoritesStore';
 import { Toaster } from '../../admin/components/common/Toaster';
 import ScrollToTop from '../../components/ScrollToTop';
 
+// Rotas onde os botões flutuantes de suporte (WhatsApp/Chat) tapam elementos
+// críticos — formulários curtos com CTA no rodapé (login/registo/checkout) e
+// o portal do cliente, que já tem os próprios canais de contacto na sidebar.
+const FLOATING_BUTTONS_HIDDEN_ON = ['/login', '/register', '/checkout'];
+
+function shouldHideFloatingButtons(pathname: string): boolean {
+  if (pathname.startsWith('/account')) return true;
+  return FLOATING_BUTTONS_HIDDEN_ON.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
 export default function StorefrontLayout() {
   const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+  const hideFloatingButtons = shouldHideFloatingButtons(location.pathname);
   const { loadFromServer: loadCartFromServer } = useCartStore();
   const { loadFromServer: loadFavoritesFromServer, syncWithServer: syncFavoritesWithServer } = useFavoritesStore();
 
@@ -53,8 +65,12 @@ export default function StorefrontLayout() {
         </div>
       </main>
       <StoreFooter />
-      <WhatsAppButton />
-      <AIChat />
+      {!hideFloatingButtons && (
+        <>
+          <WhatsAppButton />
+          <AIChat />
+        </>
+      )}
       <Toaster />
     </div>
   );
