@@ -7,6 +7,7 @@ import { API_BASE_URL } from '../../utils/api';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const { login, isLoggingIn, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -22,22 +23,13 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    try {
-      login(
-        { email, password },
-        {
-          onSuccess: () => {
-            navigate(redirect);
-          },
-          onError: (err: Error) => {
-            setError(err.message);
-          },
-        }
-      );
-    } catch (err: any) {
-      setError(err.message || 'Erro ao fazer login');
-    }
+    login(
+      { email, password },
+      {
+        onSuccess: () => navigate(redirect),
+        onError: (err: Error) => setError(err.message),
+      }
+    );
   };
 
   const handleOAuth = (provider: OAuthProvider) => {
@@ -45,141 +37,163 @@ export default function LoginPage() {
       setError('Integração com Microsoft em breve.');
       return;
     }
-
-    try {
-      window.location.href = `${API_BASE_URL}/api/auth/oauth/${provider}?redirect=${encodeURIComponent(
-        redirect
-      )}`;
-    } catch (err: any) {
-      setError(`Erro ao iniciar login com ${provider === 'google' ? 'Google' : 'Apple'}`);
-    }
+    window.location.href = `${API_BASE_URL}/api/auth/oauth/${provider}?redirect=${encodeURIComponent(redirect)}`;
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-64px)] overflow-hidden bg-[radial-gradient(circle_at_top,_#fff4e6,_#fff9f4_55%,_#ffffff)] px-4 py-12 flex items-center justify-center">
-      <div className="pointer-events-none absolute -top-16 right-0 h-56 w-56 rounded-full bg-[#ffe0c7]/60 blur-[110px]" />
-      <div className="pointer-events-none absolute bottom-4 left-8 h-64 w-64 rounded-full bg-[#d2f2e9]/70 blur-[130px]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.35),_rgba(255,255,255,0))]" />
+    <div className="min-h-screen bg-[#faf9f7] flex flex-col">
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-6 py-4 sm:px-10">
+        <Link to="/" className="flex items-center gap-2 group">
+          <span className="text-lg font-semibold tracking-tight text-[#1a0f0a]">
+            Leia Sabores
+          </span>
+        </Link>
+        <p className="text-sm text-[#9c8070]">
+          Não tem conta?{' '}
+          <Link
+            to={`/register?redirect=${encodeURIComponent(redirect)}`}
+            className="font-medium text-[#1a0f0a] hover:underline underline-offset-2"
+          >
+            Registre-se
+          </Link>
+        </p>
+      </div>
 
-      <div className="relative z-10 w-full max-w-4xl grid gap-6 lg:grid-cols-2 items-center">
-        <div className="hidden lg:flex flex-col justify-between rounded-[28px] bg-gradient-to-br from-[#f4b985] via-[#e29b66] to-[#c97b57] text-white min-h-[520px] p-9 shadow-[0_25px_70px_rgba(201,123,87,0.35)]">
-          <div>
-            <p className="text-xs uppercase tracking-[0.4em] text-white/80 mb-3">
-              leia sabores
-            </p>
-            <h2 className="text-3xl font-heading font-semibold leading-tight mb-4">
-              Experiência premium em alimentação saudável de Portugal.
-            </h2>
-            <p className="text-white/80 leading-relaxed text-sm">
-              Salve seus pedidos, acompanhe entregas e receba recomendações personalizadas
-              para uma rotina equilibrada em Portugal.
-            </p>
-          </div>
-          <div className="space-y-3 text-sm text-white/80">
-            <div className="flex items-center gap-3">
-              <span className="h-10 w-10 rounded-2xl bg-white/15 text-white flex items-center justify-center text-base font-semibold">
-                24h
-              </span>
-              <p>Suporte dedicado para clientes cadastrados.</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="h-10 w-10 rounded-2xl bg-white/15 text-white flex items-center justify-center text-base font-semibold">
-                +
-              </span>
-              <p>Benefícios exclusivos, lançamentos e perks do clube.</p>
-            </div>
-          </div>
-        </div>
+      {/* Center content */}
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-[420px]">
 
-        <div className="rounded-[28px] bg-white/95 backdrop-blur-xl border border-white shadow-[0_25px_70px_rgba(15,23,42,0.12)] p-8">
-          <div className="flex flex-col gap-1 mb-8 text-center">
-            <h1 className="text-3xl font-heading font-semibold text-[#24160b]">
+          {/* Header */}
+          <div className="mb-8 text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#1a0f0a] mb-5">
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-semibold text-[#1a0f0a] tracking-tight">
               Bem-vindo de volta
             </h1>
-            <p className="text-sm text-[#6b4b34]">
-              Faça login para continuar sua experiência na Leiasabores.
+            <p className="mt-1.5 text-sm text-[#9c8070]">
+              Aceda à sua conta Leia Sabores
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Card */}
+          <div className="bg-white rounded-2xl border border-[#e8e0d9] shadow-sm p-7 sm:p-8">
+
+            {/* Error */}
             {error && (
-              <div className="bg-rose-50 border border-rose-200 text-rose-600 px-4 py-3 rounded-2xl text-sm">
+              <div className="mb-5 flex items-start gap-3 bg-red-50 border border-red-100 text-red-700 px-4 py-3 rounded-xl text-sm">
+                <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
                 {error}
               </div>
             )}
 
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-[#3c2a1c]">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full rounded-2xl border border-[#edd9c9] bg-white px-4 py-3 text-[#24160b] placeholder:text-[#a58a75] focus:outline-none focus:ring-2 focus:ring-[#f0cdae]"
-                placeholder="voce@email.com"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium text-[#3c2a1c]">
-                Senha
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full rounded-2xl border border-[#edd9c9] bg-white px-4 py-3 text-[#24160b] placeholder:text-[#a58a75] focus:outline-none focus:ring-2 focus:ring-[#f0cdae]"
-                placeholder="••••••••"
-              />
-              <div className="flex justify-end">
-                <Link
-                  to="/forgot-password"
-                  className="text-xs text-[#a98367] hover:text-[#24160b] hover:underline"
-                >
-                  Esqueceu a senha?
-                </Link>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Email */}
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-[#3c2a1c] mb-1.5">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  placeholder="voce@email.com"
+                  className="w-full rounded-xl border border-[#e2d6cc] bg-[#faf9f7] px-4 py-2.5 text-sm text-[#1a0f0a] placeholder:text-[#bba898] transition focus:outline-none focus:border-[#1a0f0a] focus:ring-2 focus:ring-[#1a0f0a]/10"
+                />
               </div>
+
+              {/* Password */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label htmlFor="password" className="block text-sm font-medium text-[#3c2a1c]">
+                    Senha
+                  </label>
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs text-[#9c8070] hover:text-[#1a0f0a] transition"
+                  >
+                    Esqueceu a senha?
+                  </Link>
+                </div>
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    className="w-full rounded-xl border border-[#e2d6cc] bg-[#faf9f7] px-4 py-2.5 pr-10 text-sm text-[#1a0f0a] placeholder:text-[#bba898] transition focus:outline-none focus:border-[#1a0f0a] focus:ring-2 focus:ring-[#1a0f0a]/10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(v => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#bba898] hover:text-[#1a0f0a] transition"
+                    aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  >
+                    {showPassword ? (
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={isLoggingIn}
+                className="w-full mt-1 rounded-xl bg-[#1a0f0a] text-white text-sm font-semibold py-2.5 transition hover:bg-[#2e1a10] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isLoggingIn ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    A entrar...
+                  </>
+                ) : (
+                  'Entrar'
+                )}
+              </button>
+            </form>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 my-5">
+              <div className="flex-1 h-px bg-[#ede6df]" />
+              <span className="text-xs text-[#bba898] font-medium">ou continue com</span>
+              <div className="flex-1 h-px bg-[#ede6df]" />
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoggingIn}
-              className="w-full rounded-2xl bg-[#24160b] text-white font-semibold py-3 transition hover:bg-[#3a2313] disabled:opacity-70"
-            >
-              {isLoggingIn ? 'Entrando...' : 'Entrar'}
-            </button>
-          </form>
-
-          <div className="mt-10">
-            <p className="text-center text-[#77543a] text-sm mb-4">Ou continue com</p>
+            {/* OAuth */}
             <OAuthButtons onSelect={handleOAuth} disabledProviders={['microsoft']} />
-            <p className="text-xs text-[#a98367] mt-3 text-center">* Microsoft em breve</p>
+            <p className="text-xs text-[#bba898] mt-2 text-center">* Microsoft em breve</p>
           </div>
 
-          <div className="mt-8 text-center space-y-2">
-            <p className="text-sm text-[#6b4b34]">
-              Não tem uma conta?{' '}
-              <Link
-                to={`/register?redirect=${encodeURIComponent(redirect)}`}
-                className="text-[#24160b] font-semibold hover:underline"
-              >
-                Registre-se
-              </Link>
-            </p>
-            <p className="text-sm">
-              <Link to="/" className="text-[#a98367] hover:text-[#24160b]">
-                ← Voltar para a loja
-              </Link>
-            </p>
-          </div>
+          {/* Footer link */}
+          <p className="mt-6 text-center text-sm text-[#9c8070]">
+            <Link to="/" className="hover:text-[#1a0f0a] transition">
+              ← Voltar para a loja
+            </Link>
+          </p>
         </div>
       </div>
     </div>
   );
 }
-

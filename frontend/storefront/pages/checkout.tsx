@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { loadStripe, StripeElementsOptions } from '@stripe/stripe-js'
-import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
+import { Elements, ExpressCheckoutElement, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useCartStore } from '../../store/cartStore'
 import { formatPrice } from '../../utils/format'
@@ -14,11 +14,13 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../admin/components
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '../../admin/components/ui/dialog'
 import { Input } from '../../admin/components/ui/input'
 import { Label } from '../../admin/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../admin/components/ui/select'
 import { Badge } from '../../admin/components/ui/badge'
 import { handleError } from '../../utils/errorHandler'
 import { useAuth } from '../../hooks/useAuth'
 import type { Address, ApiResponse } from '@shared/types'
 import { cn } from '../../utils/cn'
+import { PORTUGAL_DISTRICTS, PortugalDistrict } from '@shared/constants/portugal'
 
 const COUNTRY_ALIAS: Record<string, string> = {
   portugal: 'PT',
@@ -47,6 +49,41 @@ const normalizeCountryCode = (value?: string | null) => {
   return 'PT'
 }
 
+const normalizeDistrictKey = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+
+const PORTUGAL_DISTRICT_LOOKUP: Record<string, PortugalDistrict> = PORTUGAL_DISTRICTS.reduce(
+  (acc, district) => {
+    acc[normalizeDistrictKey(district)] = district
+    return acc
+  },
+  {} as Record<string, PortugalDistrict>
+)
+
+const ensurePortugalDistrict = (value?: string | null): PortugalDistrict | null => {
+  if (!value) return null
+  const normalized = normalizeDistrictKey(value)
+  return PORTUGAL_DISTRICT_LOOKUP[normalized] ?? null
+}
+
+const STRIPE_SECRET_ERROR_PATTERN = /(sk|rk)_(live|test)_|expired api key|invalid api key|api key provided|stripe_secret_key/i
+
+const getCreateOrderErrorMessage = (message?: string) => {
+  if (!message) {
+    return 'Erro ao iniciar checkout. Verifique se há produtos no carrinho.'
+  }
+
+  if (STRIPE_SECRET_ERROR_PATTERN.test(message)) {
+    return 'Pagamento temporariamente indisponível. Estamos a atualizar a configuração da Stripe.'
+  }
+
+  return message
+}
+
 // Componente do formulário de pagamento
 function CheckoutForm({
   clientSecret,
@@ -71,9 +108,7 @@ function CheckoutForm({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
+  const confirmCurrentPayment = async () => {
     if (!stripe || !elements) {
       return
     }
@@ -164,17 +199,17 @@ function CheckoutForm({
         },
       }
 
-      const shippingParams = {
-        name: billingDetails.name,
-        phone: normalizedAddress.phone || undefined,
-        address: {
-          line1: normalizedAddress.address_line1,
-          line2: normalizedAddress.address_line2 || undefined,
-          city: normalizedAddress.city,
-          state: normalizedAddress.state,
-          postal_code: normalizedAddress.postal_code,
-          country: normalizeCountryCode(normalizedAddress.country),
-        },
+      const { error: submitError } = await elements.submit()
+      if (submitError) {
+        const message = submitError.message || 'Verifique os dados do pagamento e tente novamente.'
+        setError(message)
+        toast({
+          title: 'Dados de pagamento incompletos',
+          description: message,
+          variant: 'destructive',
+        })
+        setLoading(false)
+        return
       }
 
       const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
@@ -259,6 +294,15 @@ function CheckoutForm({
     }
   }
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await confirmCurrentPayment()
+  }
+
+  const handleExpressConfirm = async () => {
+    await confirmCurrentPayment()
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="rounded-lg border bg-muted/40 p-4">
@@ -287,11 +331,64 @@ function CheckoutForm({
       <div className="space-y-2">
         <h3 className="text-lg font-semibold">Método de Pagamento</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Escolha entre Cartão, MB Way, Klarna, Apple Pay ou Google Pay
+          Escolha entre pagamento rápido, cartão e outros métodos disponíveis
         </p>
+
+        <div className="rounded-2xl border bg-white p-4 shadow-sm">
+          <div className="mb-3">
+            <p className="font-semibold">Pagamento rápido</p>
+            <p className="text-xs text-muted-foreground">
+              Apple Pay, Google Pay, Link/Shop, PayPal e Klarna aparecem quando estiverem disponíveis para o dispositivo e para a conta Stripe.
+            </p>
+          </div>
+          <ExpressCheckoutElement
+            options={{
+              business: { name: 'Leiasabores' },
+              buttonHeight: 48,
+              layout: {
+                maxColumns: 2,
+                maxRows: 3,
+                overflow: 'auto',
+              },
+              paymentMethodOrder: ['apple_pay', 'google_pay', 'link', 'paypal', 'klarna'],
+              paymentMethods: {
+                applePay: 'always',
+                googlePay: 'always',
+                link: 'auto',
+                paypal: 'auto',
+                klarna: 'auto',
+                amazonPay: 'never',
+              },
+            }}
+            onConfirm={handleExpressConfirm}
+            onLoadError={(event) => {
+              console.error('Erro ao carregar pagamento rápido:', event.error)
+            }}
+          />
+        </div>
+
+        <div className="flex items-center gap-3 py-2">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">ou</span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
+
         <PaymentElement
           options={{
-            layout: 'tabs',
+            layout: { type: 'accordion', defaultCollapsed: false, radios: true, spacedAccordionItems: false },
+            defaultValues: {
+              billingDetails: {
+                name: selectedAddress
+                  ? `${selectedAddress.first_name} ${selectedAddress.last_name}`.trim()
+                  : undefined,
+                email: customerEmail || undefined,
+                phone: selectedAddress?.phone || undefined,
+                address: {
+                  country: normalizeCountryCode(selectedAddress?.country) || 'PT',
+                  postal_code: selectedAddress?.postal_code || undefined,
+                },
+              },
+            },
             fields: {
               billingDetails: {
                 name: 'never',
@@ -301,12 +398,9 @@ function CheckoutForm({
               },
             },
             wallets: {
-              applePay: 'auto',
-              googlePay: 'auto',
+              applePay: 'never',
+              googlePay: 'never',
             },
-            // Métodos disponíveis: Cartão, MB Way (link), Klarna
-            // Apple Pay e Google Pay aparecem automaticamente quando disponíveis no dispositivo
-            // Nota: MB Way (link) e Klarna só aparecem se estiverem habilitados no painel do Stripe
           }}
         />
       </div>
@@ -712,7 +806,7 @@ export default function CheckoutPage() {
 
       toast({
         title: 'Erro ao criar pedido',
-        description: handled.message || 'Erro ao iniciar checkout. Verifique se há produtos no carrinho.',
+        description: getCreateOrderErrorMessage(handled.message),
         variant: 'destructive',
       })
       // Não navegar automaticamente - deixar usuário tentar novamente
@@ -736,6 +830,16 @@ export default function CheckoutPage() {
       return
     }
 
+    const normalizedDistrict = ensurePortugalDistrict(addressForm.state)
+    if (!normalizedDistrict) {
+      toast({
+        title: 'Distrito inválido',
+        description: 'Selecione um distrito de Portugal para continuar.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     // Requer autenticação para salvar endereço
     if (!isAuthenticated) {
       toast({
@@ -751,6 +855,7 @@ export default function CheckoutPage() {
     try {
       await addAddressMutation.mutateAsync({
         ...addressForm,
+        state: normalizedDistrict,
         country: normalizeCountryCode(addressForm.country),
         type: 'shipping',
         is_default: addressForm.is_default || addresses.length === 0,
@@ -769,14 +874,13 @@ export default function CheckoutPage() {
     if (!clientSecret) return { clientSecret: '' }
     return {
       clientSecret,
+      locale: 'pt' as const,
       appearance: {
         theme: 'stripe' as const,
         variables: {
           colorPrimary: '#8B4513',
         },
       },
-      // Remover paymentMethodTypes - não é necessário aqui
-      // O AddressElement e PaymentElement são configurados separadamente
     }
   }, [clientSecret])
 
@@ -1004,12 +1108,23 @@ export default function CheckoutPage() {
                         </div>
                         <div>
                           <Label htmlFor="state">Distrito *</Label>
-                          <Input
-                            id="state"
-                            value={addressForm.state}
-                            onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })}
-                            required
-                          />
+                          <Select
+                            value={addressForm.state || undefined}
+                            onValueChange={(value) =>
+                              setAddressForm({ ...addressForm, state: value })
+                            }
+                          >
+                            <SelectTrigger id="state">
+                              <SelectValue placeholder="Selecione o distrito" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PORTUGAL_DISTRICTS.map((district) => (
+                                <SelectItem key={district} value={district}>
+                                  {district}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div>
                           <Label htmlFor="postal_code">Código Postal *</Label>

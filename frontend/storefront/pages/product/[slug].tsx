@@ -293,10 +293,29 @@ export default function ProductPage() {
             </div>
 
             {/* Preço */}
-            <div className="mb-6">
+            <div className="mb-4">
               <div className="flex items-baseline gap-3">
                 <span className="text-4xl font-bold text-primary">{formatPrice(price)}</span>
               </div>
+              {/* Klarna Pay in 3 messaging */}
+              {price >= 3500 && (
+                <div className="mt-3 flex items-center gap-2 bg-[#fdf0f5] border border-[#FFB3C7] rounded-lg px-4 py-2.5">
+                  <span className="font-black text-[#17120f] italic text-base leading-none">K</span>
+                  <span className="text-sm text-[#17120f]">
+                    3× {formatPrice(Math.ceil(price / 3))} sem juros com{' '}
+                    <span className="font-black italic">Klarna</span>
+                    {' '}·{' '}
+                    <a
+                      href="https://www.klarna.com/pt/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline text-[#0057FF]"
+                    >
+                      Saber mais
+                    </a>
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

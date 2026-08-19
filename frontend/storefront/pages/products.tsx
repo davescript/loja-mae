@@ -184,8 +184,13 @@ export default function ProductsPage() {
                 value={categoryId || ''}
                 onChange={(e) => {
                   const p = new URLSearchParams(searchParams);
-                  e.target.value ? p.set('category_id', e.target.value) : p.delete('category_id');
-                  p.delete('category'); p.set('page', '1');
+                  if (e.target.value) {
+                    p.set('category_id', e.target.value);
+                  } else {
+                    p.delete('category_id');
+                  }
+                  p.delete('category');
+                  p.set('page', '1');
                   setSearchParams(p);
                 }}
                 className="input w-full text-sm"
