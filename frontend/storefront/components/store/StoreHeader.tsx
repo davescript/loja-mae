@@ -121,7 +121,10 @@ export default function StoreHeader() {
       </motion.div> */}
 
       {/* Main Header com glassmorphism */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-border/50 shadow-sm">
+      <header
+        className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-border/50 shadow-sm"
+        style={{ paddingTop: 'var(--safe-area-top)' }}
+      >
         <div className="container mx-auto px-3 sm:px-4">
           {/* Header Top - Social & Welcome */}
           <div className="hidden md:flex items-center justify-between py-2 text-xs text-muted-foreground border-b border-border/50">
@@ -449,7 +452,15 @@ export default function StoreHeader() {
                 transition={{ type: 'spring', damping: 28, stiffness: 220 }}
                 className="lg:hidden fixed inset-y-0 left-0 w-[80vw] max-w-xs bg-white border-r border-border/50 shadow-2xl z-50 overflow-y-auto"
               >
-                <div className="p-5">
+                <div
+                  className="p-5"
+                  style={{
+                    paddingTop: 'calc(1.25rem + var(--safe-area-top))',
+                    paddingRight: 'calc(1.25rem + var(--safe-area-right))',
+                    paddingBottom: 'calc(1.25rem + var(--safe-area-bottom))',
+                    paddingLeft: 'calc(1.25rem + var(--safe-area-left))',
+                  }}
+                >
                   <div className="flex items-center justify-between mb-6">
                     <span className="text-xl font-heading font-bold gradient-text">Leiasabores</span>
                     <button

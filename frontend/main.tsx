@@ -22,6 +22,8 @@ if (!rootElement) {
   throw new Error('Root element not found');
 }
 
+document.documentElement.dataset.appBuild = '2026-04-18-asset-refresh';
+
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <ErrorBoundary>
@@ -33,4 +35,3 @@ ReactDOM.createRoot(rootElement).render(
     </ErrorBoundary>
   </React.StrictMode>
 );
-

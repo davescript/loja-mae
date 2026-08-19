@@ -192,6 +192,17 @@ export default function CartPage() {
                 </div>
               </div>
 
+              {/* Klarna messaging */}
+              {total >= 3500 && (
+                <div className="flex items-center gap-2 bg-[#fdf0f5] border border-[#FFB3C7] rounded-lg px-3 py-2 mb-4">
+                  <span className="font-black text-[#17120f] italic text-base leading-none">K</span>
+                  <span className="text-xs text-[#17120f]">
+                    3× {formatPrice(Math.ceil(total / 3))} sem juros com{' '}
+                    <span className="font-black italic">Klarna</span>
+                  </span>
+                </div>
+              )}
+
               <Button
                 onClick={handleCheckout}
                 className="w-full"

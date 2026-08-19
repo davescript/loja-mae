@@ -128,7 +128,7 @@ export default function ProductCard({ product, onQuickView, onAddToCart, listVie
             onClick={() => onQuickView?.(product)}
           >
             {imageUrl ? (
-              <img src={imageUrl} alt={product.title} className="w-full h-full object-cover" />
+              <img src={imageUrl} alt={product.title} className="w-full h-full object-contain p-1" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-2xl">📦</div>
             )}
@@ -225,7 +225,7 @@ export default function ProductCard({ product, onQuickView, onAddToCart, listVie
                 key={`product-${product.id}-image-${currentImageIndex}`}
                 src={imageUrl}
                 alt={currentImage?.alt_text || product.title}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain p-2"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}

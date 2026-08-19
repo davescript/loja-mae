@@ -33,6 +33,10 @@ export default function WhatsAppButton() {
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.95 }}
       className="fixed bottom-6 right-6 z-50 group"
+      style={{
+        right: 'calc(1.5rem + var(--safe-area-right))',
+        bottom: 'calc(1.5rem + var(--safe-area-bottom))',
+      }}
       aria-label="Fale conosco no WhatsApp"
     >
       {/* Botão Principal */}
@@ -69,4 +73,3 @@ export default function WhatsAppButton() {
     </motion.a>
   );
 }
-
