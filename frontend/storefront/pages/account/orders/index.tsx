@@ -4,7 +4,7 @@ import { apiRequest } from '../../../../utils/api';
 import { formatPrice } from '../../../../utils/format';
 import { Order, PaginatedResponse } from '../../../../../shared/types';
 import { motion } from 'framer-motion';
-import { Package, Search, Filter, Download } from 'lucide-react';
+import { Package, Search, Filter, Download, CreditCard, AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '../../../../admin/components/ui/card';
 import { Badge } from '../../../../admin/components/ui/badge';
 import { Button } from '../../../../admin/components/ui/button';
@@ -201,8 +201,17 @@ export default function CustomerOrdersPage() {
                           </div>
                         </div>
                         {order.payment_status && (
-                          <div className="mt-2 text-xs text-muted-foreground space-y-1">
-                            <div>Pagamento: {order.payment_status === 'paid' ? 'Confirmado' : 'Pendente'}</div>
+                          <div className="mt-2 text-xs space-y-1">
+                            {order.payment_status === 'pending' && order.status !== 'cancelled' ? (
+                              <div className="flex items-center gap-1 text-amber-600 font-medium">
+                                <AlertCircle className="w-3 h-3" />
+                                Pagamento pendente — clique em Pagar Agora para concluir
+                              </div>
+                            ) : (
+                              <div className="text-muted-foreground">
+                                Pagamento: {order.payment_status === 'paid' ? 'Confirmado' : order.payment_status}
+                              </div>
+                            )}
                             {getPrimaryItemCode(order) && (
                               <div className="font-medium text-foreground">
                                 Produto: {order.items?.[0]?.title || 'Produto sem nome'}
@@ -211,7 +220,21 @@ export default function CustomerOrdersPage() {
                           </div>
                         )}
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap justify-end">
+                        {order.payment_status === 'pending' && order.status !== 'cancelled' && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="bg-amber-600 hover:bg-amber-700 text-white"
+                            onClick={(e: React.MouseEvent) => {
+                              e.stopPropagation();
+                              navigate(`/account/orders/${order.order_number}#pagar`);
+                            }}
+                          >
+                            <CreditCard className="w-4 h-4 mr-2" />
+                            Pagar Agora
+                          </Button>
+                        )}
                         {order.payment_status === 'paid' && (
                           <Button
                             variant="outline"
@@ -227,7 +250,7 @@ export default function CustomerOrdersPage() {
                           </Button>
                         )}
                         <Button
-                          variant="default"
+                          variant="outline"
                           size="sm"
                           onClick={(e: React.MouseEvent) => {
                             e.stopPropagation();

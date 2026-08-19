@@ -3,6 +3,22 @@
  * Professional invoice design with modern styling
  */
 
+/**
+ * These templates interpolate customer-controlled data (name, address, notes)
+ * directly into HTML served to admins/customers in a browser. Escape it —
+ * otherwise a customer can plant a script in e.g. their address line 2 or
+ * order notes that runs in an admin's session when they open the document.
+ */
+function escapeHtml(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export interface InvoiceData {
   order_number: string;
   order_date: string;
@@ -442,20 +458,20 @@ export function generateInvoiceHTML(data: InvoiceData): string {
       <div class="info-grid">
         <div class="card">
           <h3>Cliente</h3>
-          <div class="highlight">${fullName}</div>
-          <div class="value">${data.customer_email}</div>
-          ${data.shipping_address.phone ? `<div class="value">Telefone: ${data.shipping_address.phone}</div>` : ''}
+          <div class="highlight">${escapeHtml(fullName)}</div>
+          <div class="value">${escapeHtml(data.customer_email)}</div>
+          ${data.shipping_address.phone ? `<div class="value">Telefone: ${escapeHtml(data.shipping_address.phone)}</div>` : ''}
         </div>
         <div class="card">
           <h3>Entrega</h3>
-          <div class="value">${addressLine1 || '—'}</div>
-          ${addressLine2 ? `<div class="value">${addressLine2}</div>` : ''}
-          <div class="value">${data.shipping_address.postal_code} ${data.shipping_address.city}</div>
-          <div class="value">${getCountryName(data.shipping_address.country)}</div>
+          <div class="value">${escapeHtml(addressLine1) || '—'}</div>
+          ${addressLine2 ? `<div class="value">${escapeHtml(addressLine2)}</div>` : ''}
+          <div class="value">${escapeHtml(data.shipping_address.postal_code)} ${escapeHtml(data.shipping_address.city)}</div>
+          <div class="value">${escapeHtml(getCountryName(data.shipping_address.country))}</div>
         </div>
         <div class="card">
           <h3>Pagamento</h3>
-          ${data.payment_method ? `<div class="value">${data.payment_method}</div>` : '<div class="value">Não especificado</div>'}
+          ${data.payment_method ? `<div class="value">${escapeHtml(data.payment_method)}</div>` : '<div class="value">Não especificado</div>'}
           <div class="status-pill ${paymentStatusClass}">
             ${data.payment_status === 'paid' ? '✔' : '⏳'} ${paymentStatusLabel}
           </div>
@@ -475,7 +491,7 @@ export function generateInvoiceHTML(data: InvoiceData): string {
           <tbody>
             ${data.items.map(item => `
             <tr>
-              <td>${item.title}</td>
+              <td>${escapeHtml(item.title)}</td>
               <td>${item.quantity}</td>
               <td>${formatPrice(item.price_cents)}</td>
               <td>${formatPrice(item.total_cents)}</td>
@@ -537,6 +553,221 @@ export function generateInvoiceHTML(data: InvoiceData): string {
 </body>
 </html>
   `.trim();
+}
+
+export interface ShippingSlipData {
+  order_number: string;
+  order_date: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone?: string;
+  shipping_address: {
+    first_name?: string;
+    last_name?: string;
+    address_line1?: string;
+    address_line2?: string;
+    city: string;
+    postal_code: string;
+    state?: string;
+    country: string;
+    phone?: string;
+  };
+  items: Array<{
+    title: string;
+    quantity: number;
+    price_cents: number;
+  }>;
+  total_cents: number;
+  notes?: string | null;
+}
+
+export function generateShippingSlipHTML(data: ShippingSlipData): string {
+  const formatPrice = (cents: number) =>
+    new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(cents / 100);
+
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString('pt-PT', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const countryNames: Record<string, string> = {
+    PT: 'Portugal', BR: 'Brasil', ES: 'Espanha', FR: 'França', GB: 'Reino Unido', US: 'Estados Unidos',
+  };
+
+  const recipientName = data.shipping_address.first_name || data.shipping_address.last_name
+    ? `${data.shipping_address.first_name || ''} ${data.shipping_address.last_name || ''}`.trim()
+    : data.customer_name;
+  const recipientPhone = data.shipping_address.phone || data.customer_phone || '';
+  const addressLine1 = data.shipping_address.address_line1 || '';
+  const addressLine2 = data.shipping_address.address_line2 || '';
+  const city = `${data.shipping_address.postal_code} ${data.shipping_address.city}`.trim();
+  const state = data.shipping_address.state || '';
+  const country = countryNames[data.shipping_address.country?.toUpperCase()] || data.shipping_address.country || 'Portugal';
+
+  const itemsHTML = data.items.map(item => `
+    <tr>
+      <td class="item-name">${escapeHtml(item.title)}</td>
+      <td class="item-qty">${item.quantity}</td>
+      <td class="item-price">${formatPrice(item.price_cents * item.quantity)}</td>
+    </tr>`).join('');
+
+  return `<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <title>Guia de Envio ${data.order_number}</title>
+  <style>
+    @page { size: A4; margin: 12mm; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Arial', sans-serif; font-size: 13px; color: #111; background: #fff; }
+
+    .page { max-width: 780px; margin: 0 auto; }
+
+    /* ── Top bar ── */
+    .topbar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 16px; background: #111827; color: #fff; border-radius: 8px 8px 0 0;
+    }
+    .topbar .brand { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+    .topbar .order-ref { font-size: 13px; opacity: 0.8; }
+    .topbar .order-num { font-size: 22px; font-weight: 700; letter-spacing: 2px; }
+
+    /* ── Address block ── */
+    .address-section {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+      border: 2px solid #111827; border-top: none;
+    }
+    .address-box { padding: 18px 20px; }
+    .address-box + .address-box { border-left: 2px solid #111827; }
+    .address-box .label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px;
+      color: #6b7280; margin-bottom: 10px; font-weight: 700;
+    }
+    .address-box .main-name {
+      font-size: 20px; font-weight: 800; line-height: 1.2; margin-bottom: 6px; color: #111;
+    }
+    .address-box .addr-line { font-size: 14px; line-height: 1.7; color: #222; }
+    .address-box .phone { font-size: 13px; margin-top: 8px; color: #374151; }
+    .address-box .phone span { font-weight: 700; }
+    .highlight-box { background: #f0fdf4; border-left: 4px solid #16a34a !important; }
+
+    /* ── Cut line ── */
+    .cut-hint {
+      text-align: center; font-size: 10px; color: #9ca3af;
+      border-top: 1px dashed #d1d5db; padding: 4px 0; margin: 0;
+      letter-spacing: 2px;
+    }
+
+    /* ── Items table ── */
+    .items-section {
+      margin-top: 16px;
+      border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;
+    }
+    .items-header {
+      background: #f9fafb; padding: 10px 16px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1px; color: #374151; border-bottom: 1px solid #e5e7eb;
+      display: flex; justify-content: space-between;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #1f2937; color: #fff; padding: 10px 14px; font-size: 11px;
+         text-transform: uppercase; letter-spacing: 0.8px; text-align: left; }
+    th:nth-child(2), th:nth-child(3) { text-align: center; }
+    td { padding: 10px 14px; border-bottom: 1px solid #f3f4f6; font-size: 13px; }
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) td { background: #f9fafb; }
+    .item-qty, .item-price { text-align: center; font-weight: 600; }
+
+    /* ── Footer row ── */
+    .footer-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 14px; padding: 12px 16px;
+      background: #111827; color: #fff; border-radius: 0 0 8px 8px;
+    }
+    .footer-row .meta { font-size: 11px; opacity: 0.7; }
+    .footer-row .total { font-size: 18px; font-weight: 800; }
+
+    /* ── Notes ── */
+    .notes-box {
+      margin-top: 12px; padding: 12px 16px;
+      border: 1px dashed #d1d5db; border-radius: 6px; background: #fffbeb;
+      font-size: 12px; color: #555;
+    }
+    .notes-box strong { display: block; margin-bottom: 4px; color: #111; }
+
+    @media print {
+      body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div>
+      <div class="brand">Leia Sabores</div>
+      <div class="order-ref">Guia de Envio • ${formatDate(data.order_date)}</div>
+    </div>
+    <div style="text-align:right">
+      <div class="order-ref">Nº do Pedido</div>
+      <div class="order-num">#${data.order_number}</div>
+    </div>
+  </div>
+
+  <!-- Address section -->
+  <div class="address-section">
+    <div class="address-box">
+      <div class="label">Remetente (De)</div>
+      <div class="main-name">Leia Sabores</div>
+      <div class="addr-line">Loja Mãe — Produtos Premium</div>
+      <div class="addr-line">Portugal</div>
+      <div class="phone">Email: <span>suporte@leiasabores.pt</span></div>
+    </div>
+    <div class="address-box highlight-box">
+      <div class="label">Destinatário (Para)</div>
+      <div class="main-name">${escapeHtml(recipientName)}</div>
+      <div class="addr-line">${escapeHtml(addressLine1)}</div>
+      ${addressLine2 ? `<div class="addr-line">${escapeHtml(addressLine2)}</div>` : ''}
+      <div class="addr-line">${escapeHtml(city)}</div>
+      ${state ? `<div class="addr-line">${escapeHtml(state)}</div>` : ''}
+      <div class="addr-line" style="font-weight:700">${escapeHtml(country)}</div>
+      ${recipientPhone ? `<div class="phone">Tel: <span>${escapeHtml(recipientPhone)}</span></div>` : ''}
+    </div>
+  </div>
+
+  <div class="cut-hint">✂ ─ ─ ─ ─ ─ ─ RECORTAR PARA ETIQUETA ─ ─ ─ ─ ─ ─ ✂</div>
+
+  <!-- Items -->
+  <div class="items-section">
+    <div class="items-header">
+      <span>Lista de Produtos — Pedido #${data.order_number}</span>
+      <span>${data.items.reduce((sum, i) => sum + i.quantity, 0)} artigo(s)</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>Qtd.</th>
+          <th>Valor</th>
+        </tr>
+      </thead>
+      <tbody>${itemsHTML}</tbody>
+    </table>
+  </div>
+
+  ${data.notes ? `<div class="notes-box"><strong>Notas do Pedido:</strong>${escapeHtml(data.notes)}</div>` : ''}
+
+  <!-- Footer -->
+  <div class="footer-row">
+    <div class="meta">
+      ${escapeHtml(data.customer_email)}<br>
+      Gerado em ${new Date().toLocaleDateString('pt-PT')} às ${new Date().toLocaleTimeString('pt-PT')}
+    </div>
+    <div class="total">Total: ${formatPrice(data.total_cents)}</div>
+  </div>
+
+</div>
+</body>
+</html>`.trim();
 }
 
 /**

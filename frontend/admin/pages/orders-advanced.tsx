@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../components/ui/dialog"
 import { Badge } from "../components/ui/badge"
 import { formatPrice } from "../../utils/format"
-import { Eye, Package, Truck, CheckCircle, XCircle, Clock, RefreshCw } from "lucide-react"
+import { Eye, Package, Truck, CheckCircle, XCircle, Clock, RefreshCw, FileText, Printer } from "lucide-react"
+import { downloadShippingSlip, downloadInvoicePDF } from "../../utils/invoice"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { useToast } from "../hooks/useToast"
@@ -75,6 +76,8 @@ export default function AdminOrdersPageAdvanced() {
   const { toast } = useToast()
 
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string>(new Date().toISOString())
+  const [slipLoading, setSlipLoading] = useState<number | null>(null)
+  const [invoiceLoading, setInvoiceLoading] = useState<number | null>(null)
 
   const { data: ordersData, isLoading } = useQuery({
     queryKey: ["admin", "orders", page, search, statusFilter],
@@ -274,24 +277,57 @@ export default function AdminOrdersPageAdvanced() {
       key: "actions",
       header: "Ações",
       accessor: (order) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <Button
             variant="outline"
             size="sm"
-            onClick={(e) => {
-              e.stopPropagation()
-              setSelectedOrder(order)
-            }}
+            onClick={(e) => { e.stopPropagation(); setSelectedOrder(order); }}
+            title="Ver detalhes"
           >
             <Eye className="w-4 h-4" />
           </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async (e) => {
+              e.stopPropagation()
+              setSlipLoading(order.id)
+              try { await downloadShippingSlip(order.id) } finally { setSlipLoading(null) }
+            }}
+            disabled={slipLoading === order.id}
+            title="Guia de envio (imprimir para o correio)"
+            className="text-green-700 border-green-300 hover:bg-green-50"
+          >
+            {slipLoading === order.id
+              ? <RefreshCw className="w-4 h-4 animate-spin" />
+              : <Truck className="w-4 h-4" />}
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async (e) => {
+              e.stopPropagation()
+              setInvoiceLoading(order.id)
+              try { await downloadInvoicePDF(order.id) } finally { setInvoiceLoading(null) }
+            }}
+            disabled={invoiceLoading === order.id}
+            title="Fatura PDF"
+            className="text-blue-700 border-blue-300 hover:bg-blue-50"
+          >
+            {invoiceLoading === order.id
+              ? <RefreshCw className="w-4 h-4 animate-spin" />
+              : <FileText className="w-4 h-4" />}
+          </Button>
+
           {order.payment_status === 'pending' && order.stripe_payment_intent_id && (
             <Button
               variant="outline"
               size="sm"
               onClick={(e) => {
                 e.stopPropagation()
-                syncPaymentMutation.mutate({ 
+                syncPaymentMutation.mutate({
                   orderId: order.id,
                   orderNumber: order.order_number,
                   paymentIntentId: order.stripe_payment_intent_id || undefined
@@ -374,7 +410,45 @@ export default function AdminOrdersPageAdvanced() {
       <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Pedido #{selectedOrder?.order_number}</DialogTitle>
+            <DialogTitle className="flex items-center justify-between gap-4 flex-wrap">
+              <span>Pedido #{selectedOrder?.order_number}</span>
+              {selectedOrder && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2 text-green-700 border-green-300 hover:bg-green-50"
+                    onClick={async () => {
+                      if (!selectedOrder) return
+                      setSlipLoading(selectedOrder.id)
+                      try { await downloadShippingSlip(selectedOrder.id) } finally { setSlipLoading(null) }
+                    }}
+                    disabled={slipLoading === selectedOrder.id}
+                  >
+                    {slipLoading === selectedOrder.id
+                      ? <RefreshCw className="w-4 h-4 animate-spin" />
+                      : <Printer className="w-4 h-4" />}
+                    Guia de Envio
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2 text-blue-700 border-blue-300 hover:bg-blue-50"
+                    onClick={async () => {
+                      if (!selectedOrder) return
+                      setInvoiceLoading(selectedOrder.id)
+                      try { await downloadInvoicePDF(selectedOrder.id) } finally { setInvoiceLoading(null) }
+                    }}
+                    disabled={invoiceLoading === selectedOrder.id}
+                  >
+                    {invoiceLoading === selectedOrder.id
+                      ? <RefreshCw className="w-4 h-4 animate-spin" />
+                      : <FileText className="w-4 h-4" />}
+                    Fatura PDF
+                  </Button>
+                </div>
+              )}
+            </DialogTitle>
             <DialogDescription>Detalhes completos do pedido</DialogDescription>
           </DialogHeader>
 

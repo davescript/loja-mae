@@ -1,25 +1,32 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { apiRequest } from '../../../../utils/api';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect, useMemo } from 'react';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { apiRequest, API_BASE_URL } from '../../../../utils/api';
 import { formatPrice } from '../../../../utils/format';
 import { Order, OrderItem } from '../../../../../shared/types';
 import { motion } from 'framer-motion';
-import { 
-  Package, 
-  Download, 
-  ArrowLeft, 
-  CheckCircle2, 
-  Clock, 
-  Truck, 
+import {
+  Package,
+  Download,
+  ArrowLeft,
+  CheckCircle2,
+  Clock,
+  Truck,
   MapPin,
   CreditCard,
   HeadphonesIcon,
   ExternalLink,
-  XCircle
+  XCircle,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../../admin/components/ui/card';
 import { Badge } from '../../../../admin/components/ui/badge';
 import { Button } from '../../../../admin/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../../admin/components/ui/dialog';
+import { useToast } from '../../../../admin/hooks/useToast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -43,9 +50,159 @@ type OrderWithHistory = Order & {
   delivered_at?: string;
 };
 
+function ResumePaymentForm({
+  orderNumber,
+  clientSecret,
+  onSuccess,
+  onCancel,
+}: {
+  orderNumber: string;
+  clientSecret: string;
+  onSuccess: () => void;
+  onCancel: () => void;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+    setLoading(true);
+    setError(null);
+
+    const { error: submitError } = await elements.submit();
+    if (submitError) {
+      setError(submitError.message || 'Verifique os dados do pagamento.');
+      setLoading(false);
+      return;
+    }
+
+    const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      confirmParams: { return_url: `${window.location.origin}/checkout/success?order=${orderNumber}` },
+      redirect: 'if_required',
+    });
+
+    if (stripeError) {
+      setError(stripeError.message || 'Erro ao processar pagamento.');
+      toast({ title: 'Erro no pagamento', description: stripeError.message, variant: 'destructive' });
+      setLoading(false);
+      return;
+    }
+
+    if (paymentIntent?.status === 'succeeded') {
+      try {
+        await fetch(`${API_BASE_URL}/api/orders/sync-payment?order_number=${orderNumber}&payment_intent_id=${paymentIntent.id}`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch {
+        // sync falhou mas pagamento foi processado
+      }
+      toast({ title: 'Pagamento confirmado!', description: 'O seu pedido foi pago com sucesso.' });
+      onSuccess();
+    }
+    setLoading(false);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <PaymentElement
+        options={{
+          layout: { type: 'accordion', defaultCollapsed: false, radios: true, spacedAccordionItems: false },
+          wallets: { applePay: 'never', googlePay: 'never' },
+        }}
+      />
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">{error}</div>
+      )}
+      <div className="flex gap-3">
+        <Button type="button" variant="outline" onClick={onCancel} disabled={loading} className="flex-1">
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={!stripe || loading} className="flex-1">
+          {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />A processar...</> : 'Pagar Agora'}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 export default function CustomerOrderDetailsPage() {
   const { orderNumber } = useParams<{ orderNumber: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [payModalOpen, setPayModalOpen] = useState(false);
+  const [resumeData, setResumeData] = useState<{
+    client_secret: string;
+    payment_intent_id: string;
+    total_cents: number;
+  } | null>(null);
+  const [resumeLoading, setResumeLoading] = useState(false);
+  const [publishableKey, setPublishableKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/stripe/config`)
+      .then(r => r.json())
+      .then((d: any) => setPublishableKey(d?.data?.publishableKey || d?.publishableKey || null))
+      .catch(() => {});
+  }, []);
+
+  // Abrir modal automaticamente se URL contém #pagar
+  useEffect(() => {
+    if (location.hash === '#pagar') {
+      handleOpenPayModal();
+    }
+  }, [location.hash]);
+
+  const stripePromise = useMemo(() => publishableKey ? loadStripe(publishableKey) : null, [publishableKey]);
+
+  const stripeOptions = useMemo(() => {
+    if (!resumeData?.client_secret) return undefined;
+    return {
+      clientSecret: resumeData.client_secret,
+      locale: 'pt' as const,
+      appearance: { theme: 'stripe' as const, variables: { colorPrimary: '#8B4513' } },
+    };
+  }, [resumeData?.client_secret]);
+
+  const handleOpenPayModal = async () => {
+    if (!orderNumber) return;
+    setResumeLoading(true);
+    try {
+      const res = await apiRequest<{
+        client_secret: string;
+        payment_intent_id: string;
+        total_cents: number;
+      }>('/api/stripe/resume-payment', {
+        method: 'POST',
+        body: JSON.stringify({ order_number: orderNumber }),
+      });
+      if (!res.success || !res.data?.client_secret) {
+        throw new Error(res.error || 'Erro ao retomar pagamento');
+      }
+      setResumeData(res.data);
+      setPayModalOpen(true);
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err?.message || 'Não foi possível retomar o pagamento.', variant: 'destructive' });
+    } finally {
+      setResumeLoading(false);
+    }
+  };
+
+  const handlePaySuccess = () => {
+    setPayModalOpen(false);
+    setResumeData(null);
+    queryClient.invalidateQueries({ queryKey: ['customer-order', orderNumber] });
+    queryClient.invalidateQueries({ queryKey: ['customer-orders'] });
+    navigate(`/checkout/success?order=${orderNumber}`);
+  };
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['customer-order', orderNumber],
@@ -184,6 +341,36 @@ export default function CustomerOrderDetailsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Modal de retoma de pagamento */}
+      <Dialog open={payModalOpen} onOpenChange={(open) => { if (!open) { setPayModalOpen(false); setResumeData(null); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="w-5 h-5" />
+              Concluir Pagamento — Pedido {order.order_number}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mb-4 p-3 bg-muted rounded-lg flex justify-between text-sm">
+            <span className="text-muted-foreground">Total a pagar</span>
+            <span className="font-bold text-lg">{resumeData ? formatPrice(resumeData.total_cents) : ''}</span>
+          </div>
+          {stripePromise && stripeOptions ? (
+            <Elements stripe={stripePromise} options={stripeOptions} key={resumeData?.client_secret}>
+              <ResumePaymentForm
+                orderNumber={order.order_number}
+                clientSecret={resumeData!.client_secret}
+                onSuccess={handlePaySuccess}
+                onCancel={() => { setPayModalOpen(false); setResumeData(null); }}
+              />
+            </Elements>
+          ) : (
+            <div className="flex justify-center py-8">
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -214,6 +401,35 @@ export default function CustomerOrderDetailsPage() {
           )}
         </div>
       </div>
+
+      {/* Banner de pagamento pendente */}
+      {order.payment_status === 'pending' && order.status !== 'cancelled' && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-amber-300 bg-amber-50 p-5"
+        >
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-semibold text-amber-800">Pagamento não concluído</p>
+              <p className="text-sm text-amber-700">
+                Este pedido aguarda pagamento. Clique no botão para escolher o método de pagamento e finalizar a compra.
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={handleOpenPayModal}
+            disabled={resumeLoading}
+            className="bg-amber-600 hover:bg-amber-700 text-white shrink-0"
+          >
+            {resumeLoading
+              ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />A carregar...</>
+              : <><CreditCard className="w-4 h-4 mr-2" />Pagar Agora</>
+            }
+          </Button>
+        </motion.div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}

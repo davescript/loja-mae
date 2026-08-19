@@ -176,6 +176,12 @@ export async function handleOrdersRoutes(request: Request, env: Env): Promise<Re
       return await handleGetInvoice(request, env);
     }
 
+    // Get shipping slip: GET /api/orders/:id/shipping-slip
+    if (method === 'GET' && path.match(/^\/api\/orders\/\d+\/shipping-slip$/)) {
+      const { handleGetShippingSlip } = await import('./shipping-slip');
+      return await handleGetShippingSlip(request, env);
+    }
+
     // Resend confirmation email: POST /api/orders/:id/resend-email
     if (method === 'POST' && path.match(/^\/api\/orders\/\d+\/resend-email$/)) {
       await requireAdmin(request, env);

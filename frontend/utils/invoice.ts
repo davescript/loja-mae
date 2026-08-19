@@ -116,6 +116,53 @@ export async function downloadInvoiceHTML(orderId: number | string): Promise<voi
 }
 
 /**
+ * Download shipping slip as printable PDF (for post office use)
+ */
+export async function downloadShippingSlip(orderId: number | string): Promise<void> {
+  const url = `${API_BASE_URL}/api/orders/${orderId}/shipping-slip`;
+
+  try {
+    const token = localStorage.getItem('admin_token') || localStorage.getItem('customer_token') || localStorage.getItem('token');
+    const headers: HeadersInit = { 'Accept': 'text/html' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(url, { method: 'GET', credentials: 'include', headers });
+
+    if (!response.ok) {
+      throw new Error(`Erro ao gerar guia: ${response.statusText}`);
+    }
+
+    const html = await response.text();
+    const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
+    const blobUrl = URL.createObjectURL(blob);
+
+    const printWindow = window.open(blobUrl, '_blank');
+    if (printWindow) {
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.print();
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+        }, 400);
+      };
+    } else {
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `guia-envio-${orderId}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    }
+  } catch (error) {
+    console.error('Error downloading shipping slip:', error);
+    const printWindow = window.open(url, '_blank');
+    if (printWindow) {
+      printWindow.onload = () => setTimeout(() => printWindow.print(), 500);
+    }
+  }
+}
+
+/**
  * View invoice in new tab (with authentication)
  */
 export async function viewInvoice(orderId: number | string): Promise<void> {
