@@ -181,10 +181,10 @@ export default function CustomerOrdersPage() {
                 >
                   <CardContent className="p-6">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Package className="w-5 h-5 text-muted-foreground" />
-                          <span className="font-semibold text-lg">{getOrderTitle(order)}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2">
+                          <Package className="w-5 h-5 text-muted-foreground shrink-0" />
+                          <span className="font-semibold text-lg break-all">{getOrderTitle(order)}</span>
                           {getStatusBadge(order.status)}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-muted-foreground">
@@ -269,7 +269,7 @@ export default function CustomerOrdersPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <p className="text-sm text-muted-foreground">
                 Mostrando {((page - 1) * pageSize) + 1} a {Math.min(page * pageSize, total)} de {total} pedidos
               </p>

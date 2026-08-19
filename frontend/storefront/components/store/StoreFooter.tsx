@@ -90,7 +90,7 @@ export default function StoreFooter() {
                 </Link>
               </li>
               <li>
-                <Link to="/orders" className="text-sm hover:text-primary transition">
+                <Link to="/account/orders" className="text-sm hover:text-primary transition">
                   Meus Pedidos
                 </Link>
               </li>

@@ -101,9 +101,9 @@ export default function CustomerDashboardPage() {
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2 break-words">
             Olá, {user?.name || (user?.email ? user.email.split('@')[0] : 'Cliente')}! 👋
           </h1>
           <p className="text-muted-foreground">
@@ -114,7 +114,7 @@ export default function CustomerDashboardPage() {
           onClick={handleRefresh}
           variant="outline"
           size="sm"
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 self-start sm:self-center shrink-0"
           disabled={ordersLoading || statsLoading}
         >
           <RefreshCw className={`w-4 h-4 ${(ordersLoading || statsLoading) ? 'animate-spin' : ''}`} />
@@ -207,26 +207,26 @@ export default function CustomerDashboardPage() {
                   key={order.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
                   onClick={() => navigate(`/account/orders/${order.order_number}`)}
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Package className="w-5 h-5 text-muted-foreground" />
-                      <span className="font-medium">Pedido {order.order_number}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2">
+                      <Package className="w-5 h-5 text-muted-foreground shrink-0" />
+                      <span className="font-medium break-all">Pedido {order.order_number}</span>
                       {getStatusBadge(order.status)}
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
                       <span>
                         {format(new Date(order.created_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                       </span>
-                      <span>•</span>
+                      <span className="hidden sm:inline">•</span>
                       <span>{order.items?.length || 0} item{order.items?.length !== 1 ? 's' : ''}</span>
-                      <span>•</span>
+                      <span className="hidden sm:inline">•</span>
                       <span className="font-medium text-foreground">{formatPrice(order.total_cents)}</span>
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" className="self-start sm:self-center shrink-0">
                     Ver Detalhes
                   </Button>
                 </motion.div>

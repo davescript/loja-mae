@@ -28,7 +28,6 @@ import ForgotPasswordPage from './storefront/pages/forgot-password';
 import ResetPasswordPage from './storefront/pages/reset-password';
 import AccountPage from './storefront/pages/account';
 import FavoritesPage from './storefront/pages/favorites';
-import OrdersPage from './storefront/pages/orders';
 
 // Customer Portal Layout and Pages
 import CustomerPortalLayout from './storefront/layout/CustomerPortalLayout';
@@ -97,7 +96,7 @@ function App() {
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password" element={<ResetPasswordPage />} />
         <Route path="favorites" element={<FavoritesPage />} />
-        <Route path="orders" element={<OrdersPage />} />
+        <Route path="orders" element={<Navigate to="/account/orders" replace />} />
         
         {/* Customer Portal Routes - New Portal (replaces old /account) */}
         <Route path="account" element={<CustomerPortalLayout />}>

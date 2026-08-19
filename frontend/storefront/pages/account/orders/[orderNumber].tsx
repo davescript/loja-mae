@@ -372,20 +372,23 @@ export default function CustomerOrderDetailsPage() {
       </Dialog>
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/account/orders')}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="min-w-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/account/orders')}
+            className="-ml-2 mb-1"
+          >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Voltar
           </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Pedido {order.order_number}</h1>
-            <p className="text-muted-foreground">
-              Realizado em {format(new Date(order.created_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
-            </p>
-          </div>
+          <h1 className="text-xl sm:text-3xl font-bold break-all">Pedido {order.order_number}</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            Realizado em {format(new Date(order.created_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
+          </p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap sm:shrink-0">
           {getStatusBadge(order.status)}
           {order.payment_status === 'paid' && (
             <Button

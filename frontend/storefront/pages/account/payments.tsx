@@ -73,11 +73,11 @@ export default function CustomerPaymentsPage() {
           {payments.map((payment) => (
             <Card key={payment.id}>
               <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <CreditCard className="w-5 h-5 text-muted-foreground" />
-                      <span className="font-semibold">Pedido {payment.order_number}</span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2">
+                      <CreditCard className="w-5 h-5 text-muted-foreground shrink-0" />
+                      <span className="font-semibold break-all">Pedido {payment.order_number}</span>
                       {getStatusBadge(payment.status)}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-muted-foreground">
@@ -101,7 +101,7 @@ export default function CustomerPaymentsPage() {
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 shrink-0">
                     <Button
                       variant="outline"
                       size="sm"

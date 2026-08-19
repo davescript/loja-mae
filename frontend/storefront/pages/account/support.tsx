@@ -225,9 +225,9 @@ export default function CustomerSupportPage() {
           {tickets.map((ticket) => (
             <Card key={ticket.id}>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">{ticket.subject}</CardTitle>
-                  <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <CardTitle className="text-lg break-words">{ticket.subject}</CardTitle>
+                  <div className="flex gap-2 flex-wrap shrink-0">
                     {getStatusBadge(ticket.status)}
                     {getPriorityBadge(ticket.priority)}
                   </div>
@@ -237,13 +237,11 @@ export default function CustomerSupportPage() {
                 <p className="text-sm text-muted-foreground mb-4 whitespace-pre-wrap">
                   {ticket.message}
                 </p>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <div>
-                    {ticket.order && (
-                      <span>Pedido: {ticket.order.order_number} • </span>
-                    )}
-                    Criado em {format(new Date(ticket.created_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
-                  </div>
+                <div className="text-xs text-muted-foreground break-words">
+                  {ticket.order && (
+                    <span>Pedido: {ticket.order.order_number} • </span>
+                  )}
+                  Criado em {format(new Date(ticket.created_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
                 </div>
               </CardContent>
             </Card>

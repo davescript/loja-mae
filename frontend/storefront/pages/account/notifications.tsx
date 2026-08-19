@@ -129,17 +129,17 @@ export default function CustomerNotificationsPage() {
                     >
                       <Icon className="w-5 h-5" />
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 mb-1">
                         <h3
-                          className={`font-medium ${
+                          className={`font-medium break-words ${
                             !notification.is_read ? 'text-foreground' : 'text-muted-foreground'
                           }`}
                         >
                           {notification.title}
                         </h3>
                         {!notification.is_read && (
-                          <Badge variant="default" className="ml-2">
+                          <Badge variant="default" className="shrink-0">
                             Nova
                           </Badge>
                         )}

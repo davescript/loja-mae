@@ -69,9 +69,9 @@ export default function CheckoutSuccessPage() {
             <div>
               <h2 className="text-xl font-bold mb-4">Detalhes do Pedido</h2>
               <div className="space-y-2">
-                <div className="flex justify-between">
+                <div className="flex flex-wrap justify-between gap-x-2 gap-y-1">
                   <span className="text-muted-foreground">Número do Pedido:</span>
-                  <span className="font-medium">{order.order_number}</span>
+                  <span className="font-medium break-all text-right">{order.order_number}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total:</span>
