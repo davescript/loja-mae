@@ -1,4 +1,5 @@
 // Shared types between frontend and backend
+export * from './dropshipping';
 
 export type ApiResponse<T = any> = {
   success: boolean;

@@ -238,6 +238,12 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
       return handleCORS(await handleCampaignsRoutes(request, env), env, request);
     }
 
+    // Admin dropshipping routes
+    if (path.startsWith('/api/admin/dropshipping')) {
+      const { handleAdminDropshippingRoutes } = await import('./admin/dropshipping');
+      return handleCORS(await handleAdminDropshippingRoutes(request, env), env, request);
+    }
+
     // Admin collections routes
     if (path.startsWith('/api/admin/collections')) {
       const { handleAdminCollectionsRoutes } = await import('./admin/collections');

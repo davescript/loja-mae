@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Heart,
   Mail,
+  Truck,
 } from "lucide-react"
 import { Topbar } from "../components/common/Topbar"
 import { Breadcrumbs } from "../components/common/Breadcrumbs"
@@ -63,6 +64,7 @@ export default function AdvancedLayout() {
     { path: "/admin/contact-messages", icon: Mail, label: "Mensagens" },
     { path: "/admin/blog", icon: FileText, label: "Blog" },
     { path: "/admin/analytics", icon: BarChart3, label: "Analytics" },
+    { path: "/admin/dropshipping", icon: Truck, label: "Dropshipping" },
     { path: "/admin/settings", icon: Settings, label: "Configurações" },
   ]
 
@@ -252,4 +254,3 @@ export default function AdvancedLayout() {
     </div>
   )
 }
-

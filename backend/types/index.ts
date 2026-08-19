@@ -10,6 +10,10 @@ export interface Env {
   OPENAI_API_KEY?: string;
   FROM_EMAIL?: string;
   FROM_NAME?: string; // Opcional - se não configurado, usa fallback
+  CJ_API_KEY?: string;
+  CJ_PLATFORM_TOKEN?: string;
+  CJ_API_BASE_URL?: string;
+  CJ_DEFAULT_WAREHOUSE_COUNTRY?: string;
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
   APPLE_CLIENT_ID?: string;
@@ -22,4 +26,3 @@ export interface Env {
   WORKER_NAME?: string;
   APP_URL?: string;
 }
-

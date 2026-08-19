@@ -59,6 +59,7 @@ import AdminCampaignsPage from './admin/pages/campaigns';
 import AdminBannersPage from './admin/pages/banners';
 import AdminBlogPage from './admin/pages/blog';
 import AdminAnalyticsPage from './admin/pages/analytics';
+import AdminDropshippingPage from './admin/pages/dropshipping';
 import AdminSettingsPage from './admin/pages/settings-advanced';
 import AdminContactMessagesPage from './admin/pages/contact-messages';
 import { GoogleAnalytics } from './components/GoogleAnalytics';
@@ -130,6 +131,7 @@ function App() {
         <Route path="blog" element={<AdminBlogPage />} />
         <Route path="contact-messages" element={<AdminContactMessagesPage />} />
         <Route path="analytics" element={<AdminAnalyticsPage />} />
+        <Route path="dropshipping" element={<AdminDropshippingPage />} />
         <Route path="settings" element={<AdminSettingsPage />} />
         <Route index element={<Navigate to="/admin/dashboard" replace />} />
       </Route>

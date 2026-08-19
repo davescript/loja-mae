@@ -9,3 +9,10 @@ ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
 APP_URL=http://localhost:5173
 FROM_EMAIL=noreply@leiasabores.pt
 FROM_NAME=Leiasabores
+
+# CJ Dropshipping
+# Gere a chave em My CJ > Authorization > API. Nunca exponha isto no frontend.
+CJ_API_KEY=CJUserNum@api@your_api_key_here
+CJ_PLATFORM_TOKEN=
+CJ_API_BASE_URL=https://developers.cjdropshipping.com/api2.0/v1
+CJ_DEFAULT_WAREHOUSE_COUNTRY=PT
