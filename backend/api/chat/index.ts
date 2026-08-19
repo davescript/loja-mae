@@ -4,6 +4,7 @@ import { successResponse, errorResponse } from '../../utils/response';
 import { getDb } from '../../utils/db';
 import { listProducts } from '../../modules/products';
 import { listCategories } from '../../modules/categories';
+import { callAI, type AIMessage } from '../../utils/ai';
 
 export async function handleChatRoutes(request: Request, env: Env): Promise<Response> {
   const method = request.method;
@@ -48,7 +49,7 @@ async function handleChatMessage(request: Request, env: Env): Promise<Response> 
 
         const catalogContext = formatCatalogContext(categories, productsResult.items);
 
-        const aiResponse = await callAI(
+        const aiResponse = await callChatAI(
           body.message,
           body.conversation || [],
           openaiApiKey,
@@ -93,13 +94,13 @@ function formatCatalogContext(categories: any[], products: any[]): string {
   return context;
 }
 
-async function callAI(
+async function callChatAI(
   message: string,
   conversation: Array<{ role: string; content: string }>,
   apiKey: string,
   catalogContext: string
 ): Promise<string> {
-  const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+  const messages: AIMessage[] = [
     {
       role: 'system',
       content: `És a Maria, assistente virtual da Leia Sabores — loja premium de acessórios para confeitaria e festas.
@@ -136,40 +137,7 @@ Responde sempre em português de Portugal, de forma clara e respeitosa.`,
   }
   messages.push({ role: 'user', content: message });
 
-  const isGroq = apiKey.startsWith('gsk_');
-  const apiUrl = isGroq
-    ? 'https://api.groq.com/openai/v1/chat/completions'
-    : 'https://api.openai.com/v1/chat/completions';
-  const model = isGroq ? 'llama-3.3-70b-versatile' : 'gpt-4o-mini';
-
-  const response = await fetch(apiUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature: 0.5,
-      max_tokens: 350,
-      stream: false,
-    }),
-  });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(`AI API error: ${response.status} - ${JSON.stringify(err)}`);
-  }
-
-  const data = await response.json() as {
-    choices?: Array<{ message?: { content?: string } }>;
-  };
-
-  const aiResponse = data.choices?.[0]?.message?.content;
-  if (!aiResponse) throw new Error('Resposta vazia da IA');
-
-  return aiResponse.trim();
+  return callAI(messages, apiKey, { temperature: 0.5, maxTokens: 350 });
 }
 
 function generateFallbackResponse(message: string): string {

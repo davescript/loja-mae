@@ -15,7 +15,7 @@ import { useToast } from "../hooks/useToast"
 import { handleError } from "../../utils/errorHandler"
 import { formatPrice } from "../../utils/format"
 import { validateImage } from "../../utils/validateImage"
-import { Plus, Edit, Trash2, MoreVertical, Eye, X } from "lucide-react"
+import { Plus, Edit, Trash2, MoreVertical, Eye, X, Sparkles, Loader2 } from "lucide-react"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import { useForm } from "react-hook-form"
 
@@ -43,6 +43,7 @@ export default function AdminProductsPageAdvanced() {
   const [uploadingImages, setUploadingImages] = useState<File[]>([])
   const [imageErrors, setImageErrors] = useState<string[]>([])
   const [imagesToDelete, setImagesToDelete] = useState<number[]>([])
+  const [generatingDescription, setGeneratingDescription] = useState(false)
   const { toast } = useToast()
   const queryClient = useQueryClient()
 
@@ -307,6 +308,47 @@ export default function AdminProductsPageAdvanced() {
     }
   }
 
+  const handleGenerateDescription = async () => {
+    const title = form.watch("title")?.trim()
+    if (!title || title.length < 2) {
+      toast({
+        title: "Preenche o título primeiro",
+        description: "A IA precisa do nome do produto para gerar a descrição.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const categoryId = form.watch("category_id")
+    const categoryName = categoryId
+      ? categories?.find((cat) => cat.id === categoryId)?.name
+      : undefined
+
+    setGeneratingDescription(true)
+    try {
+      const response = await apiRequest<{ short_description: string; description: string }>(
+        "/api/admin/ai-content/product-description",
+        {
+          method: "POST",
+          body: JSON.stringify({ title, category: categoryName }),
+        }
+      )
+      if (response.data) {
+        form.setValue("short_description", response.data.short_description)
+        form.setValue("description", response.data.description)
+        toast({ title: "Descrição gerada", description: "Revê o texto antes de guardar." })
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro ao gerar descrição",
+        description: error.message || "Tenta novamente.",
+        variant: "destructive",
+      })
+    } finally {
+      setGeneratingDescription(false)
+    }
+  }
+
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     const errors: string[] = []
@@ -510,6 +552,27 @@ export default function AdminProductsPageAdvanced() {
                     value={form.watch("title")}
                     onChange={(e) => form.setValue("title", e.target.value)}
                   />
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm text-muted-foreground">
+                    Preenche o título e, opcionalmente, a categoria — a IA gera as descrições abaixo.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerateDescription}
+                    disabled={generatingDescription}
+                    className="shrink-0"
+                  >
+                    {generatingDescription ? (
+                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                    )}
+                    {generatingDescription ? "A gerar..." : "Gerar com IA"}
+                  </Button>
                 </div>
 
                 <div className="space-y-2">

@@ -244,6 +244,12 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
       return handleCORS(await handleAdminDropshippingRoutes(request, env), env, request);
     }
 
+    // Admin AI content generation routes
+    if (path.startsWith('/api/admin/ai-content')) {
+      const { handleAdminAIContentRoutes } = await import('./admin/ai-content');
+      return handleCORS(await handleAdminAIContentRoutes(request, env), env, request);
+    }
+
     // Admin collections routes
     if (path.startsWith('/api/admin/collections')) {
       const { handleAdminCollectionsRoutes } = await import('./admin/collections');
