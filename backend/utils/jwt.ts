@@ -18,8 +18,13 @@ export function signToken(
 export function verifyToken(token: string, secret: string): JWTPayload {
   try {
     return jwt.verify(token, secret) as JWTPayload;
-  } catch (error) {
-    throw new Error('Invalid or expired token');
+  } catch (error: any) {
+    if (error.name === 'TokenExpiredError') {
+      const err = new Error('Token expired') as any;
+      err.code = 'TOKEN_EXPIRED';
+      throw err;
+    }
+    throw new Error('Invalid token');
   }
 }
 

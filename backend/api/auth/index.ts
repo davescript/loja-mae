@@ -504,10 +504,21 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
       const rotate = crypto.randomUUID() + '.' + crypto.randomUUID();
       const rotateHash = await hashRefreshToken(rotate);
       await executeRun(db, 'UPDATE user_sessions SET refresh_token_hash = ?, updated_at = datetime("now") WHERE id = ?', [rotateHash, session.id]);
-      const domain = url.hostname;
-      const res = successResponse({ refreshed: true });
-      res.headers.set('Set-Cookie', `session_access=${access}; Path=/; Domain=${domain}; HttpOnly; Secure; SameSite=Lax; Max-Age=${15 * 60}`);
-      res.headers.append('Set-Cookie', `session_refresh=${encodeURIComponent(rotate)}; Path=/; Domain=${domain}; HttpOnly; Secure; SameSite=Lax; Max-Age=${60 * 24 * 60 * 60}`);
+      const requestHostname = url.hostname;
+      let cookieDomain = '';
+      let sameSite: 'Lax' | 'None' = 'Lax';
+      if (requestHostname.includes('leiasabores.pt')) {
+        cookieDomain = 'Domain=.leiasabores.pt; ';
+        sameSite = 'Lax';
+      } else if (requestHostname.includes('workers.dev')) {
+        cookieDomain = '';
+        sameSite = 'None';
+      } else {
+        cookieDomain = `Domain=${requestHostname}; `;
+      }
+      const res = successResponse({ refreshed: true, token: access });
+      res.headers.set('Set-Cookie', `session_access=${access}; Path=/; ${cookieDomain}HttpOnly; Secure; SameSite=${sameSite}; Max-Age=${15 * 60}`);
+      res.headers.append('Set-Cookie', `session_refresh=${encodeURIComponent(rotate)}; Path=/; ${cookieDomain}HttpOnly; Secure; SameSite=${sameSite}; Max-Age=${60 * 24 * 60 * 60}`);
       res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
       res.headers.set('Pragma', 'no-cache');
       res.headers.set('Expires', '0');
@@ -517,26 +528,35 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
 
     // Me: GET /api/auth/me
     if (method === 'GET' && path === '/api/auth/me') {
-      const cookieHeader = request.headers.get('Cookie');
       let token: string | null = null;
+      let fromAuthHeader = false;
+
+      // Ler cookies (admin_token e session_access)
+      let cookieToken: string | null = null;
+      const cookieHeader = request.headers.get('Cookie');
       if (cookieHeader) {
         const cookies = cookieHeader.split(';').map(c => c.trim());
+        let adminTokenCookie: string | null = null;
+        let sessionAccessCookie: string | null = null;
         for (const cookie of cookies) {
-          const [key, value] = cookie.split('=');
-          // Verificar session_access (cliente) ou admin_token (admin)
-          if (key === 'session_access' || key === 'admin_token') {
-            token = decodeURIComponent(value);
-            break;
-          }
+          const eqIdx = cookie.indexOf('=');
+          if (eqIdx === -1) continue;
+          const key = cookie.substring(0, eqIdx).trim();
+          const value = cookie.substring(eqIdx + 1);
+          if (key === 'admin_token') adminTokenCookie = decodeURIComponent(value);
+          else if (key === 'session_access') sessionAccessCookie = decodeURIComponent(value);
         }
+        cookieToken = adminTokenCookie || sessionAccessCookie;
       }
 
-      // Se não encontrou token no cookie, tentar Authorization header
-      if (!token) {
-        const authHeader = request.headers.get('Authorization');
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-          token = authHeader.substring(7);
-        }
+      // Authorization header tem prioridade, mas se o token estiver expirado
+      // fazemos fallback para o cookie (que pode ter sido renovado via refresh)
+      const authHeader = request.headers.get('Authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+        fromAuthHeader = true;
+      } else {
+        token = cookieToken;
       }
 
       if (!token) {
@@ -545,7 +565,23 @@ export async function handleAuthRoutes(request: Request, env: Env): Promise<Resp
 
       try {
         const { verifyToken } = await import('../../utils/jwt');
-        const payload = verifyToken(token, jwtSecret);
+        let payload;
+        try {
+          payload = verifyToken(token, jwtSecret);
+        } catch (tokenErr: any) {
+          // Se o token do Authorization header estiver expirado, tenta o cookie
+          if (tokenErr.code === 'TOKEN_EXPIRED' && fromAuthHeader && cookieToken && cookieToken !== token) {
+            try {
+              payload = verifyToken(cookieToken, jwtSecret);
+            } catch {
+              const r = errorResponse('Not authenticated', 401);
+              r.headers.set('Cache-Control', 'no-store');
+              return r;
+            }
+          } else {
+            throw tokenErr;
+          }
+        }
 
         const { executeOne } = await import('../../utils/db');
 

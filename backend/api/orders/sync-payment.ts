@@ -4,6 +4,7 @@ import { successResponse, errorResponse } from '../../utils/response';
 import { handleError } from '../../utils/errors';
 import { updateOrderPayment, getOrder } from '../../modules/orders';
 import Stripe from 'stripe';
+import { logStripeError, stripeErrorResponse } from '../../utils/stripeErrors';
 
 /**
  * Sincroniza status de pagamento verificando diretamente no Stripe
@@ -208,12 +209,11 @@ export async function handleSyncPaymentStatus(
         });
       }
     } catch (stripeError: any) {
-      console.error('Stripe error:', stripeError);
-      return errorResponse(`Stripe error: ${stripeError.message}`, 500);
+      logStripeError('Sync payment error', stripeError);
+      return stripeErrorResponse(stripeError);
     }
   } catch (error) {
     const { message, status, details } = handleError(error);
     return errorResponse(message, status, details);
   }
 }
-

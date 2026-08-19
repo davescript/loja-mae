@@ -6,6 +6,7 @@ import { requireAuth } from '../../utils/auth';
 import { generateOrderNumber } from '../../utils/db';
 import Stripe from 'stripe';
 import { executeOne, executeRun } from '../../utils/db';
+import { isStripeError, logStripeError, stripeErrorResponse } from '../../utils/stripeErrors';
 
 const COUNTRY_ALIAS: Record<string, string> = {
   portugal: 'PT',
@@ -14,6 +15,7 @@ const COUNTRY_ALIAS: Record<string, string> = {
   'republica portuguesa': 'PT',
   'pt': 'PT',
 };
+
 
 function normalizeCountry(value?: string | null): string {
   if (!value) return 'PT';
@@ -322,8 +324,8 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
 
     // Criar Payment Intent no Stripe
     // Nota: Para EUR, o valor mínimo é 0.50 EUR (50 centavos)
-    // Métodos permitidos: Cartão, MB Way (via link), Klarna
-    // Apple Pay e Google Pay aparecem automaticamente quando card está habilitado e o dispositivo suporta
+    // Deixar a Stripe escolher todos os métodos elegíveis ativados no Dashboard.
+    // Amazon Pay fica excluído por pedido da loja.
     const country = normalizeCountry(shippingAddressPayload?.country);
 
     // Log para debug - verificar se o país está sendo enviado corretamente
@@ -331,42 +333,59 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
       amount: totalCents,
       currency: 'eur',
       country: country,
-      payment_method_types: ['card', 'link', 'klarna'],
+      payment_method_types: ['mb_way', 'card', 'klarna'],
       hasShipping: !!shippingAddressPayload,
     });
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: totalCents,
-      currency: 'eur',
-      metadata: {
-        order_id: orderId.toString(),
-        order_number: orderNumber,
-        customer_id: customerId?.toString() || 'guest',
-      },
-      // Especificar métodos de pagamento: Cartão, MB Way (link), Klarna
-      // Apple Pay e Google Pay aparecem automaticamente quando card está na lista
-      payment_method_types: ['card', 'link', 'klarna'],
-      description: `Pedido ${orderNumber} - Loja Mãe`,
-      // Adicionar shipping address para métodos que requerem (importante para MB Way detectar país PT)
-      shipping: shippingAddressPayload ? {
-        name: `${shippingAddressPayload.first_name} ${shippingAddressPayload.last_name}`,
-        address: {
-          line1: shippingAddressPayload.address_line1,
-          line2: shippingAddressPayload.address_line2 || undefined,
-          city: shippingAddressPayload.city,
-          state: shippingAddressPayload.state || undefined,
-          postal_code: shippingAddressPayload.postal_code,
-          country: country, // Garantir que o país seja PT para MB Way aparecer
+    let paymentIntent: Stripe.PaymentIntent;
+
+    try {
+      const paymentIntentParams: Stripe.PaymentIntentCreateParams = {
+        amount: totalCents,
+        currency: 'eur',
+        receipt_email: email !== 'guest@example.com' ? email : undefined,
+        payment_method_types: ['mb_way', 'card', 'klarna'],
+        payment_method_options: {
+          klarna: {
+            preferred_locale: 'pt-PT',
+          },
         },
-        phone: shippingAddressPayload.phone || undefined,
-      } : undefined,
-      // Adicionar payment_method_options para garantir que Link (MB Way) esteja disponível
-      payment_method_options: {
-        link: {
-          persistent_token: undefined, // Não usar token persistente na primeira vez
+        metadata: {
+          order_id: orderId.toString(),
+          order_number: orderNumber,
+          customer_id: customerId?.toString() || 'guest',
         },
-      },
-    });
+        description: `Pedido ${orderNumber} - Loja Mãe`,
+        shipping: shippingAddressPayload ? {
+          name: `${shippingAddressPayload.first_name} ${shippingAddressPayload.last_name}`,
+          address: {
+            line1: shippingAddressPayload.address_line1,
+            line2: shippingAddressPayload.address_line2 || undefined,
+            city: shippingAddressPayload.city,
+            state: shippingAddressPayload.state || undefined,
+            postal_code: shippingAddressPayload.postal_code,
+            country: country,
+          },
+          phone: shippingAddressPayload.phone || undefined,
+        } : undefined,
+      };
+
+      paymentIntent = await stripe.paymentIntents.create(paymentIntentParams);
+    } catch (stripeError) {
+      // Se o PaymentIntent nem chegou a ser criado, removemos o pedido pendente.
+      try {
+        await executeRun(db, 'DELETE FROM order_items WHERE order_id = ?', [orderId]);
+        await executeRun(
+          db,
+          'DELETE FROM orders WHERE id = ? AND stripe_payment_intent_id IS NULL',
+          [orderId]
+        );
+      } catch (cleanupError) {
+        console.error('[STRIPE] Failed to cleanup pending order after payment intent error:', cleanupError);
+      }
+
+      throw stripeError;
+    }
 
     if (!paymentIntent.client_secret) {
       console.error('Payment Intent criado sem client_secret:', paymentIntent);
@@ -388,9 +407,13 @@ export async function handleCreateIntent(request: Request, env: Env): Promise<Re
       payment_intent_id: paymentIntent.id,
     });
   } catch (error) {
+    if (isStripeError(error)) {
+      logStripeError('Create intent error', error);
+      return stripeErrorResponse(error);
+    }
+
     console.error('Create intent error:', error);
     const { message, status, details } = handleError(error);
     return errorResponse(message, status, details);
   }
 }
-

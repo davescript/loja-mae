@@ -2,6 +2,7 @@ import type { Env } from '../../types';
 import { handleCheckout } from './checkout';
 import { handleWebhook } from './webhook';
 import { handleCreateIntent } from './create-intent';
+import { handleResumePayment } from './resume-payment';
 import { successResponse, errorResponse } from '../../utils/response';
 
 export async function handleStripeRoutes(request: Request, env: Env): Promise<Response> {
@@ -22,6 +23,11 @@ export async function handleStripeRoutes(request: Request, env: Env): Promise<Re
     // Webhook: POST /api/stripe/webhook
     if (method === 'POST' && path === '/api/stripe/webhook') {
       return handleWebhook(request, env);
+    }
+
+    // Resume Payment: POST /api/stripe/resume-payment
+    if (method === 'POST' && path === '/api/stripe/resume-payment') {
+      return handleResumePayment(request, env);
     }
 
   // Config: GET /api/stripe/config

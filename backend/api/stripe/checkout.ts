@@ -6,6 +6,11 @@ import { createOrder, updateOrderPayment } from '../../modules/orders';
 import { validateCoupon, applyCoupon } from '../../modules/coupons';
 import { createOrderSchema } from '../../validators/orders';
 import Stripe from 'stripe';
+import { isStripeError, logStripeError, stripeErrorResponse } from '../../utils/stripeErrors';
+
+type PaymentIntentCreateParamsWithExclusions = Stripe.PaymentIntentCreateParams & {
+  excluded_payment_method_types?: string[];
+};
 
 export async function handleCheckout(request: Request, env: Env): Promise<Response> {
   try {
@@ -54,9 +59,9 @@ export async function handleCheckout(request: Request, env: Env): Promise<Respon
     });
 
     // Create Stripe Payment Intent
-    const paymentIntent = await stripe.paymentIntents.create({
+    const paymentIntentParams: PaymentIntentCreateParamsWithExclusions = {
       amount: order.total_cents,
-      currency: 'brl',
+      currency: 'eur',
       metadata: {
         order_id: order.id.toString(),
         order_number: order.order_number,
@@ -64,7 +69,11 @@ export async function handleCheckout(request: Request, env: Env): Promise<Respon
       automatic_payment_methods: {
         enabled: true,
       },
-    });
+      // A Stripe já aceita este parâmetro, mas o SDK local ainda não o expõe nos tipos.
+      excluded_payment_method_types: ['amazon_pay'],
+    };
+
+    const paymentIntent = await stripe.paymentIntents.create(paymentIntentParams);
 
     // Update order with payment intent ID
     await updateOrderPayment(db, order.id, paymentIntent.id);
@@ -81,8 +90,12 @@ export async function handleCheckout(request: Request, env: Env): Promise<Respon
       total_cents: order.total_cents,
     });
   } catch (error) {
+    if (isStripeError(error)) {
+      logStripeError('Checkout error', error);
+      return stripeErrorResponse(error);
+    }
+
     const { message, status, details } = handleError(error);
     return errorResponse(message, status, details);
   }
 }
-
