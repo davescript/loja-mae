@@ -66,12 +66,32 @@ export default function PrivacyPage() {
       ],
     },
     {
+      icon: Lock,
+      title: '7. Klarna — Partilha de Dados para Pagamento',
+      content: [
+        'Quando seleciona Klarna como método de pagamento, partilhamos os dados necessários para processar a transação com a Klarna Bank AB (publ), registada na Suécia, nº 556737-0431.',
+        'Os dados partilhados incluem: nome completo, endereço de entrega e faturação, endereço de email, número de telefone, valor e detalhes do pedido.',
+        'A Klarna tratará estes dados como responsável pelo tratamento independente, ao abrigo da sua própria Política de Privacidade disponível em klarna.com/pt/privacidade.',
+        'A Klarna pode realizar verificações de identidade e avaliações de crédito com base nos dados recebidos. Estas avaliações não afetam o seu historial de crédito habitual.',
+        'A Klarna é uma instituição bancária regulamentada e está sujeita ao RGPD e à legislação bancária europeia.',
+      ],
+    },
+    {
       icon: Calendar,
-      title: '7. Retenção de Dados',
+      title: '8. Retenção de Dados',
       content: [
         'Mantemos os seus dados pessoais apenas pelo tempo necessário para cumprir os fins para os quais foram coletados.',
         'Dados de pedidos são mantidos por um período mínimo de 7 anos conforme exigido pela legislação fiscal portuguesa.',
         'Após o período de retenção, os dados são eliminados de forma segura.',
+      ],
+    },
+    {
+      icon: Shield,
+      title: '9. Transferências Internacionais de Dados',
+      content: [
+        'Os dados processados pela Stripe são transferidos para os Estados Unidos da América sob cláusulas contratuais-tipo aprovadas pela Comissão Europeia.',
+        'Os dados partilhados com a Klarna são tratados dentro do Espaço Económico Europeu (Suécia) e estão sujeitos ao RGPD.',
+        'Não transferimos dados pessoais para países terceiros sem salvaguardas adequadas.',
       ],
     },
   ];

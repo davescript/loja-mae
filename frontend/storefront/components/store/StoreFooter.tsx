@@ -136,17 +136,42 @@ export default function StoreFooter() {
           </div>
         </div>
 
+        {/* Payment methods */}
+        <div className="border-t border-gray-800 mt-6 sm:mt-8 pt-6 sm:pt-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-xs text-gray-500">Métodos de pagamento aceites:</p>
+            <div className="flex items-center gap-2 flex-wrap justify-center">
+              {/* Visa */}
+              <span className="bg-white text-[#1A1F71] font-black text-xs px-3 py-1 rounded font-sans tracking-wide">VISA</span>
+              {/* Mastercard */}
+              <span className="bg-[#EB001B] text-white font-bold text-xs px-2 py-1 rounded">MC</span>
+              {/* MB Way */}
+              <span className="bg-white text-[#005faa] font-bold text-xs px-2 py-1 rounded">MB WAY</span>
+              {/* Klarna */}
+              <span className="bg-[#FFB3C7] text-[#17120f] font-black text-xs px-3 py-1 rounded italic">Klarna</span>
+            </div>
+          </div>
+        </div>
+
         {/* Bottom Bar */}
-        <div className="border-t border-gray-800 mt-6 sm:mt-8 pt-6 sm:pt-8 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+        <div className="border-t border-gray-800 mt-4 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+          <div className="text-center sm:text-left">
             <p className="text-sm text-gray-400">
               © {new Date().getFullYear()} Leiasabores. Todos os direitos reservados.
             </p>
-          <div className="flex gap-6 text-sm">
+            <p className="text-xs text-gray-600 mt-0.5">
+              Lisboa, Portugal · davecdl@outlook.com
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-4 text-sm justify-center">
             <Link to="/privacy" className="hover:text-primary transition">
               Privacidade
             </Link>
             <Link to="/terms" className="hover:text-primary transition">
               Termos
+            </Link>
+            <Link to="/returns" className="hover:text-primary transition">
+              Devoluções
             </Link>
             <Link to="/shipping" className="hover:text-primary transition">
               Envios

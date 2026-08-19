@@ -1,11 +1,24 @@
 import { motion } from 'framer-motion';
-import { FileText, ShoppingCart, CreditCard, RotateCcw, CheckCircle } from 'lucide-react';
+import { FileText, ShoppingCart, CreditCard, RotateCcw, CheckCircle, Building2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function TermsPage() {
   const sections = [
     {
+      icon: Building2,
+      title: '1. Identificação do Vendedor',
+      content: [
+        'Leiasabores — Loja de Acessórios para Confeitaria',
+        'Morada: Lisboa, Portugal',
+        'Email: davecdl@outlook.com',
+        'Telefone: +351 969 407 406',
+        'Website: www.leiasabores.pt',
+        'A Leiasabores opera ao abrigo da legislação portuguesa e da União Europeia aplicável ao comércio eletrónico.',
+      ],
+    },
+    {
       icon: FileText,
-      title: '1. Aceitação dos Termos',
+      title: '2. Aceitação dos Termos',
       content: [
         'Ao aceder e utilizar o website da Leiasabores, aceita estar vinculado a estes Termos e Condições de Utilização.',
         'Se não concordar com algum destes termos, não deve utilizar o nosso website.',
@@ -15,7 +28,7 @@ export default function TermsPage() {
     },
     {
       icon: ShoppingCart,
-      title: '2. Produtos e Preços',
+      title: '3. Produtos e Preços',
       content: [
         'Todos os produtos são apresentados com a maior precisão possível, incluindo descrições, imagens e preços.',
         'Reservamo-nos o direito de corrigir erros de preços, mesmo após a confirmação do pedido.',
@@ -26,18 +39,29 @@ export default function TermsPage() {
     },
     {
       icon: CreditCard,
-      title: '3. Pagamentos',
+      title: '4. Pagamentos',
       content: [
-        'Aceitamos pagamentos através de cartão de crédito/débito, MB Way e transferência bancária.',
-        'Todos os pagamentos são processados de forma segura através de gateways de pagamento certificados.',
+        'Aceitamos pagamentos através de cartão de crédito/débito (Visa, Mastercard), MB Way e Klarna.',
+        'Todos os pagamentos são processados de forma segura através da Stripe Payments Europe, Ltd.',
         'O pagamento é processado no momento da confirmação do pedido.',
-        'Em caso de pagamento por transferência bancária, o pedido será processado após confirmação do pagamento.',
         'Reservamo-nos o direito de solicitar informações adicionais para verificar a identidade do cliente.',
       ],
     },
     {
+      icon: CreditCard,
+      title: '5. Klarna — Pagamento em Prestações',
+      content: [
+        'A Leiasabores oferece a opção de pagamento em 3 prestações sem juros através da Klarna.',
+        'O serviço "Pagar em 3 vezes" da Klarna está disponível para compras elegíveis. A Klarna avaliará independentemente a sua elegibilidade para este produto.',
+        'Ao selecionar Klarna como método de pagamento, aceita os Termos e Condições da Klarna e autoriza a Klarna a realizar uma avaliação de crédito.',
+        'A Klarna é um prestador de serviços de pagamento independente, regulamentado como instituição de crédito. A Leiasabores não é responsável pelas decisões de crédito da Klarna.',
+        'Em caso de devolução de produtos pagos com Klarna, o reembolso será processado diretamente pela Klarna após confirmação da nossa parte. As prestações pendentes serão ajustadas ou canceladas conforme aplicável.',
+        'Para informações sobre a política de privacidade da Klarna e como os seus dados são tratados, consulte a Política de Privacidade da Klarna em klarna.com/pt.',
+      ],
+    },
+    {
       icon: CheckCircle,
-      title: '4. Envio e Entrega',
+      title: '6. Envio e Entrega',
       content: [
         'Os produtos são enviados para o endereço indicado durante o processo de checkout.',
         'Os prazos de entrega são estimativas e podem variar consoante a disponibilidade e o método de envio escolhido.',
@@ -48,18 +72,18 @@ export default function TermsPage() {
     },
     {
       icon: RotateCcw,
-      title: '5. Direito de Devolução e Reembolso',
+      title: '7. Direito de Devolução e Reembolso',
       content: [
+        'Tem o direito de devolver qualquer produto no prazo de 14 dias após a receção, sem necessidade de justificação, ao abrigo do Decreto-Lei n.º 24/2014.',
+        'Consulte a nossa Política de Devoluções completa em leiasabores.pt/returns para informações detalhadas.',
         'Os produtos devem ser devolvidos nas mesmas condições em que foram recebidos, com etiquetas e embalagens originais.',
-        'Os custos de devolução são da responsabilidade do cliente, exceto em caso de produto defeituoso ou incorreto.',
         'O reembolso será processado no prazo de 14 dias após receção e verificação do produto devolvido.',
-        'O reembolso será efetuado através do mesmo método de pagamento utilizado na compra.',
-        'Produtos personalizados ou feitos sob medida não podem ser devolvidos, exceto em caso de defeito.',
+        'Produtos personalizados (ex.: toppers com nome ou data específica) não podem ser devolvidos, exceto em caso de defeito.',
       ],
     },
     {
       icon: FileText,
-      title: '6. Contas de Utilizador',
+      title: '8. Contas de Utilizador',
       content: [
         'É responsável por manter a confidencialidade das suas credenciais de acesso.',
         'Deve notificar-nos imediatamente em caso de uso não autorizado da sua conta.',

@@ -16,6 +16,7 @@ import ContactPage from './storefront/pages/contact';
 import PrivacyPage from './storefront/pages/privacy';
 import TermsPage from './storefront/pages/terms';
 import ShippingPage from './storefront/pages/shipping';
+import ReturnsPage from './storefront/pages/returns';
 import ProductPage from './storefront/pages/product/[slug]';
 import CartPage from './storefront/pages/cart';
 import CheckoutPage from './storefront/pages/checkout';
@@ -85,6 +86,7 @@ function App() {
         <Route path="privacy" element={<PrivacyPage />} />
         <Route path="terms" element={<TermsPage />} />
         <Route path="shipping" element={<ShippingPage />} />
+        <Route path="returns" element={<ReturnsPage />} />
         <Route path="cart" element={<CartPage />} />
         <Route path="checkout" element={<CheckoutPage />} />
         <Route path="checkout/success" element={<CheckoutSuccessPage />} />
