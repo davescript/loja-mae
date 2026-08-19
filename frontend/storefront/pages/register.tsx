@@ -43,8 +43,8 @@ export default function RegisterPage() {
   };
 
   const handleOAuth = (provider: OAuthProvider) => {
-    if (provider === 'microsoft') {
-      setError('Integração com Microsoft em breve.');
+    if (provider === 'microsoft' || provider === 'apple') {
+      setError('Esta opção de registo estará disponível em breve.');
       return;
     }
 
@@ -175,8 +175,8 @@ export default function RegisterPage() {
 
           <div className="mt-10">
             <p className="text-center text-[#77543a] text-sm mb-4">Ou continue com</p>
-            <OAuthButtons onSelect={handleOAuth} disabledProviders={['microsoft']} />
-            <p className="text-xs text-[#a98367] mt-3 text-center">* Microsoft em breve</p>
+            <OAuthButtons onSelect={handleOAuth} disabledProviders={['microsoft', 'apple']} />
+            <p className="text-xs text-[#a98367] mt-3 text-center">* Microsoft e Apple em breve</p>
           </div>
 
           <div className="mt-8 text-center space-y-2">

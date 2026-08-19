@@ -33,8 +33,8 @@ export default function LoginPage() {
   };
 
   const handleOAuth = (provider: OAuthProvider) => {
-    if (provider === 'microsoft') {
-      setError('Integração com Microsoft em breve.');
+    if (provider === 'microsoft' || provider === 'apple') {
+      setError('Esta opção de login estará disponível em breve.');
       return;
     }
     window.location.href = `${API_BASE_URL}/api/auth/oauth/${provider}?redirect=${encodeURIComponent(redirect)}`;
@@ -182,8 +182,8 @@ export default function LoginPage() {
             </div>
 
             {/* OAuth */}
-            <OAuthButtons onSelect={handleOAuth} disabledProviders={['microsoft']} />
-            <p className="text-xs text-[#bba898] mt-2 text-center">* Microsoft em breve</p>
+            <OAuthButtons onSelect={handleOAuth} disabledProviders={['microsoft', 'apple']} />
+            <p className="text-xs text-[#bba898] mt-2 text-center">* Microsoft e Apple em breve</p>
           </div>
 
           {/* Footer link */}
