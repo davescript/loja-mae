@@ -16,6 +16,7 @@ import { handleBlogRoutes } from './blog';
 import { handleImageRequest } from './images';
 import { handleChatRoutes } from './chat';
 import { handleCartRoutes } from './cart';
+import { handleNewsletter } from './newsletter';
 
 export async function handleRequest(request: Request, env: Env): Promise<Response> {
   // Handle CORS
@@ -121,6 +122,11 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
     // Chat routes
     if (path.startsWith('/api/chat')) {
       return handleCORS(await handleChatRoutes(request, env), env, request);
+    }
+
+    // Newsletter routes
+    if (path.startsWith('/api/newsletter')) {
+      return handleCORS(await handleNewsletter(request, env), env, request);
     }
 
     // Admin Dashboard routes

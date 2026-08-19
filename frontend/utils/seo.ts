@@ -8,26 +8,26 @@ const SITE_NAME = 'Leiasabores';
  * Gera dados de SEO para um produto
  */
 export function generateProductSEO(product: Product) {
-  const imageUrl = product.images?.[0]?.url 
-    ? (product.images[0].url.startsWith('http') 
-        ? product.images[0].url 
-        : `${SITE_URL}${product.images[0].url}`)
+  const imageUrl = product.images?.[0]?.image_url
+    ? (product.images[0].image_url.startsWith('http')
+        ? product.images[0].image_url
+        : `${SITE_URL}${product.images[0].image_url}`)
     : `${SITE_URL}/og-image.jpg`;
 
   const price = product.variants && product.variants.length > 0
     ? product.variants[0].price_cents
     : product.price_cents || 0;
 
-  const availability = product.status === 'active' ? 'in stock' : 'out of stock';
+  const availability: 'in stock' | 'out of stock' = product.status === 'active' ? 'in stock' : 'out of stock';
 
   // Structured Data para Product
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.title,
-    description: product.description || product.excerpt || '',
-    image: product.images?.map(img => 
-      img.url.startsWith('http') ? img.url : `${SITE_URL}${img.url}`
+    description: product.description || product.short_description || '',
+    image: product.images?.map(img =>
+      img.image_url.startsWith('http') ? img.image_url : `${SITE_URL}${img.image_url}`
     ) || [imageUrl],
     brand: {
       '@type': 'Brand',
@@ -55,8 +55,8 @@ export function generateProductSEO(product: Product) {
 
   return {
     title: product.title,
-    description: product.description || product.excerpt || `Compre ${product.title} na ${SITE_NAME}`,
-    keywords: product.tags?.join(', ') || `${product.title}, ${product.category?.name || ''}`,
+    description: product.description || product.short_description || `Compre ${product.title} na ${SITE_NAME}`,
+    keywords: `${product.title}, ${product.category?.name || ''}`,
     image: imageUrl,
     url: `${SITE_URL}/product/${product.slug}`,
     type: 'product' as const,
@@ -73,10 +73,10 @@ export function generateProductSEO(product: Product) {
  * Gera dados de SEO para um post de blog
  */
 export function generateBlogPostSEO(post: BlogPost) {
-  const imageUrl = post.featured_image
-    ? (post.featured_image.startsWith('http') 
-        ? post.featured_image 
-        : `${SITE_URL}${post.featured_image}`)
+  const imageUrl = post.cover_image_url
+    ? (post.cover_image_url.startsWith('http')
+        ? post.cover_image_url
+        : `${SITE_URL}${post.cover_image_url}`)
     : `${SITE_URL}/og-image.jpg`;
 
   // Structured Data para Article
@@ -105,7 +105,7 @@ export function generateBlogPostSEO(post: BlogPost) {
   return {
     title: post.title,
     description: post.excerpt || '',
-    keywords: post.tags?.join(', ') || '',
+    keywords: '',
     image: imageUrl,
     url: `${SITE_URL}/blog/${post.slug}`,
     type: 'article' as const,

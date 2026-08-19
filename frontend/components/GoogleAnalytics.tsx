@@ -69,7 +69,7 @@ export function GoogleAnalytics({ measurementId }: GoogleAnalyticsProps) {
 declare global {
   interface Window {
     dataLayer: any[];
-    gtag: (...args: any[]) => void;
+    gtag?: (...args: any[]) => void;
   }
 }
 
