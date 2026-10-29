@@ -9,6 +9,7 @@ export interface Env {
   ENVIRONMENT: string;
   OPENAI_API_KEY?: string;
   FROM_EMAIL?: string;
+  RESEND_API_KEY?: string;
   FROM_NAME?: string; // Opcional - se não configurado, usa fallback
   CJ_API_KEY?: string;
   CJ_PLATFORM_TOKEN?: string;

@@ -25,6 +25,7 @@ export const listProductsSchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   search: z.string().optional(),
   category_id: z.coerce.number().int().positive().optional(),
+  category: z.string().max(100).optional(),
   status: z.enum(['draft', 'active', 'archived']).optional(),
   featured: z.coerce.number().int().min(0).max(1).optional(),
   sortBy: z.enum(['title', 'price_cents', 'created_at', 'updated_at']).default('created_at'),

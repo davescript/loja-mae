@@ -262,6 +262,12 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
       return handleCORS(await handleCollectionsRoutes(request, env), env, request);
     }
 
+    // Sitemap (public)
+    if (path === '/api/sitemap.xml' && method === 'GET') {
+      const { handleSitemap } = await import('./sitemap');
+      return await handleSitemap(env);
+    }
+
     // Health check
     if (path === '/api/health') {
       return successResponse({ status: 'ok', timestamp: new Date().toISOString() });

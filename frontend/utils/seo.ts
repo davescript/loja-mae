@@ -137,8 +137,8 @@ export function generateHomeSEO() {
 
   return {
     title: 'Início',
-    description: 'Loja online de produtos premium. Elegância moderna para o seu dia a dia. Descubra nossa coleção exclusiva.',
-    keywords: 'loja online, produtos premium, elegância, moda, acessórios',
+    description: 'Topos de bolo personalizados e produtos de confeitaria. Envio para todo Portugal.',
+    keywords: 'topos de bolo, toppers, topper personalizado, confeitaria, corante em gel, bolos de aniversário, Portugal',
     image: `${SITE_URL}/og-image.jpg`,
     url: SITE_URL,
     type: 'website' as const,

@@ -10,6 +10,7 @@ import CollectionsPage from './storefront/pages/collections';
 import CollectionPage from './storefront/pages/collections/[slug]';
 import CategoriesPage from './storefront/pages/categories';
 import AboutPage from './storefront/pages/about';
+import NotFoundPage from './storefront/pages/not-found';
 import BlogListPage from './storefront/pages/blog';
 import BlogPostPage from './storefront/pages/blog/[slug]';
 import ContactPage from './storefront/pages/contact';
@@ -109,6 +110,7 @@ function App() {
           <Route path="support" element={<CustomerSupportPage />} />
           <Route path="notifications" element={<CustomerNotificationsPage />} />
         </Route>
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
 
       {/* Admin Routes */}

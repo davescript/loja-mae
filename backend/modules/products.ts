@@ -158,6 +158,7 @@ export async function listProducts(
     pageSize?: number;
     search?: string;
     category_id?: number;
+    category?: string;
     status?: string;
     featured?: number;
     sortBy?: string;
@@ -170,6 +171,7 @@ export async function listProducts(
     pageSize = 20,
     search,
     category_id,
+    category,
     status,
     featured,
     sortBy = 'created_at',
@@ -188,6 +190,11 @@ export async function listProducts(
   if (category_id) {
     whereConditions.push('category_id = ?');
     params.push(category_id);
+  }
+
+  if (category) {
+    whereConditions.push('category_id IN (SELECT id FROM categories WHERE slug = ?)');
+    params.push(category);
   }
 
   if (status) {

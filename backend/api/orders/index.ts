@@ -258,7 +258,7 @@ export async function handleOrdersRoutes(request: Request, env: Env): Promise<Re
             await executeRun(
               db,
               'INSERT INTO order_email_logs (order_id, email, email_type, status, error_message, created_at) VALUES (?, ?, ?, ?, ?, datetime("now"))',
-              [id, order.email, 'confirmation', 'failed', 'Email sending failed - check MailChannels logs']
+              [id, order.email, 'confirmation', 'failed', 'Email sending failed - check Resend logs']
             );
           } catch (logError) {
             console.error('[API] Erro ao salvar log de email:', logError);

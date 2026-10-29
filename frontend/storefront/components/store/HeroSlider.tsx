@@ -3,13 +3,15 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const IMG = 'https://api.leiasabores.pt/api/images/products/toppers';
+
 const slides = [
   {
     id: 1,
-    title: 'Acessórios Premium para Bolos',
+    title: 'Topos de Bolo',
     subtitle: 'Tudo o que você precisa para criar bolos incríveis',
-    description: 'Formas, toppers, decorações e muito mais com qualidade premium',
-    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1600&auto=format&fit=crop',
+    description: 'Dezenas de temas para aniversários, festas e eventos',
+    image: `${IMG}/topper-nome-dourado.jpeg`,
     buttonText: 'Explorar Produtos',
     buttonLink: '/products',
     bgColor: 'from-primary/20 via-secondary/30 to-accent/20',
@@ -19,19 +21,19 @@ const slides = [
     title: 'Toppers Personalizados',
     subtitle: 'Dê um toque especial ao seu bolo',
     description: 'Toppers únicos e personalizados para tornar seu evento inesquecível',
-    image: 'https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?q=80&w=1600&auto=format&fit=crop',
+    image: `${IMG}/topper-nome-acrilico.jpeg`,
     buttonText: 'Ver Toppers',
-    buttonLink: '/products?category=toppers',
+    buttonLink: '/products?category=topos-de-bolo',
     bgColor: 'from-accent/20 via-primary/30 to-secondary/20',
   },
   {
     id: 3,
-    title: 'Embalagens Elegantes',
-    subtitle: 'Apresente seus produtos com estilo',
-    description: 'Caixas, sacolas e embalagens premium para seus eventos',
-    image: 'https://images.unsplash.com/photo-1501045661006-fcebe0257c3f?q=80&w=1600&auto=format&fit=crop',
-    buttonText: 'Ver Embalagens',
-    buttonLink: '/products?category=embalagens',
+    title: 'Corantes em Gel',
+    subtitle: 'Cores intensas para massas e coberturas',
+    description: 'Gel corante altamente concentrado para colorir cremes, massas e coberturas',
+    image: `${IMG}/gel-azul-royal.jpeg`,
+    buttonText: 'Ver Corantes',
+    buttonLink: '/products?category=gel',
     bgColor: 'from-secondary/20 via-accent/30 to-primary/20',
   },
 ];

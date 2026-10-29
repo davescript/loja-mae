@@ -21,7 +21,7 @@ export interface SEOData {
 
 const DEFAULT_SITE_NAME = 'Leiasabores';
 const DEFAULT_SITE_URL = 'https://www.leiasabores.pt';
-const DEFAULT_DESCRIPTION = 'Loja online de produtos premium. Elegância moderna para o seu dia a dia.';
+const DEFAULT_DESCRIPTION = 'Topos de bolo personalizados e produtos de confeitaria. Envio para todo Portugal.';
 const DEFAULT_IMAGE = `${DEFAULT_SITE_URL}/og-image.jpg`;
 
 /**
@@ -46,7 +46,7 @@ export function useSEO(data: SEOData) {
     } = data;
 
     // Title
-    const fullTitle = title ? `${title} | ${DEFAULT_SITE_NAME}` : `${DEFAULT_SITE_NAME} — Elegância Moderna`;
+    const fullTitle = title ? `${title} | ${DEFAULT_SITE_NAME}` : `${DEFAULT_SITE_NAME} — Topos de Bolo e Confeitaria`;
     document.title = fullTitle;
 
     // Helper function to update or create meta tag

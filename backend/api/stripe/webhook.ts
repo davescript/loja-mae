@@ -442,7 +442,7 @@ export async function handleWebhook(request: Request, env: Env): Promise<Respons
                     await executeRun(
                       db,
                       'INSERT INTO order_email_logs (order_id, email, email_type, status, error_message, created_at) VALUES (?, ?, ?, ?, ?, datetime("now"))',
-                      [finalOrderId, order.email, 'confirmation', 'failed', 'Email sending failed - check MailChannels logs']
+                      [finalOrderId, order.email, 'confirmation', 'failed', 'Email sending failed - check Resend logs']
                     );
                   } catch (logError) {
                     console.error('[WEBHOOK] Erro ao salvar log de email:', logError);

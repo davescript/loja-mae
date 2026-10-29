@@ -140,7 +140,7 @@ Esta mensagem foi enviada através do formulário de contato do website.
           );
         }
       } else {
-        emailError = 'Failed to send email via MailChannels';
+        emailError = 'Failed to send email via Resend';
         console.error('[CONTACT] Failed to send email to admin:', {
           to: adminEmail,
           subject: validated.subject,

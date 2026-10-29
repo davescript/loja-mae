@@ -273,24 +273,26 @@ export default function ProductPage() {
               </span>
             </div>
 
-            {/* Avaliações */}
-            <div className="flex items-center gap-2 mb-4">
-              <div className="flex items-center gap-1 text-amber-500">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-5 h-5 ${
-                      i < Math.round((product as any).average_rating || 4)
-                        ? 'fill-current'
-                        : 'opacity-30'
-                    }`}
-                  />
-                ))}
+            {/* Avaliações — só mostrar estrelas quando há avaliações reais */}
+            {((product as any).reviews_count || 0) > 0 && (
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-1 text-amber-500">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`w-5 h-5 ${
+                        i < Math.round((product as any).average_rating || 0)
+                          ? 'fill-current'
+                          : 'opacity-30'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  {(product as any).reviews_count} {(product as any).reviews_count === 1 ? 'avaliação' : 'avaliações'}
+                </span>
               </div>
-              <span className="text-sm text-muted-foreground">
-                {(product as any).reviews_count || 0} avaliações
-              </span>
-            </div>
+            )}
 
             {/* Preço */}
             <div className="mb-4">

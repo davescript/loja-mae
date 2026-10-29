@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '../../utils/api';
-import type { Product } from '@shared/types';
+import type { Product, Category } from '@shared/types';
 import Carousel from '../components/app/Carousel';
 import ProductCard from '../components/app/ProductCard';
 import CategoriesModal from '../components/app/CategoriesModal';
@@ -56,6 +56,34 @@ export default function HomePage() {
     },
     retry: 1,
   });
+
+  const { data: categories } = useQuery({
+    queryKey: ['categories', 'home'],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest<{ items: Category[] }>('/api/categories?is_active=1');
+        return response.data?.items || [];
+      } catch (error) {
+        console.error('Error loading categories:', error);
+        return [];
+      }
+    },
+    retry: 1,
+  });
+
+  // Só mostrar categorias que têm produtos, com estilos em rotação
+  const categoryStyles = [
+    { emoji: '✨', gradient: 'from-amber-200 via-yellow-200 to-amber-300', iconBg: 'bg-amber-100' },
+    { emoji: '🎨', gradient: 'from-blue-200 via-cyan-200 to-blue-300', iconBg: 'bg-blue-100' },
+    { emoji: '🍰', gradient: 'from-rose-200 via-pink-200 to-rose-300', iconBg: 'bg-rose-100' },
+    { emoji: '🧁', gradient: 'from-purple-200 via-indigo-200 to-purple-300', iconBg: 'bg-purple-100' },
+    { emoji: '🎁', gradient: 'from-emerald-200 via-teal-200 to-emerald-300', iconBg: 'bg-emerald-100' },
+  ];
+  const homeCategories = (categories || [])
+    .filter((c) => ((c as any).product_count ?? 0) > 0)
+    .sort((a, b) => ((b as any).product_count ?? 0) - ((a as any).product_count ?? 0))
+    .slice(0, 5)
+    .map((c, i) => ({ label: c.name, slug: c.slug, ...categoryStyles[i % categoryStyles.length] }));
 
   const { data: heroBanners } = useBanners('home_hero', 1);
   const hasHeroBanner = heroBanners && heroBanners.length > 0;
@@ -116,49 +144,8 @@ export default function HomePage() {
             </motion.span>
           </Link>
         </div>
-        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
-          {[
-            {
-              label: 'Formas',
-              emoji: '🍰',
-              slug: 'formas',
-              gradient: 'from-rose-200 via-pink-200 to-rose-300',
-              hoverGradient: 'from-rose-300 via-pink-300 to-rose-400',
-              iconBg: 'bg-rose-100'
-            },
-            {
-              label: 'Toppers',
-              emoji: '✨',
-              slug: 'toppers',
-              gradient: 'from-amber-200 via-yellow-200 to-amber-300',
-              hoverGradient: 'from-amber-300 via-yellow-300 to-amber-400',
-              iconBg: 'bg-amber-100'
-            },
-            {
-              label: 'Confeitaria',
-              emoji: '🧁',
-              slug: 'confeitaria',
-              gradient: 'from-purple-200 via-indigo-200 to-purple-300',
-              hoverGradient: 'from-purple-300 via-indigo-300 to-purple-400',
-              iconBg: 'bg-purple-100'
-            },
-            {
-              label: 'Caixas',
-              emoji: '🎁',
-              slug: 'caixas',
-              gradient: 'from-emerald-200 via-teal-200 to-emerald-300',
-              hoverGradient: 'from-emerald-300 via-teal-300 to-emerald-400',
-              iconBg: 'bg-emerald-100'
-            },
-            {
-              label: 'Balões',
-              emoji: '🎈',
-              slug: 'baloes',
-              gradient: 'from-blue-200 via-cyan-200 to-blue-300',
-              hoverGradient: 'from-blue-300 via-cyan-300 to-blue-400',
-              iconBg: 'bg-blue-100'
-            },
-          ].map((c, index) => (
+        <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6">
+          {homeCategories.map((c, index) => (
             <motion.div
               key={c.slug}
               initial={{ opacity: 0, y: 30 }}
@@ -166,7 +153,7 @@ export default function HomePage() {
               viewport={{ once: true }}
               transition={{ delay: index * 0.1, duration: 0.5 }}
               whileHover={{ y: -12, scale: 1.05 }}
-              className="group"
+              className="group w-[calc(33.333%-0.5rem)] sm:w-40 md:w-48"
             >
               <Link
                 to={`/products?category=${c.slug}`}

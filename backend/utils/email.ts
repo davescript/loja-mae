@@ -10,93 +10,38 @@ interface EmailOptions {
 }
 
 /**
- * Send email using Cloudflare MailChannels (free, no API key needed)
- * Works with Cloudflare Workers and requires DKIM setup
- * 
- * IMPORTANT: MailChannels only works when:
- * 1. The request comes from a Cloudflare Worker
- * 2. The "from" email is from a workers.dev domain OR a verified domain
+ * Send email using Resend (https://resend.com)
+ *
+ * Requer:
+ * - RESEND_API_KEY (secret)
+ * - FROM_EMAIL de um domínio verificado no Resend (ex: encomendas@leiasabores.pt)
+ *
+ * O antigo envio gratuito via MailChannels deixou de funcionar em 2024 (passou a exigir chave).
  */
 export async function sendEmail(env: Env, options: EmailOptions): Promise<boolean> {
   try {
-    const workerName = env.WORKER_NAME || 'loja-mae-api';
-    const workerSubdomain = env.WORKERS_SUBDOMAIN || 'davecdl';
-    const fallbackFrom = `noreply@${workerName}.${workerSubdomain}.workers.dev`;
-
-    // MailChannels requer que o email "from" seja de um domínio workers.dev
-    // ou de um domínio verificado.
-    let fromEmail = options.from || env.FROM_EMAIL || fallbackFrom;
-
-    if (!fromEmail.endsWith('.workers.dev') && !env.FROM_EMAIL) {
-      console.warn('[EMAIL] FROM_EMAIL não é de workers.dev e env.FROM_EMAIL não está configurado. Usando fallback workers.dev.');
-      fromEmail = fallbackFrom;
+    if (!env.RESEND_API_KEY) {
+      console.error('[EMAIL] RESEND_API_KEY não está configurada. Email não enviado:', options.subject);
+      return false;
     }
 
+    const fromEmail = options.from || env.FROM_EMAIL || 'noreply@leiasabores.pt';
     const fromName = env.FROM_NAME || 'Leiasabores';
 
-    console.log('[EMAIL] Attempting to send email:', {
-      to: options.to,
-      from: fromEmail,
-      fromName,
-      subject: options.subject,
-      workerName,
-    });
-
-    // Preparar payload conforme especificação MailChannels
-    const personalization: Record<string, any> = {
-      to: [
-        {
-          email: options.to,
-          name: options.to.split('@')[0] || 'Cliente',
-        },
-      ],
-    };
-
-    if (options.replyTo) {
-      personalization.headers = {
-        'Reply-To': options.replyTo,
-      };
-    }
-
-    const payload = {
-      personalizations: [personalization],
-      from: {
-        email: fromEmail,
-        name: fromName,
-      },
-      subject: options.subject,
-      content: [
-        {
-          type: 'text/html',
-          value: options.html,
-        },
-        ...(options.text
-          ? [
-            {
-              type: 'text/plain',
-              value: options.text,
-            },
-          ]
-          : []),
-      ],
-    };
-
-    console.log('[EMAIL] Payload prepared:', {
-      from: payload.from,
-      to: payload.personalizations[0].to[0].email,
-      subject: payload.subject,
-      hasHtml: !!payload.content.find((c) => c.type === 'text/html'),
-      hasText: !!payload.content.find((c) => c.type === 'text/plain'),
-    });
-
-    // MailChannels API endpoint
-    // IMPORTANTE: Esta requisição DEVE vir de um Cloudflare Worker
-    const response = await fetch('https://api.mailchannels.net/tx/v1/send', {
+    const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        from: `${fromName} <${fromEmail}>`,
+        to: [options.to],
+        subject: options.subject,
+        html: options.html,
+        ...(options.text ? { text: options.text } : {}),
+        ...(options.replyTo ? { reply_to: options.replyTo } : {}),
+      }),
     });
 
     const responseText = await response.text();
@@ -104,35 +49,20 @@ export async function sendEmail(env: Env, options: EmailOptions): Promise<boolea
     if (!response.ok) {
       console.error('[EMAIL] Send failed:', {
         status: response.status,
-        statusText: response.statusText,
         error: responseText,
         to: options.to,
         from: fromEmail,
-        payload: JSON.stringify(payload, null, 2),
+        subject: options.subject,
       });
-
-      // Tentar parsear erro se for JSON
-      let errorDetails = responseText;
-      try {
-        const errorJson = JSON.parse(responseText);
-        errorDetails = JSON.stringify(errorJson, null, 2);
-      } catch {
-        // Não é JSON, usar texto direto
-      }
-
-      console.error('[EMAIL] Error details:', errorDetails);
       return false;
     }
 
-    console.log('[EMAIL] ✅ Email sent successfully to:', options.to);
-    console.log('[EMAIL] Response:', responseText);
+    console.log('[EMAIL] ✅ Email sent successfully to:', options.to, responseText);
     return true;
   } catch (error) {
     console.error('[EMAIL] Exception sending email:', {
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
       to: options.to,
-      errorType: error?.constructor?.name,
     });
     return false;
   }

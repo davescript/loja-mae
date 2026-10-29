@@ -21,8 +21,7 @@ export default function CollectionsPage() {
         const res = await apiRequest<Collection[]>('/api/collections');
         return res.data || [];
       } catch (error) {
-        console.error('Erro ao carregar coleções:', error);
-        return [];
+                return [];
       }
     },
   });
@@ -76,12 +75,16 @@ export default function CollectionsPage() {
                 to={linkTo} 
                 className="group rounded-lg overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow"
               >
-                <div className="aspect-[4/3] overflow-hidden">
-                  <img
-                    src={(item as any).image_url || 'https://images.unsplash.com/photo-1615873968403-89e068629265?q=80&w=1200&auto=format&fit=crop'}
-                    alt={item.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
+                <div className="aspect-[4/3] overflow-hidden bg-gradient-to-br from-orange-100 via-amber-50 to-rose-100 flex items-center justify-center">
+                  {(item as any).image_url ? (
+                    <img
+                      src={(item as any).image_url}
+                      alt={item.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <span className="text-3xl font-heading text-primary/80 px-4 text-center">{item.name}</span>
+                  )}
                 </div>
                 <div className="p-5">
                   <h3 className="font-medium text-lg">{item.name}</h3>
