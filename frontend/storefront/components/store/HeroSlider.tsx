@@ -93,7 +93,7 @@ export default function HeroSlider() {
 
                 {/* Content */}
                 <div className="relative h-full flex items-end sm:items-center pb-12 sm:pb-0">
-                  <div className="container mx-auto px-5 sm:px-6 md:px-8">
+                  <div className="container mx-auto px-14 sm:px-20">
                     <div className="max-w-lg md:max-w-2xl">
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
